@@ -56,11 +56,12 @@ from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg as ssl
 from vectsum import vectsum
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from scipy.constants import e, epsilon_0
 
 na = lambda x:np.array([x])
 
-qe=1.602176565e-19;
-eps0=8.8541878176e-12;
+qe = e
+eps0 = epsilon_0
 
 class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
