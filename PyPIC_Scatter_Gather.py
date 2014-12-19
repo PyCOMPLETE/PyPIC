@@ -53,6 +53,7 @@
 import numpy as np
 import rhocompute as rhocom
 import int_field_for as iff
+from abc import abstractmethod, ABCMeta
 
 na = lambda x:np.array([x])
 
@@ -61,7 +62,9 @@ eps0=8.8541878176e-12;
 
 class PyPIC_Scatter_Gather(object):
 	
-	def __init__(self, x_aper, y_aper, Dh):
+	__metadata__ = ABCMeta
+	
+	def __init__(self, x_aper, y_aper, Dh, *args, **kwargs):
 		print 'Call Generic Constructor'
 		xg=np.arange(0, x_aper+5.*Dh,Dh,float)  
 		xgr=xg[1:]
@@ -88,8 +91,10 @@ class PyPIC_Scatter_Gather(object):
                         
 	#@profile
 	def scatter(self, x_mp, y_mp, nel_mp):
-		#print 'Scatter from parent'
-		assert(len(x_mp)==len(y_mp)==len(nel_mp))
+		
+		if not (len(x_mp)==len(y_mp)==len(nel_mp)):
+			raise ValueError('x_mp, y_mp, nel_mp should have the same length!!!')
+		
 		if len(x_mp)>0:
 			rho=rhocom.compute_sc_rho(x_mp,y_mp,nel_mp,
 									  self.bias_x,self.bias_y,self.Dh, self.Nxg, self.Nyg)
@@ -98,8 +103,9 @@ class PyPIC_Scatter_Gather(object):
 
          
 	def gather(self, x_mp, y_mp):
-		#print 'Gather from parent'
-		assert(len(x_mp) == len(y_mp))
+		
+		if not (len(x_mp)==len(y_mp)):
+			raise ValueError('x_mp, y_mp should have the same length!!!')
 
 		if len(x_mp)>0:    
 			## compute beam electric field
@@ -112,3 +118,13 @@ class PyPIC_Scatter_Gather(object):
 			
 		return Ex_sc_n, Ey_sc_n
 
+	@abstractmethod
+	def solve(self, *args, **kwargs):
+		'''Computes the electric field maps from the stored 
+		charge distribution (self.rho) and stores them in
+		self.efx, self.efy.'''
+		pass
+		
+	def scatter_and_solve(self, x_mp, y_mp, nel_mp):
+		self.scatter(x_mp, y_mp, nel_mp)
+		self.solve()
