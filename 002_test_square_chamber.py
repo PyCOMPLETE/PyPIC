@@ -6,10 +6,12 @@ import geom_impact_poly as poly
 from scipy import rand
 import numpy as np
 
+from module_poisson_from_exmple import fft_poisson
+
 R_cham = 1e-1
 R_charge = 4e-2
 N_part_gen = 100000
-Dh = 3e-3
+Dh = 5e-3
 
 from scipy.constants import e, epsilon_0
 
@@ -27,6 +29,7 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([R_cham, -R_cham, -R_cham, R_cham
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh)
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
+
 
 # generate particles
 x_part = R_charge*(2.*rand(N_part_gen)-1.)
@@ -68,5 +71,13 @@ pl.plot(x_probes, E_r_th, label = 'Analytic')
 pl.legend()
 pl.ylabel('Ex on the x axis [V/m]')
 pl.xlabel('x [m]')
+
+V = fft_poisson(-picFD.rho[1:-1,:]/eps0, Dh)
+
+pl.figure(100)
+pl.pcolor(picFD.phi)
+
+pl.figure(101)
+pl.pcolor(V)
 
 pl.show()
