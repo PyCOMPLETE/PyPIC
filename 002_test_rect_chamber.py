@@ -79,7 +79,7 @@ j_max = np.max(np.where(yg<y_aper)[0])+1
 
 
 phi = 0*picFDSW.rho
-phi[i_min:i_max,j_min:j_max] = fft_poisson(-picFDSW.rho[i_min:i_max,j_min:j_max]/eps0*Dh*np.pi**2, Dh)
+phi[i_min:i_max,j_min:j_max] = fft_poisson(-picFDSW.rho[i_min:i_max,j_min:j_max]/eps0*np.pi**2, Dh)
 
 pl.figure(100)
 pl.pcolor(picFDSW.phi.T)
