@@ -10,7 +10,7 @@ from module_poisson_from_exmple import fft_poisson
 R_cham = .5e-1
 R_charge = 4e-2
 N_part_gen = 100000
-Dh = .5e-3
+Dh = 1e-3
 
 from scipy.constants import e, epsilon_0
 
@@ -79,7 +79,7 @@ j_max = np.max(np.where(yg<y_aper)[0])+1
 
 
 phi = 0*picFDSW.rho
-phi[i_min:i_max,j_min:j_max] = fft_poisson(-picFDSW.rho[i_min:i_max,j_min:j_max]/eps0*Dh*np.pi**2, Dh)
+phi[i_min:i_max,j_min:j_max] = fft_poisson(-picFDSW.rho[i_min:i_max,j_min:j_max]/eps0*Dh**3*np.pi**2, Dh)
 
 pl.figure(100)
 pl.pcolor(picFDSW.phi)
