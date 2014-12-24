@@ -8,7 +8,7 @@ import numpy as np
 from module_poisson_from_exmple import fft_poisson
 
 x_aper = .5e-1
-y_aper = 2e-1
+y_aper = .25e-1
 R_charge = 4e-2
 N_part_gen = 100000
 Dh = 1e-3
