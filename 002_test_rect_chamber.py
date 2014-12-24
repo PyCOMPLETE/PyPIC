@@ -1,5 +1,6 @@
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FFT_OpenBoundary_SquareGrid as PIC_FFT
+import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 import geom_impact_ellip as ell
 import geom_impact_poly as poly
 from scipy import rand
@@ -27,7 +28,7 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
 
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
-
+picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
 
 # generate particles
 x_part = R_charge*(2.*rand(N_part_gen)-1.)
@@ -41,10 +42,13 @@ nel_part = 0*x_part+1.
 #pic scatter
 picFDSW.scatter(x_part, y_part, nel_part)
 picFFT.scatter(x_part, y_part, nel_part)
+picFFTPEC.scatter(x_part, y_part, nel_part)
 
 #pic scatter
 picFDSW.solve()
 picFFT.solve()
+picFFTPEC.solve()
+
 
 x_probes = np.linspace(0,x_aper,1000)
 y_probes = 0.*x_probes
@@ -52,6 +56,7 @@ y_probes = 0.*x_probes
 #pic gather
 Ex_FDSW, Ey_FDSW = picFDSW.gather(x_probes, y_probes)
 Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
+Ex_FFTPEC, Ey_FFTPEC = picFFTPEC.gather(x_probes, y_probes)
 
 E_r_th = map(lambda x: -np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x), x_probes)
 
@@ -60,6 +65,7 @@ import pylab as pl
 pl.close('all')
 pl.plot(x_probes, Ex_FDSW, label = 'FD ShorleyWeller')
 pl.plot(x_probes, Ex_FFT, label = 'FFT open')
+pl.plot(x_probes, Ex_FFTPEC, label = 'FFT PEC')
 pl.plot(x_probes, E_r_th, label = 'Analytic')
 #pl.plot(picFFT.xg, picFFT.efx[picFFT.ny/2, :])
 pl.legend()
@@ -93,6 +99,9 @@ pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(phi)))
 pl.figure(102)
 Ny = len(yg)
 pl.plot(picFDSW.phi[:,Ny/2]/phi[:,Ny/2])
+
+pl.figure(103)
+pl.plot(picFDSW.phi[:,Ny/2]/picFFTPEC.phi[:,Ny/2])
 
 pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(phi)))
 
