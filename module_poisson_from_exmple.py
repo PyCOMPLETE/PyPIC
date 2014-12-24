@@ -58,11 +58,20 @@ def fft_poisson(b,h):
 	b_bar = b_bar * (2/n+1);
 	# next we can solve for u_bar
 	u_bar = np.zeros((n,n));
-	lam = arange(1,n+0.5,1);
-	lam = -4 * (sin((lam*np.pi) / (2*n + 2)))**2;
-	for i in xrange(n):
-	    for j in xrange(n):
-	        u_bar[i,j] = (h**2 * b_bar[i,j]) / (lam[i] + lam[j]);
+	#~ lam = arange(1,n+0.5,1);
+	#~ lam = -4 * (sin((lam*np.pi) / (2*n + 2)))**2;
+	#~ for i in xrange(n):
+	    #~ for j in xrange(n):
+	        #~ u_bar[i,j] = (h**2 * b_bar[i,j]) / (lam[i] + lam[j]);
+	xx = arange(1,n+0.5,1);
+	yy = arange(1,n+0.5,1);
+	
+	YY, XX = np.meshgrid(yy,xx) 
+	green = -4*(sin(XX/2*pi/(n+1))**2/h**2+\
+               sin(YY/2*pi/(m+1))**2/h**2);
+               
+	u_bar = b_bar/green    
+	
 	
 	# u = 2/(n+1) * v * u_bar * v
 	# do a DST on columns of u_bar, which is analogous to multiplying v * u_bar
