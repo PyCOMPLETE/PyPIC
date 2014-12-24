@@ -11,7 +11,7 @@ from module_poisson_from_exmple import fft_poisson
 R_cham = 1e-1
 R_charge = 4e-2
 N_part_gen = 100000
-Dh = 5e-3
+Dh = 2e-3
 
 from scipy.constants import e, epsilon_0
 
@@ -72,12 +72,27 @@ pl.legend()
 pl.ylabel('Ex on the x axis [V/m]')
 pl.xlabel('x [m]')
 
-V = fft_poisson(-picFD.rho[1:-1,:]/eps0, Dh)
+# I try to use with the dst solver with the correct boundary
+xg = picFD.xg
+yg = picFD.yg
+x_aper = chamber.x_aper
+y_aper = chamber.y_aper
+
+i_min = np.min(np.where(xg>-x_aper)[0])
+i_max = np.max(np.where(xg<x_aper)[0])+1
+j_min = np.min(np.where(yg>-y_aper)[0])
+j_max = np.max(np.where(yg<y_aper)[0])+1
+
+
+phi = 0*picFD.rho
+phi[i_min:i_max,j_min:j_max] = fft_poisson(-picFD.rho[i_min:i_max,j_min:j_max]/eps0*Dh, Dh)
 
 pl.figure(100)
 pl.pcolor(picFD.phi)
 
 pl.figure(101)
-pl.pcolor(V)
+pl.pcolor(phi)
+pl.suptitle('%f'%(np.sum(phi)/np.sum(picFD.phi)))
+
 
 pl.show()
