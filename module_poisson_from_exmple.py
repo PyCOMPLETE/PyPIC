@@ -55,16 +55,14 @@ def fft_poisson(b,h):
 	    #b_bar[i,:] = fast_dst(b_bar[i,:].T).T;
 
 	# now scale by 2/(n+1)
-	# b_bar = b_bar * (2/n+1); #it seems there was a bug before, instrunction inconsistent with comment
+	b_bar = b_bar * (2/n+1);
 	# next we can solve for u_bar
 	u_bar = np.zeros((n,n));
 	lam = arange(1,n+0.5,1);
 	lam = -4 * (sin((lam*np.pi) / (2*n + 2)))**2;
 	for i in xrange(n):
 	    for j in xrange(n):
-	        #u_bar[i,j] = (h**2 * b_bar[i,j]) / (lam[i] + lam[j]);
-			u_bar[i,j] = (b_bar[i,j]) / (lam[i] + lam[j]);
-
+	        u_bar[i,j] = (h**2 * b_bar[i,j]) / (lam[i] + lam[j]);
 	
 	# u = 2/(n+1) * v * u_bar * v
 	# do a DST on columns of u_bar, which is analogous to multiplying v * u_bar
@@ -76,7 +74,7 @@ def fft_poisson(b,h):
 	    u[i,:] = fast_dst(u[i,:]);
 
 	# last, multiply by 2/(n+1)
-	# u = u * 2/(n+1);
+	u = u * 2/(n+1);
 	return u
 
 
