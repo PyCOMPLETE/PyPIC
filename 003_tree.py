@@ -85,10 +85,30 @@ pl.figure(3)
 pl.pcolor((picFFTPEC.efx**2+picFFTPEC.efy**2).T)
 pl.axis('equal')
 pl.suptitle('Magnitude electric field')
+pl.colorbar()
 pl.savefig('Xmas_efield.png', dpi=200)
 
 pl.figure(4)
 pl.pcolor(picFFTPEC.phi.T)
+pl.colorbar()
+pl.axis('equal')
+
+
+pl.figure(102)
+pl.pcolor(picFDSW.rho.T)
+pl.axis('equal')
+pl.suptitle('Charge density')
+
+
+pl.figure(103)
+pl.pcolor((picFDSW.efx**2+picFDSW.efy**2).T)
+pl.axis('equal')
+pl.suptitle('Magnitude electric field')
+pl.colorbar()
+
+pl.figure(104)
+pl.pcolor(picFDSW.phi.T)
+pl.colorbar()
 pl.axis('equal')
 
 pl.show()
