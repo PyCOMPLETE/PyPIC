@@ -98,10 +98,10 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 
 		
 		
-		self.i_min = np.min(np.where(self.xg>-x_aper)[0])
-		self.i_max = np.max(np.where(self.xg<x_aper)[0])+1
-		self.j_min = np.min(np.where(self.yg>-y_aper)[0])
-		self.j_max = np.max(np.where(self.yg<y_aper)[0])+1
+		self.i_min = np.min(np.where(self.xg>=-x_aper)[0])
+		self.i_max = np.max(np.where(self.xg<=x_aper)[0])+1
+		self.j_min = np.min(np.where(self.yg>=-y_aper)[0])
+		self.j_max = np.max(np.where(self.yg<=y_aper)[0])+1
 
 		self.rho = np.zeros((self.Nxg,self.Nyg))
 		self.phi = np.zeros((self.Nxg,self.Nyg))
@@ -115,9 +115,30 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		yy = np.arange(1,n+0.5,1);
 		
 		YY, XX = np.meshgrid(yy,xx) 
-		self.green = -4./eps0*(np.sin(XX/2*np.pi/(m+1.))**2/self.Dh**2+\
-				   np.sin(YY/2.*np.pi/(n+1.))**2/self.Dh**2);
+		self.green = 4.*eps0*(np.sin(XX/2*np.pi/float(m+1.))**2/self.Dh**2+\
+				   np.sin(YY/2.*np.pi/float(n+1.))**2/self.Dh**2);
+				   
+		
+		# handle border
+		[xn, yn]=np.meshgrid(self.xg,self.yg)		   
+		
+		xn=xn.T
+		xn=xn.flatten()
 
+		yn=yn.T
+		yn=yn.flatten()
+		#% xn and yn are stored such that the external index is on x 
+
+		flag_outside_n=np.logical_or(np.abs(xn)>x_aper,np.abs(yn)>y_aper)
+		flag_inside_n=~(flag_outside_n)
+
+
+		flag_outside_n_mat=np.reshape(flag_outside_n,(self.Nyg,self.Nxg),'F');
+		flag_outside_n_mat=flag_outside_n_mat.T
+		[gx,gy]=np.gradient(np.double(flag_outside_n_mat));
+		gradmod=abs(gx)+abs(gy);
+		flag_border_mat=np.logical_and((gradmod>0), flag_outside_n_mat);
+		self.flag_border_mat = flag_border_mat
                         
 
     #@profile    
@@ -125,15 +146,22 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		if rho == None:
 			rho = self.rho
 
-		rhocut = self.rho[self.i_min:self.i_max,self.j_min:self.j_max]
+		rhocut = rho[self.i_min:self.i_max,self.j_min:self.j_max]
 		
 		rho_bar =  dst2(rhocut)       
 		phi_bar = rho_bar/self.green    
 		self.phi[self.i_min:self.i_max,self.j_min:self.j_max] = dst2(phi_bar).copy()
 
-		self.efy, self.efx = np.gradient(self.phi, self.Dh, self.Dh)
-		self.efy = self.efy.T
-		self.efx = self.efx.T
+		
+		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
+		self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes
+
+		self.efx[self.flag_border_mat]=self.efx[self.flag_border_mat]*2;
+		self.efy[self.flag_border_mat]=self.efy[self.flag_border_mat]*2;
+		
+		
+		self.efy = self.efy/(2*self.Dh)
+		self.efx = self.efx/(2*self.Dh)
         
         
 

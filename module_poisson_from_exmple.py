@@ -39,8 +39,8 @@ def fft_poisson(b,h):
 	yy = arange(1,n+0.5,1);
 	
 	YY, XX = np.meshgrid(yy,xx) 
-	green = -4*(sin(XX/2*pi/(m+1))**2/h**2+\
-               sin(YY/2*pi/(n+1))**2/h**2);
+	green = -4*(sin(XX/2*pi/float(m+1))**2/h**2+\
+               sin(YY/2*pi/float(n+1))**2/h**2);
     
     
 	b_bar =  dst2(b)       

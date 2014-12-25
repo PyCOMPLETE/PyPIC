@@ -8,8 +8,8 @@ import numpy as np
 
 from module_poisson_from_exmple import fft_poisson
 
-x_aper = .5e-1
-y_aper = .25e-1
+x_aper = 1e-1
+y_aper = .5e-1
 R_charge = 4e-2
 N_part_gen = 100000
 Dh = 1e-3
@@ -87,23 +87,48 @@ j_max = np.max(np.where(yg<y_aper)[0])+1
 phi = 0*picFDSW.rho
 phi[i_min:i_max,j_min:j_max] = fft_poisson(-picFDSW.rho[i_min:i_max,j_min:j_max]/eps0, Dh)
 
+
+
+
 pl.figure(100)
 pl.pcolor(picFDSW.phi.T)
 pl.axis('equal')
 
-pl.figure(101)
-pl.pcolor(phi.T)
-pl.axis('equal')
-pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(phi)))
 
-pl.figure(102)
+pl.figure(101)
+pl.pcolor(picFFTPEC.phi.T)
+pl.axis('equal')
+
+
+pl.figure(200)
+pl.pcolor(picFDSW.efx.T)
+pl.axis('equal')
+
+
+
+pl.figure(201)
+pl.pcolor(picFFTPEC.efx.T)
+pl.axis('equal')
+
+pl.figure(300)
+pl.pcolor(picFDSW.efy.T)
+pl.axis('equal')
+
+
+
+pl.figure(301)
+pl.pcolor(picFFTPEC.efy.T)
+pl.axis('equal')
+
+
+pl.figure(1002)
 Ny = len(yg)
 pl.plot(picFDSW.phi[:,Ny/2]/phi[:,Ny/2])
 
-pl.figure(103)
+pl.figure(1003)
 pl.plot(picFDSW.phi[:,Ny/2]/picFFTPEC.phi[:,Ny/2])
 
-pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(phi)))
+pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(picFFTPEC.phi)))
 
 
 pl.show()
