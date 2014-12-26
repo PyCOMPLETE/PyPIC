@@ -67,7 +67,6 @@ picFFTPEC.scatter(x_part, y_part, nel_part)
 picFFT.scatter(x_part, y_part, nel_part)
 
 
-#pic scatter
 picFDSW.solve()
 picFFTPEC.solve()
 picFFT.solve()
