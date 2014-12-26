@@ -3,6 +3,7 @@ import numpy as np
 from scipy import rand
 import geom_impact_poly as poly
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import FFT_OpenBoundary_SquareGrid as PIC_FFT
 import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 
 na = np.array
@@ -59,13 +60,17 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
 									   
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
+picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
 
 picFDSW.scatter(x_part, y_part, nel_part)
 picFFTPEC.scatter(x_part, y_part, nel_part)
+picFFT.scatter(x_part, y_part, nel_part)
+
 
 #pic scatter
 picFDSW.solve()
 picFFTPEC.solve()
+picFFT.solve()
 
 pl.close('all')
 pl.figure(1)
@@ -84,9 +89,9 @@ pl.savefig('Xmas_rho.png', dpi=200)
 pl.figure(3)
 pl.pcolor((picFFTPEC.efx**2+picFFTPEC.efy**2).T)
 pl.axis('equal')
-pl.suptitle('Magnitude electric field')
+pl.suptitle('Magnitude electric field\nFFT')
 pl.colorbar()
-pl.savefig('Xmas_efield.png', dpi=200)
+pl.savefig('Xmas_efield_FFT.png', dpi=200)
 
 pl.figure(4)
 pl.pcolor(picFFTPEC.phi.T)
@@ -103,12 +108,21 @@ pl.suptitle('Charge density')
 pl.figure(103)
 pl.pcolor((picFDSW.efx**2+picFDSW.efy**2).T)
 pl.axis('equal')
-pl.suptitle('Magnitude electric field')
+pl.suptitle('Magnitude electric field\nFinite differences')
 pl.colorbar()
+pl.savefig('Xmas_efield_FD.png', dpi=200)
 
 pl.figure(104)
 pl.pcolor(picFDSW.phi.T)
 pl.colorbar()
 pl.axis('equal')
+
+pl.figure(203)
+pl.pcolor((picFFT.efx**2+picFFT.efy**2).T)
+pl.axis('equal')
+pl.suptitle('Magnitude electric field - free space')
+pl.colorbar()
+pl.savefig('Xmas_efield_open_boudary.png', dpi=200)
+
 
 pl.show()
