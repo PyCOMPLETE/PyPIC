@@ -118,7 +118,7 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		fftphi = np.fft.fft2(tmprho) * np.fft.fft2(self.fgreen)
 
 		tmpphi = np.fft.ifft2(fftphi)
-		self.phi = 1./(4. * np.pi * eps0)*np.abs(tmpphi[:self.ny, :self.nx]).T
+		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
 
 		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
 		self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes

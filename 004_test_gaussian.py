@@ -5,7 +5,7 @@ import geom_impact_ellip as ell
 from scipy import rand
 import numpy as np
 
-sigma = 1.
+sigma = .5
 
 R_cham = 10*sigma
 Dh = sigma/20.
