@@ -1,3 +1,7 @@
+import sys, os
+BIN=os.path.expanduser('../')
+sys.path.append(BIN)
+
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
@@ -26,7 +30,7 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
 									   'x_sem_ellip_insc':0.99*x_aper,
 									   'y_sem_ellip_insc':0.99*y_aper})
 
-picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
+picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh)
 picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
 
