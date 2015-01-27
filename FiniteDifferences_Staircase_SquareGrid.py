@@ -206,7 +206,6 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 		efx[self.flag_border_mat]=efx[self.flag_border_mat]*2;
 		efy[self.flag_border_mat]=efy[self.flag_border_mat]*2;
 		
-		print 'Ciao' 
 		self.efx = efx / (2*self.Dh);    #divide grid size
 		self.efy = efy / (2*self.Dh);
 
