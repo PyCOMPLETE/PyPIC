@@ -8,7 +8,7 @@ import FFT_OpenBoundary_SquareGrid as PIC_FFT
 import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 
 na = np.array
-Dh =.2e-1
+Dh =1e-1
 N_part_gen = 100000
 
 tree = [[0,0],
@@ -68,23 +68,30 @@ picFFT.scatter(x_part, y_part, nel_part)
 
 data = picFFT.fgreen
 
-N_rep = 40
+N_rep = 1000
 
 
 t_start_npfft = time.mktime(time.localtime())
 for _ in xrange(N_rep):
 	transf = np.fft.fft2(data)
+	itransf = np.real(np.fft.ifft2(transf*data))
+	
 t_stop_npfft = time.mktime(time.localtime())
 t_npfft = t_stop_npfft-t_start_npfft
 print 't_npfft', t_npfft
 
+
+
 import pyfftw
 
 fftobj = pyfftw.builders.fft2(data.copy())
+temptransf = fftobj(data)
+ifftobj = pyfftw.builders.ifft2(temptransf)
 
 t_start_npfftw = time.mktime(time.localtime())
 for _ in xrange(N_rep):
 	transfw = fftobj(data)
+	itransfw = ifftobj(transfw)
 t_stop_npfftw = time.mktime(time.localtime())
 t_npfftw = t_stop_npfftw-t_start_npfftw
 print 't_npfftw', t_npfftw

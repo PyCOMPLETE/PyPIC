@@ -7,7 +7,7 @@ import FFT_OpenBoundary_SquareGrid as PIC_FFT
 import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 
 na = np.array
-Dh =.2e-1
+Dh =1e-1
 N_part_gen = 100000
 
 tree = [[0,0],
@@ -66,7 +66,7 @@ picFDSW.scatter(x_part, y_part, nel_part)
 picFFTPEC.scatter(x_part, y_part, nel_part)
 picFFT.scatter(x_part, y_part, nel_part)
 
-N_rep = 20
+N_rep = 500
 
 import time
 t_start_sw = time.mktime(time.localtime())
