@@ -95,7 +95,7 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		fgreen[:ny, nx:] = fgreen[:ny, nx:0:-1]
 		fgreen[ny:, nx:] = fgreen[ny:0:-1, nx:0:-1]
 		
-		self.fgreen = fgreen
+		self.fgreen = np.fft.fft2(fgreen)
 		self.rho = np.zeros((self.Nxg,self.Nyg))
 		self.phi = np.zeros((self.Nxg,self.Nyg))
 		self.efx = np.zeros((self.Nxg,self.Nyg))
@@ -115,7 +115,7 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		tmprho = 0.*self.fgreen
 		tmprho[:self.ny, :self.nx] = rho.T
 
-		fftphi = np.fft.fft2(tmprho) * np.fft.fft2(self.fgreen)
+		fftphi = np.fft.fft2(tmprho) * self.fgreen
 
 		tmpphi = np.fft.ifft2(fftphi)
 		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
