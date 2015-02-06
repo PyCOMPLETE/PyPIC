@@ -65,7 +65,7 @@ eps0=epsilon_0
 
 class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self, x_aper, y_aper, Dh):
+    def __init__(self, x_aper, y_aper, Dh, fftlib = 'pyfftw'):
         
 		print 'Start PIC init.:'
 		print 'FFT, Open Boundary, Square Grid'
@@ -95,7 +95,26 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		fgreen[:ny, nx:] = fgreen[:ny, nx:0:-1]
 		fgreen[ny:, nx:] = fgreen[ny:0:-1, nx:0:-1]
 		
-		self.fgreen = np.fft.fft2(fgreen)
+		if fftlib == 'pyfftw':
+			try:
+				import pyfftw
+				self.fft2 = pyfftw.builders.fft2(fgreen.copy())
+				temptransf = self.fft2(fgreen.copy())
+				self.ifft2 = pyfftw.builders.ifft2(temptransf.copy())
+			except ImportError as err:
+				print 'Failed to import pyfftw'
+				print 'Got exception: ', err
+				print 'Using numpy fft'
+				self.fft2 = np.fft.fft2
+				self.ifft2 = np.fft.ifft2
+		elif fftlib == 'numpy':
+			self.fft2 = np.fft.fft2
+			self.ifft2 = np.fft.ifft2
+		else:
+			raise ValueError('fftlib not recognized!!!!')
+			
+		self.fgreen = fgreen
+		self.fgreentr = self.fft2(fgreen).copy()
 		self.rho = np.zeros((self.Nxg,self.Nyg))
 		self.phi = np.zeros((self.Nxg,self.Nyg))
 		self.efx = np.zeros((self.Nxg,self.Nyg))
@@ -115,9 +134,9 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		tmprho = 0.*self.fgreen
 		tmprho[:self.ny, :self.nx] = rho.T
 
-		fftphi = np.fft.fft2(tmprho) * self.fgreen
+		fftphi = self.fft2(tmprho) * self.fgreentr
 
-		tmpphi = np.fft.ifft2(fftphi)
+		tmpphi = self.ifft2(fftphi)
 		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
 
 		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
