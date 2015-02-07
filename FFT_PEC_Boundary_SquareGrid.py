@@ -61,30 +61,24 @@ na = lambda x:np.array([x])
 qe=e
 eps0=epsilon_0
 
-def fast_dst(x):
-# Perform a fast DST on a vector. Since Matlab does not have a DST function,
-# this just uses the built in FFT function.
 
-	n = len(x);
-	tmp = np.zeros((2*n + 2));
-	tmp[1:n+1]=x
-	tmp=-(sp.fft(tmp).imag)
-	y = np.sqrt(2./(n+1.))*tmp[1:n+1];
-	return y
-	
 def dst2(x):
 	m, n = x.shape;
-	x_bar = np.zeros((m,n)); 
 	
-	for j in xrange(n):
-	    x_bar[:,j] = fast_dst(x[:,j]);
+	#transform along i
+	tmp = np.zeros((2*m + 2, n))
+	tmp[1:m+1, :] = x
+	tmp=-(np.fft.fft(tmp, axis=0).imag)	
+	xtr_i = np.sqrt(2./(m+1.))*tmp[1:m+1, :]
 	
-	for i in xrange(m):
-	    x_bar[i,:] = fast_dst(x_bar[i,:])
-	    
+	#transform along j
+	tmp = np.zeros((m, 2*n + 2))
+	tmp[:, 1:n+1] = xtr_i
+	tmp=-(np.fft.fft(tmp, axis=1).imag)	
+	x_bar = np.sqrt(2./(n+1.))*tmp[:, 1:n+1]
+	
 	return x_bar
-
-
+	
 
 class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
