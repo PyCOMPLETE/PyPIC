@@ -62,22 +62,7 @@ qe=e
 eps0=epsilon_0
 
 
-def dst2(x):
-	m, n = x.shape;
-	
-	#transform along i
-	tmp = np.zeros((2*m + 2, n))
-	tmp[1:m+1, :] = x
-	tmp=-(np.fft.fft(tmp, axis=0).imag)	
-	xtr_i = np.sqrt(2./(m+1.))*tmp[1:m+1, :]
-	
-	#transform along j
-	tmp = np.zeros((m, 2*n + 2))
-	tmp[:, 1:n+1] = xtr_i
-	tmp=-(np.fft.fft(tmp, axis=1).imag)	
-	x_bar = np.sqrt(2./(n+1.))*tmp[:, 1:n+1]
-	
-	return x_bar
+
 	
 
 class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
@@ -135,6 +120,24 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		self.flag_border_mat = flag_border_mat
                         
 
+    def dst2(self, x):
+		m, n = x.shape;
+		
+		#transform along i
+		tmp = np.zeros((2*m + 2, n))
+		tmp[1:m+1, :] = x
+		tmp=-(np.fft.fft(tmp, axis=0).imag)	
+		xtr_i = np.sqrt(2./(m+1.))*tmp[1:m+1, :]
+		
+		#transform along j
+		tmp = np.zeros((m, 2*n + 2))
+		tmp[:, 1:n+1] = xtr_i
+		tmp=-(np.fft.fft(tmp, axis=1).imag)	
+		x_bar = np.sqrt(2./(n+1.))*tmp[:, 1:n+1]
+		
+		return x_bar
+
+
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
 		if rho == None:
@@ -142,9 +145,9 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 
 		rhocut = rho[self.i_min:self.i_max,self.j_min:self.j_max]
 		
-		rho_bar =  dst2(rhocut)       
+		rho_bar =  self.dst2(rhocut)       
 		phi_bar = rho_bar/self.green    
-		self.phi[self.i_min:self.i_max,self.j_min:self.j_max] = dst2(phi_bar).copy()
+		self.phi[self.i_min:self.i_max,self.j_min:self.j_max] = self.dst2(phi_bar).copy()
 
 		
 		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
