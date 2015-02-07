@@ -67,7 +67,7 @@ eps0=epsilon_0
 
 class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self, x_aper, y_aper, Dh):
+    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
         
 		print 'Start PIC init.:'
 		print 'FFT, PEC Boundary, Square Grid'
@@ -118,6 +118,27 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		gradmod=abs(gx)+abs(gy);
 		flag_border_mat=np.logical_and((gradmod>0), flag_outside_n_mat);
 		self.flag_border_mat = flag_border_mat
+		
+		if fftlib == 'pyfftw':
+			try:
+				import pyfftw
+				rhocut = self.rho[self.i_min:self.i_max,self.j_min:self.j_max]
+				m, n = rhocut.shape;
+				tmp = np.zeros((2*m + 2, n))
+				self.ffti = pyfftw.builders.fft(tmp.copy(), axis=0)
+				tmp = np.zeros((m, 2*n + 2))
+				self.fftj = pyfftw.builders.fft(tmp.copy(), axis=1)
+			except ImportError as err:
+				print 'Failed to import pyfftw'
+				print 'Got exception: ', err
+				print 'Using numpy fft'
+				self.ffti = lambda xx: np.fft.fft(xx, axis=0)
+				self.fftj = lambda xx: np.fft.fft(xx, axis=1)
+		elif fftlib == 'numpy':
+				self.ffti = lambda xx: np.fft.fft(xx, axis=0)
+				self.fftj = lambda xx: np.fft.fft(xx, axis=1)
+		else:
+			raise ValueError('fftlib not recognized!!!!')
                         
 
     def dst2(self, x):
@@ -126,13 +147,13 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		#transform along i
 		tmp = np.zeros((2*m + 2, n))
 		tmp[1:m+1, :] = x
-		tmp=-(np.fft.fft(tmp, axis=0).imag)	
+		tmp=-(self.ffti(tmp).imag)	
 		xtr_i = np.sqrt(2./(m+1.))*tmp[1:m+1, :]
 		
 		#transform along j
 		tmp = np.zeros((m, 2*n + 2))
 		tmp[:, 1:n+1] = xtr_i
-		tmp=-(np.fft.fft(tmp, axis=1).imag)	
+		tmp=-(self.fftj(tmp).imag)	
 		x_bar = np.sqrt(2./(n+1.))*tmp[:, 1:n+1]
 		
 		return x_bar
