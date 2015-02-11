@@ -139,6 +139,7 @@ class PyPIC_Scatter_Gather(object):
 		self.efx, self.efy.'''
 		pass
 		
+	#@profile
 	def scatter_and_solve(self, x_mp, y_mp, nel_mp, charge = -qe):
 		self.scatter(x_mp, y_mp, nel_mp, charge)
 		self.solve()

@@ -98,9 +98,32 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		if fftlib == 'pyfftw':
 			try:
 				import pyfftw
-				self.fft2 = pyfftw.builders.fft2(fgreen.copy())
-				temptransf = self.fft2(fgreen.copy())
-				self.ifft2 = pyfftw.builders.ifft2(temptransf.copy())
+				print 'Using PyFFTW'
+				#prepare fftw's
+				tmprho = fgreen.copy()
+				fft_first = pyfftw.builders.fft(tmprho[:ny, :].copy(), axis = 1)
+				transf1 = (fgreen*(1.+1j))*0.
+				transf1[:ny, :] = fft_first(tmprho[:ny, :].copy())
+				fft_second = pyfftw.builders.fft(transf1.copy(), axis = 0)
+				fftphi_new = fft_second(transf1.copy())* fgreen
+				ifft_first = pyfftw.builders.ifft(fftphi_new.copy(), axis = 0)
+				itransf1 = ifft_first(fftphi_new.copy())
+				ifft_second = pyfftw.builders.ifft(itransf1[:ny, :].copy(), axis = 1)
+
+				def fft2(x):
+					tmp = (x*(1.+1j))*0.
+					tmp[:ny, :] = fft_first(x[:ny, :])
+					return fft_second(tmp)
+					
+				def ifft2(x):
+					tmp = ifft_first(x)
+					res = 0*x
+					res[:ny, :] = np.real(ifft_second(tmp[:ny, :]))
+					return res
+				
+				self.fft2 = fft2
+				self.ifft2 = ifft2
+				
 			except ImportError as err:
 				print 'Failed to import pyfftw'
 				print 'Got exception: ', err
@@ -108,13 +131,14 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 				self.fft2 = np.fft.fft2
 				self.ifft2 = np.fft.ifft2
 		elif fftlib == 'numpy':
+			print 'Using numpy FFT'
 			self.fft2 = np.fft.fft2
 			self.ifft2 = np.fft.ifft2
 		else:
 			raise ValueError('fftlib not recognized!!!!')
 			
 		self.fgreen = fgreen
-		self.fgreentr = self.fft2(fgreen).copy()
+		self.fgreentr = np.fft.fft2(fgreen).copy()
 		self.rho = np.zeros((self.Nxg,self.Nyg))
 		self.phi = np.zeros((self.Nxg,self.Nyg))
 		self.efx = np.zeros((self.Nxg,self.Nyg))
@@ -135,7 +159,7 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		tmprho[:self.ny, :self.nx] = rho.T
 
 		fftphi = self.fft2(tmprho) * self.fgreentr
-
+		
 		tmpphi = self.ifft2(fftphi)
 		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
 
