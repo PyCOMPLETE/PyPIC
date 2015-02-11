@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.00                     
+#		           PyPIC Version 1.01                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
