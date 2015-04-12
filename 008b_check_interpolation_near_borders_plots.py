@@ -1,5 +1,5 @@
 
-Dh_mm=1.
+Dh_mm=.5
 import myloadmat_to_obj as mlo
 import numpy as np
 import pylab as pl
@@ -11,7 +11,7 @@ mksz = 10
 label_plots = 'ellip_gaussian_'
 ob_ref = mlo.myloadmat_to_obj('norepository_BE_Dh%.1fmm.mat'%Dh_mm)
 ob_new = mlo.myloadmat_to_obj('norepository_FDSW_Dh%.1fmm.mat'%Dh_mm)
-ob_old= mlo.myloadmat_to_obj('norepository_FDSW_Dh%.1fmm.mat'%Dh_mm)
+ob_old= mlo.myloadmat_to_obj('norepository_FDSWextrap_Dh%.1fmm.mat'%Dh_mm)
 
 
 

@@ -4,20 +4,24 @@ from geom_impact_ellip import ellip_cham_geom_object
 x_aper = .04
 y_aper = .02
 
-Dh = 1e-3
+Dh = .5e-3
 sigmax=1e-3
 sigmay=.5e-3
 
 chamber = ellip_cham_geom_object(x_aper, y_aper)
 
-#~ import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-#~ pic = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
-#~ filename_out = 'norepository_FDSW_Dh%.1fmm.mat'%(Dh*1e3)
+import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+pic = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
+filename_out = 'norepository_FDSW_Dh%.1fmm.mat'%(Dh*1e3)
 
-import Bassetti_Erskine as BE
-pic = BE.Interpolated_Bassetti_Erskine(x_aper=chamber.x_aper, y_aper=chamber.y_aper, Dh=Dh, 
-	sigmax=sigmax, sigmay=sigmay, n_imag_ellip=20)
-filename_out = 'norepository_BE_Dh%.1fmm.mat'%(Dh*1e3)
+#~ import FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation as PIC_FDSW
+#~ pic = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
+#~ filename_out = 'norepository_FDSWextrap_Dh%.1fmm.mat'%(Dh*1e3)
+
+#~ import Bassetti_Erskine as BE
+#~ pic = BE.Interpolated_Bassetti_Erskine(x_aper=chamber.x_aper, y_aper=chamber.y_aper, Dh=Dh, 
+	#~ sigmax=sigmax, sigmay=sigmay, n_imag_ellip=20)
+#~ filename_out = 'norepository_BE_Dh%.1fmm.mat'%(Dh*1e3)
 
 
 
