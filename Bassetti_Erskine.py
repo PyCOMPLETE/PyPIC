@@ -84,7 +84,7 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
 			for jj in range(len(yy)):
 				x=xx[ii];
 				y=yy[jj];
-				Ex_imag,Ey_imag  = ImageTerms(x,y,x_aper,x_aper,0,0, n_imag_ellip)
+				Ex_imag,Ey_imag  = ImageTerms(x,y,x_aper,y_aper,0,0, n_imag_ellip)
 				Ex_BE,Ey_BE      = BassErsk(x,y,sigmax,sigmay)
 				Ex[ii,jj] = Ex_BE + Ex_imag
 				Ey[ii,jj] = Ey_BE + Ey_imag
@@ -144,18 +144,17 @@ def BassErsk(xin,yin,sigmax,sigmay):
 def ImageTerms(x,y,a,b,x0,y0, nimag):
     
         
-    eps0=8.854187817620e-12;    
+    eps0=epsilon_0;    
     
     if nimag>0 and abs((a-b)/a)>1e-3:    
         g=np.sqrt(a*a-b*b)
-        
         z=x+1j*y
-        q=acosh(z/g)
+        q=np.arccosh(z/g)
         mu=q.real
         phi=q.imag
         
         z0=x0+1j*y0
-        q0=acosh(z0/g)
+        q0=np.arccosh(z0/g)
         mu0=q0.real
         phi0=q0.imag
         
@@ -164,12 +163,12 @@ def ImageTerms(x,y,a,b,x0,y0, nimag):
         Ecpx=0+0j
         
         
-        q=conj(q)
+        q=np.conj(q)
         for nn in range(1,nimag+1):
-            Ecpx=Ecpx+np.exp(-nn*mu1) * ( (cosh(nn*mu0)*cos(nn*phi0)) / (cosh(nn*mu1)) + 1j * (sinh(nn*mu0)*sin(nn*phi0)) / (sinh(nn*mu1))   )* (sinh(nn*q))/(sinh(q))
+            Ecpx=Ecpx+np.exp(-nn*mu1) * ( (np.cosh(nn*mu0)*np.cos(nn*phi0)) / (np.cosh(nn*mu1)) + 1j * (np.sinh(nn*mu0)*np.sin(nn*phi0)) / (np.sinh(nn*mu1))   )* (np.sinh(nn*q))/(np.sinh(q))
             
         
-        Ecpx=Ecpx/(4*pi*eps0)*4/g
+        Ecpx=Ecpx/(4*np.pi*eps0)*4/g
         Ex=Ecpx.real
         Ey=Ecpx.imag
     else:
