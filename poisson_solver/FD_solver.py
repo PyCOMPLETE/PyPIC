@@ -1,6 +1,6 @@
 '''
 Finite Difference Poisson solvers for PyPIC
-@author Stefan Hegglin, Adrian Oeftiger
+@author Stefan Hegglin, Adrian Oeftiger, Giovanni Iadarola
 '''
 
 from __future__ import division
@@ -242,7 +242,6 @@ class CPUFiniteDifferencePoissonSolver(PoissonSolver):
                            dtype=np.float64).tocsc()
         self.lu_obj = spl.splu(A, permc_spec="MMD_AT_PLUS_A")
 
-
     @staticmethod
     def assemble_laplacian(mesh, stencil_function=laplacian_3D_7stencil):
        return GPUFiniteDifferencePoissonSolver.assemble_laplacian(mesh, stencil_function)
@@ -261,15 +260,11 @@ class CPUFiniteDifferencePoissonSolver(PoissonSolver):
         return self.lu_obj.solve(b)
 
 
-
-
 ########## CPU/GPU MIX
 class GPUCPUFiniteDifferencePoissonSolver(PoissonSolver):
     '''Finite difference PoissonSolver on the GPU.
     Uses Dirichlet boundary conditions on a rectangle.
     '''
-
-
     def __init__(self, mesh, context, laplacian_stencil=laplacian_3D_7stencil,
                  symmetrize=True):
         '''Assumes that the mesh can accommodate all particles
@@ -341,4 +336,141 @@ class GPUCPUFiniteDifferencePoissonSolver(PoissonSolver):
             bh = self.Msel*bh
             b = gpuarray.to_gpu(bh)
         return b
+
+###############################################################################
+# code below adapted from PyPIC v1.0.2, @author Giovanni Iadarola
+###############################################################################
+
+def compute_new_mesh_properties(x_aper=None, y_aper=None, Dh=None, xg=None,
+                                yg=None):
+    '''Function which returns (Dh, xg, Nxg, bias_x, yg, Nyg, bias_y)
+    Guarantees backwards compatibility
+    '''
+    #TODO put this into the PyPIC class, the Solver should use the grid it
+    # gets and not change it!
+    if xg!=None and xg!=None:
+        assert(x_aper==None and y_aper==None and Dh==None)
+        Nxg=len(xg);
+        bias_x=min(xg);
+        Nyg=len(yg);
+        bias_y=min(yg);
+        Dh = xg[1]-xg[0]
+    else:
+        assert(xg==None and xg==None)
+        #xg=np.arange(0, x_aper+5.*Dh,Dh,float)
+        xg=np.arange(0, x_aper+0.01*Dh,Dh,float)
+        xgr=xg[1:]
+        xgr=xgr[::-1]#reverse array
+        xg=np.concatenate((-xgr,xg),0)
+        Nxg=len(xg);
+        bias_x=min(xg);
+        #yg=np.arange(0,y_aper+4.*Dh,Dh,float)
+        yg=np.arange(0,y_aper+0.01*Dh,Dh,float)
+        ygr=yg[1:]
+        ygr=ygr[::-1]#reverse array
+        yg=np.concatenate((-ygr,yg),0)
+        Nyg=len(yg);
+        bias_y=min(yg);
+    return Dh, xg, Nxg, bias_x, yg, Nyg, bias_y
+
+class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
+    '''Finite difference solver using KLU on a square grid. (2d only)
+    functionality as class in the old PyPIC with the same name
+    '''
+    def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
+        # mimics the super() call in the old version
+        params = compute_new_mesh_properties(
+                chamb.x_aper, chamb.y_aper, Dh)
+        print('params: ' + str(params))
+        self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
+
+        [xn, yn]=np.meshgrid(self.xg,self.yg)
+        xn=xn.T
+        xn=xn.flatten()
+        self.xn = xn
+
+        yn=yn.T
+        yn=yn.flatten()
+        self.yn = yn
+        #% xn and yn are stored such that the external index is on x 
+
+        self.flag_outside_n=chamb.is_outside(xn,yn)
+        self.flag_inside_n=~(self.flag_outside_n)
+
+        self.flag_outside_n_mat=np.reshape(self.flag_outside_n,(self.Nyg,self.Nxg),'F');
+        self.flag_outside_n_mat=self.flag_outside_n_mat.T
+        [gx,gy]=np.gradient(np.double(self.flag_outside_n_mat));
+        gradmod=abs(gx)+abs(gy);
+        self.flag_border_mat=np.logical_and((gradmod>0), self.flag_outside_n_mat);
+        self.flag_border_n = self.flag_border_mat.flatten()
+
+        A = self.assemble_laplacian()
+
+        diagonal = A.diagonal()
+        N_full = len(diagonal)
+        indices_non_id = np.where(diagonal!=1.)[0]
+        N_sel = len(indices_non_id)
+
+        Msel = sps.lil_matrix((N_full, N_sel))
+        for ii, ind in enumerate(indices_non_id):
+                Msel[ind, ii] =1.
+        Msel = Msel.tocsc()
+
+        Asel = Msel.T*A*Msel
+        Asel=Asel.tocsc()
+        if sparse_solver == 'scipy_slu':
+            print "Using scipy superlu solver..."
+            self.luobj = spl.splu(Asel.tocsc())
+        elif sparse_solver == 'PyKLU':
+            print "Using klu solver..."
+            try:
+                import PyKLU.klu as klu
+                self.luobj = klu.Klu(Asel.tocsc())
+            except StandardError, e:
+                print "Got exception: ", e
+                print "Falling back on scipy superlu solver:"
+                self.luobj = ssl.splu(Asel.tocsc())
+        else:
+            raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
+        self.Msel = Msel.tocsc()
+        self.Msel_T = (Msel.T).tocsc()
+        print 'Done PIC init.'
+
+    def assemble_laplacian(self):
+        ''' assembles the laplacian and returns the resulting matrix in
+        csr format
+        '''
+        Nxg = self.Nxg
+        Nyg = self.Nyg
+        Dh = self.Dh
+        flag_inside_n = self.flag_inside_n
+        A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        for u in range(0,Nxg*Nyg):
+            if np.mod(u, Nxg*Nyg/20)==0:
+                print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+            if flag_inside_n[u]:
+                A[u,u] = -(4./(Dh*Dh))
+                A[u,u-1]=1./(Dh*Dh);     #phi(i-1,j)nx
+                A[u,u+1]=1./(Dh*Dh);     #phi(i+1,j)
+                A[u,u-Nyg]=1./(Dh*Dh);    #phi(i,j-1)
+                A[u,u+Nyg]=1./(Dh*Dh);    #phi(i,j+1)
+            else:
+                # external nodes
+                A[u,u]=1.
+        A = A.tocsr()
+        return A
+
+
+    def poisson_solve(self, rho):
+        print 'poisson_solve of FiniteDifferences_Staircase_SquareGrid'
+        b=-rho.flatten()/epsilon_0;
+        b[~(self.flag_inside_n)]=0.; #boundary condition
+        b_sel = self.Msel_T*b
+        phi_sel = self.luobj.solve(b_sel)
+        phi = self.Msel*phi_sel
+        return phi
+
+
+
+
 
