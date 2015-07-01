@@ -11,9 +11,16 @@ try:
 except ImportError:
     print('pycuda not found. no gpu capabilities will be available')
 
-from gradient.gradient import make_GPU_gradient
+from gradient.gradient import make_GPU_gradient, numpy_gradient
 from m2p.m2p import mesh_to_particles_CPU_2d, mesh_to_particles_CPU_3d
 from p2m.p2m import particles_to_mesh_CPU_2d, particles_to_mesh_CPU_3d
+
+# Fortran versions of P2M, M2p
+import rhocompute as rhocom
+import int_field_for as iff
+
+#debug
+import matplotlib.pyplot as plt
 
 class PyPIC_GPU(object):
     '''Encodes the algorithm of PyPIC for a static mesh
@@ -33,12 +40,13 @@ class PyPIC_GPU(object):
     to transform back to the laboratory reference frame,
     hence accounting for the magnetic fields.
     '''
-    def __init__(self, mesh, poissonsolver, context):
+    def __init__(self, mesh, poissonsolver, context, gradient=make_GPU_gradient):
         '''Mesh sizes need to be powers of 2 in x (and y if it exists).
         '''
         self.mesh = mesh
         self._context = context
         self.poissonsolver = poissonsolver
+
 
         # prepare calls to kernels!!!
 
@@ -65,7 +73,7 @@ class PyPIC_GPU(object):
             m2p_kernels.get_function("field_to_particles" +
                                      str(mesh.dimension) + 'd'))
 
-        self._gradient = make_GPU_gradient(mesh, context)
+        self._gradient = gradient(mesh, context)
 
 
     def particles_to_mesh(self, *mp_coords, **kwargs):
@@ -254,9 +262,10 @@ class PyPIC(object):
     hence accounting for the magnetic fields.
     '''
 
-    def __init__(self, mesh, poissonsolver):
+    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
         self.mesh = mesh
         self.poissonsolver = poissonsolver
+        self._gradient = gradient(mesh)
         if mesh.dimension == 2:
             self._p2m_kernel = particles_to_mesh_CPU_2d
             self._m2p_kernel = mesh_to_particles_CPU_2d
@@ -306,12 +315,8 @@ class PyPIC(object):
         '''Return electric fields on the mesh given
         the potential phi on the mesh via
         E = - grad phi .
-
-        Returns asynchronously from the device.
-        (You may potentially want to call context.synchronize()!)
         '''
-        fields = np.gradient(-phi.reshape(list(reversed(self.mesh.shape))))
-        return list(reversed(fields))
+        return self._gradient(phi)
 
     def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):
         '''Interpolate the mesh_quantity (whose shape is the mesh shape)
@@ -402,7 +407,29 @@ class PyPIC(object):
         rho = self.particles_to_mesh(*mp_coords, charge=charge,
                                      mesh_indices=mesh_indices,
                                      mesh_weights=mesh_weights)
+        # debug       
+        plt.figure()
+        plt.imshow(rho.reshape(self.mesh.ny, self.mesh.nx))
+        plt.colorbar()
+        plt.title('Rho')
+        plt.show()
+
+
         phi = self.poisson_solve(rho)
+
+        print('shape phi: ' + str(phi.shape))
+        #phi = np.asfortranarray(phi)
+        print('shape phi: ' + str(phi.shape))
+        #debug
+        plt.figure()
+        plt.imshow(phi.reshape(self.mesh.ny, self.mesh.nx), interpolation='none')
+        plt.colorbar()
+        plt.title('Phi')
+        plt.show()
+
+
+
+
         mesh_e_fields = self.get_electric_fields(phi)
         for i, field in enumerate(mesh_e_fields):
             mesh_e_fields[i] = field.flatten()
@@ -417,3 +444,32 @@ class PyPIC(object):
     gather = field_to_particles
 
 
+class PyPIC_Fortran_M2P_P2M(PyPIC):
+    ''' Uses the fast M2P/P2M Fortran routines
+    2D only!
+    '''
+
+
+    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
+        super(PyPIC_Fortran_M2P_P2M, self).__init__(mesh, poissonsolver, gradient)
+        self.mesh = mesh
+        self.poissonsolver = poissonsolver
+        self._gradient = gradient(mesh)
+
+
+    def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
+        [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
+        ex = ex.reshape((self.mesh.ny, self.mesh.nx))
+        ey = ey.reshape((self.mesh.ny, self.mesh.nx))
+        print(ex.shape)
+        Ex, Ey = iff.int_field(x, y, self.mesh.y0, self.mesh.x0, self.mesh.dx,
+                               self.mesh.dx, ey, ex) # exchange x/y!
+        return [Ex, Ey]
+
+    def particles_to_mesh(self, *mp_coords, **kwargs):
+        x, y = mp_coords #only 2 dimensions are supported
+        charge = kwargs.get("charge", e)
+        nel_mp = charge * np.ones(x.shape)
+        rho = rhocom.compute_sc_rho(x, y, nel_mp, self.mesh.y0, self.mesh.x0, #change x/y (Fortran/C!)
+                                    self.mesh.dx, self.mesh.ny, self.mesh.nx)
+        return rho

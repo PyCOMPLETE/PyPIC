@@ -15,7 +15,7 @@ if "cleanall" in args:
     print "Deleting shared libraries and"
     # Just in case the build directory was created by accident,
     # note that shell=True should be OK here because the command is constant.
-    subprocess.Popen("rm -rf ./build", shell=True, executable="/bin/bash")
+    subprocess.Popen("rm -rf build", shell=True, executable="/bin/bash")
     subprocess.Popen("rm -rf *.so.dSYM", shell=True, executable="/bin/bash")
     subprocess.Popen("find ./ -name *.so | xargs rm", shell=True)
 

@@ -12,6 +12,9 @@ from scipy.constants import epsilon_0
 
 from poisson_solver import PoissonSolver
 
+#debug
+import matplotlib.pyplot as plt
+
 try:
     import PyKLU.klu as klu
 except ImportError:
@@ -357,15 +360,15 @@ def compute_new_mesh_properties(x_aper=None, y_aper=None, Dh=None, xg=None,
         Dh = xg[1]-xg[0]
     else:
         assert(xg==None and xg==None)
-        #xg=np.arange(0, x_aper+5.*Dh,Dh,float)
-        xg=np.arange(0, x_aper+0.01*Dh,Dh,float)
+        xg=np.arange(0, x_aper+5.*Dh,Dh,float)
+        #xg=np.arange(0, x_aper+0.01*Dh,Dh,float)
         xgr=xg[1:]
         xgr=xgr[::-1]#reverse array
         xg=np.concatenate((-xgr,xg),0)
         Nxg=len(xg);
         bias_x=min(xg);
-        #yg=np.arange(0,y_aper+4.*Dh,Dh,float)
-        yg=np.arange(0,y_aper+0.01*Dh,Dh,float)
+        yg=np.arange(0,y_aper+4.*Dh,Dh,float)
+        #yg=np.arange(0,y_aper+0.01*Dh,Dh,float)
         ygr=yg[1:]
         ygr=ygr[::-1]#reverse array
         yg=np.concatenate((-ygr,yg),0)
@@ -383,6 +386,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
                 chamb.x_aper, chamb.y_aper, Dh)
         print('params: ' + str(params))
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
+        self.chamb = chamb
 
         [xn, yn]=np.meshgrid(self.xg,self.yg)
         xn=xn.T
@@ -392,7 +396,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         yn=yn.T
         yn=yn.flatten()
         self.yn = yn
-        #% xn and yn are stored such that the external index is on x 
+        #% xn and yn are stored such that the external index is on x
 
         self.flag_outside_n=chamb.is_outside(xn,yn)
         self.flag_inside_n=~(self.flag_outside_n)
@@ -471,6 +475,423 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         return phi
 
 
+class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_SquareGrid):
+    '''
+    TODO
+    '''
+    #TODO: check how we want to use the Dx/Dy matrices (efx = Dx*phi...)
+    def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
+        #do all the basic stuff, including creating the A matrix by using the
+        #assemble_laplacian function from this child class. the only thing
+        # to be done in this constructor is the construction of the Dx,Dy mats
+        # luckily this also happens in the assemble_laplacian of this class
+        # which sets the matrices self.Dx, self.Dy
+        super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(
+                chamb, Dh, sparse_solver)
+        print(self.Dx.shape)
+        print(self.Dy.shape)
 
+
+    def assemble_laplacian(self):
+        '''override!
+        Returns the matrix A arising from the discretisation
+        sets self.Dx, self.Dy (matrices due to shortley weller)
+        '''
+        na = lambda x: np.array([x])
+        Nxg = self.Nxg
+        Nyg = self.Nyg
+        chamb = self.chamb
+        Dx=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        Dy=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        flag_inside_n = self.flag_inside_n
+        xn = self.xn
+        yn = self.yn
+        Dh = self.Dh
+        for u in range(0,Nxg*Nyg):
+            if np.mod(u, Nxg*Nyg/20)==0:
+                print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+            if flag_inside_n[u]:
+                #Compute Shortley-Weller coefficients
+                if flag_inside_n[u-1]: #phi(i-1,j)
+                    hw = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u-1]), na(yn[u-1]), na(0.), resc_fac=.995, flag_robust=False)
+                    hw = np.abs(y_int[0]-yn[u])
+                if flag_inside_n[u+1]: #phi(i+1,j)
+                    he = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u+1]), na(yn[u+1]), na(0.), resc_fac=.995, flag_robust=False)
+                    he = np.abs(y_int[0]-yn[u])
+                if flag_inside_n[u-Nyg]: #phi(i,j-1)
+                    hs = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u-Nyg]), na(yn[u-Nyg]), na(0.), resc_fac=.995, flag_robust=False)
+                    hs = np.abs(x_int[0]-xn[u])
+                    #~ print hs
+                if flag_inside_n[u+Nyg]: #phi(i,j+1)
+                    hn = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u+Nyg]), na(yn[u+Nyg]), na(0.), resc_fac=.995, flag_robust=False)
+                    hn = np.abs(x_int[0]-xn[u])
+                    #~ print hn
+
+                # Build A matrix
+                if hn<Dh/100. or hs<Dh/100. or hw<Dh/100. or he<Dh/100.: # nodes very close to the bounday
+                    A[u,u] =1.
+                    list_internal_force_zero.append(u)
+                #print u, xn[u], yn[u]
+                else:
+                    A[u,u] = -(2./(he*hw)+2/(hs*hn))
+                    A[u,u-1]=2./(hw*(hw+he));     #phi(i-1,j)nx
+                    A[u,u+1]=2./(he*(hw+he));     #phi(i+1,j)
+                    A[u,u-Nyg]=2./(hs*(hs+hn));    #phi(i,j-1)
+                    A[u,u+Nyg]=2./(hn*(hs+hn));    #phi(i,j+1)
+
+                # Build Dx matrix
+                if hn<Dh/100.:
+                    if hs>=Dh/100.:
+                        Dx[u,u] = -1./hs
+                        Dx[u,u-Nyg]=1./hs
+                elif hs<Dh/100.:
+                    if hn>=Dh/100.:
+                        Dx[u,u] = 1./hn
+                        Dx[u,u+Nyg]=-1./hn
+                else:
+                    Dx[u,u] = (1./(2*hn)-1./(2*hs))
+                    Dx[u,u-Nyg]=1./(2*hs)
+                    Dx[u,u+Nyg]=-1./(2*hn)
+
+
+                # Build Dy matrix
+                if he<Dh/100.:
+                    if hw>=Dh/100.:
+                        Dy[u,u] = -1./hw
+                        Dy[u,u-1]=1./hw
+                elif hw<Dh/100.:
+                    if he>=Dh/100.:
+                        Dy[u,u] = 1./he
+                        Dy[u,u+1]=-1./(he)
+                else:
+                    Dy[u,u] = (1./(2*he)-1./(2*hw))
+                    Dy[u,u-1]=1./(2*hw)
+                    Dy[u,u+1]=-1./(2*he)
+            else:
+                # external nodes
+                A[u,u]=1.
+        self.Dx = Dx.tocsc()
+        self.Dy = Dy.tocsc()
+        return A.tocsc()
+
+    def gradient(self, dummy):
+        ''' Function which returns a function to compute the gradient specific
+        for this Shortley Weller approximation
+        '''
+        def _gradient(phi):
+            efx = self.Dx*phi
+            efy = self.Dy*phi
+            efx, efy = efy, efx  # something is wrong...
+            return [efx, efy]
+        return _gradient
+
+class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifferences_Staircase_SquareGrid):
+    '''
+    '''
+    def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
+        super(FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation, self).__init__(
+                chamb, Dh, sparse_solver)
+
+    def handle_border(self, u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy):
+        #print u
+
+        na = lambda x: np.array([x])
+        jjj = np.floor(u/Nyg)
+
+        if flag_inside_n[u+Nyg]:
+            if not flag_inside_n[u]:
+                x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u+Nyg]), na(yn[u+Nyg]), na(0.),
+                        na(xn[u]), na(yn[u]), na(0.), resc_fac=.995, flag_robust=False)
+                hs = np.abs(x_int[0]-xn[u+Nyg])
+            else: #this is the case for internal nodes with zero potential (very close to the boundary)
+                hs = Dh
+
+            hn = Dh
+
+            if hs<Dh/100.:
+                Dx[u,u+Nyg] = (1./(hn))
+                Dx[u,u+Nyg+Nyg]=-1./(hn)
+
+                nnn=1
+                while u-nnn*Nyg>=0:
+                    Dx[u-nnn*Nyg,u+Nyg] = (1./(hn))
+                    Dx[u-nnn*Nyg,u+Nyg+Nyg]=-1./(hn)
+                    nnn+=1
+
+            else:
+                Dx[u,u+Nyg] = (1./(2*hn)-1./(2*hs))
+                Dx[u,u-Nyg+Nyg] = 1./(2*hs)
+                Dx[u,u+Nyg+Nyg] = -1./(2*hn)
+
+                nnn=1
+                while u-nnn*Nyg>=0:
+                    Dx[u-nnn*Nyg,u+Nyg] = Dx[u,u+Nyg]
+                    Dx[u-nnn*Nyg,u-Nyg+Nyg] = Dx[u,u-Nyg+Nyg]
+                    Dx[u-nnn*Nyg,u+Nyg+Nyg] = Dx[u,u+Nyg+Nyg]
+                    nnn+=1
+
+
+        elif flag_inside_n[u-Nyg]:
+            if not flag_inside_n[u]:
+                x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u-Nyg]), na(yn[u-Nyg]), na(0.),
+                        na(xn[u]), na(yn[u]), na(0.), resc_fac=.995, flag_robust=False)
+                hn = np.abs(x_int[0]-xn[u-Nyg])
+            else:#this is the case for internal nodes with zero potential (very close to the boundary)
+                hn = Dh
+
+            hs = Dh
+
+            if hn<Dh/100.:
+                Dx[u,u-Nyg] = -1./(hs)
+                Dx[u,u-Nyg-Nyg]=1./(hs)
+
+                nnn=1
+                while u+nnn*Nyg<Nxg*Nyg:
+                    Dx[u+nnn*Nyg,u-Nyg] = -1./(hs)
+                    Dx[u+nnn*Nyg,u-Nyg-Nyg]=1./(hs)
+                    nnn+=1
+
+            else:
+                Dx[u,u-Nyg] = (1./(2*hn)-1./(2*hs))
+                Dx[u,u-Nyg-Nyg]=1./(2*hs)
+                Dx[u,u+Nyg-Nyg]=-1./(2*hn)
+
+                nnn=1
+                while u+nnn*Nyg<Nxg*Nyg:
+                    Dx[u+nnn*Nyg,u-Nyg] = Dx[u,u-Nyg]
+                    Dx[u+nnn*Nyg,u-Nyg-Nyg] = Dx[u,u-Nyg-Nyg]
+                    Dx[u+nnn*Nyg,u+Nyg-Nyg] = Dx[u,u+Nyg-Nyg]
+                    nnn+=1
+
+        if flag_inside_n[u+1]:
+            if not flag_inside_n[u]:
+                x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u+1]), na(yn[u+1]), na(0.),
+                        na(xn[u]), na(yn[u]),na(0.), resc_fac=.995, flag_robust=False)
+                hw = np.abs(y_int[0]-yn[u+1])
+            else:#this is the case for internal nodes with zero potential (very close to the boundary)
+                hw = Dh
+
+            he = Dh
+
+            if hw<Dh/100.:
+                Dy[u,u+1] = (1./(he))
+                Dy[u,u+1+1]=-1./(he)
+
+                nnn=1
+                while u-nnn>=(jjj)*Nyg:
+                    Dy[u-nnn*1,u+1] = (1./(he))
+                    Dy[u-nnn*1,u+1+1]=-1./(he)
+                    nnn+=1
+            else:
+                Dy[u,u+1] = (1./(2*he)-1./(2*hw))
+                Dy[u,u-1+1] = 1./(2*hw)
+                Dy[u,u+1+1] = -1./(2*he)
+
+                nnn=1
+                while u-nnn>=(jjj)*Nyg:
+                    #print nnn
+                    Dy[u-nnn,u+1] = Dy[u,u+1]
+                    Dy[u-nnn,u-1+1] = Dy[u,u-1+1]
+                    Dy[u-nnn,u+1+1] = Dy[u,u+1+1]
+                    nnn += 1
+
+        elif flag_inside_n[u-1]:
+            if not flag_inside_n[u]:
+                x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u-1]), na(yn[u-1]), na(0.),
+                        na(xn[u]), na(yn[u]),  na(0.), resc_fac=.995, flag_robust=False)
+                he = np.abs(y_int[0]-yn[u-1])
+            else:#this is the case for internal nodes with zero potential (very close to the boundary)
+                he=Dh
+
+            hw = Dh
+
+            if he<Dh/100.:
+                Dy[u,u-1] = -1./(hw)
+                Dy[u,u-1-1]=1./(hw)
+
+                nnn=1
+                while u+nnn<(jjj+1)*Nyg:
+                    Dy[u+nnn,u-1] = -1./(hw)
+                    Dy[u+nnn,u-1-1]=1./(hw)
+                    nnn+=1
+
+            else:
+                Dy[u,u-1] = (1./(2*he)-1./(2*hw))
+                Dy[u,u-1-1]=1./(2*hw)
+                Dy[u,u+1-1]=-1./(2*he)
+
+                nnn=1
+                while u+nnn<(jjj+1)*Nyg:
+                    Dy[u+nnn,u-1] = Dy[u,u-1]
+                    Dy[u+nnn,u-1-1] = Dy[u,u-1-1]
+                    Dy[u+nnn,u+1-1] = Dy[u,u+1-1]
+                    nnn+=1
+        return Dx, Dy
+
+
+    def assemble_laplacian(self):
+        ''' override '''
+        na = lambda x: np.array([x])
+        Nxg = self.Nxg
+        Nyg = self.Nyg
+        chamb = self.chamb
+        self.Dx=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        self.Dy=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
+        flag_inside_n = self.flag_inside_n
+        xn = self.xn
+        yn = self.yn
+        Dh = self.Dh
+        Dx = self.Dx
+        Dy = self.Dy
+        list_internal_force_zero = []
+
+        # Build A Dx Dy matrices
+        for u in range(0,Nxg*Nyg):
+            if np.mod(u, Nxg*Nyg/20)==0:
+                    print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+            if flag_inside_n[u]:
+
+                #Compute Shortley-Weller coefficients
+                if flag_inside_n[u-1]: #phi(i-1,j)
+                    hw = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u-1]), na(yn[u-1]), na(0.), resc_fac=.995, flag_robust=False)
+                    hw = np.abs(y_int[0]-yn[u])
+
+                if flag_inside_n[u+1]: #phi(i+1,j)
+                    he = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u+1]), na(yn[u+1]), na(0.), resc_fac=.995, flag_robust=False)
+                    he = np.abs(y_int[0]-yn[u])
+
+                if flag_inside_n[u-Nyg]: #phi(i,j-1)
+                    hs = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u-Nyg]), na(yn[u-Nyg]), na(0.), resc_fac=.995, flag_robust=False)
+                    hs = np.abs(x_int[0]-xn[u])
+                    #~ print hs
+
+                if flag_inside_n[u+Nyg]: #phi(i,j+1)
+                    hn = Dh
+                else:
+                    x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u+Nyg]), na(yn[u+Nyg]), na(0.), resc_fac=.995, flag_robust=False)
+                    hn = np.abs(x_int[0]-xn[u])
+                    #~ print hn
+
+                # Build A matrix
+                if hn<Dh/100. or hs<Dh/100. or hw<Dh/100. or he<Dh/100.: # nodes very close to the bounday
+                    A[u,u] =1.
+                    list_internal_force_zero.append(u)
+                    #print u, xn[u], yn[u]
+                else:
+                    A[u,u] = -(2./(he*hw)+2/(hs*hn))
+                    A[u,u-1]=2./(hw*(hw+he));     #phi(i-1,j)nx
+                    A[u,u+1]=2./(he*(hw+he));     #phi(i+1,j)
+                    A[u,u-Nyg]=2./(hs*(hs+hn));    #phi(i,j-1)
+                    A[u,u+Nyg]=2./(hn*(hs+hn));    #phi(i,j+1)
+
+                # Build Dx matrix
+                if hn<Dh/100.:
+                    if hs>=Dh/100.:
+                        Dx[u,u] = -1./hs
+                        Dx[u,u-Nyg]=1./hs
+                elif hs<Dh/100.:
+                    if hn>=Dh/100.:
+                        Dx[u,u] = 1./hn
+                        Dx[u,u+Nyg]=-1./hn
+                else:
+                    Dx[u,u] = (1./(2*hn)-1./(2*hs))
+                    Dx[u,u-Nyg]=1./(2*hs)
+                    Dx[u,u+Nyg]=-1./(2*hn)
+
+
+                # Build Dy matrix
+                if he<Dh/100.:
+                    if hw>=Dh/100.:
+                        Dy[u,u] = -1./hw
+                        Dy[u,u-1]=1./hw
+                elif hw<Dh/100.:
+                    if he>=Dh/100.:
+                        Dy[u,u] = 1./he
+                        Dy[u,u+1]=-1./(he)
+                    else:
+                        Dy[u,u] = (1./(2*he)-1./(2*hw))
+                        Dy[u,u-1]=1./(2*hw)
+                        Dy[u,u+1]=-1./(2*he)
+
+            else:
+                # external nodes
+                A[u,u]=1.
+                if self.flag_border_n[u]:
+                    self.handle_border(u, self.flag_inside_n, self.Nxg,
+                                       self.Nyg, self.xn, self.yn, self.chamb,
+                                       self.Dh, self.Dx, self.Dy)
+
+        for u in list_internal_force_zero:
+            self.handle_border(u, self.flag_inside_n, self.Nxg,
+                               self.Nyg, self.xn, self.yn, self.chamb, self.Dh,
+                               self.Dx, self.Dy)
+
+        #~ A = A.tocsc()
+        self.Dx = self.Dx.tocsc()
+        self.Dy = self.Dy.tocsc()
+
+        flag_force_zero = self.flag_outside_n.copy()
+        for ind in  list_internal_force_zero:
+            flag_force_zero[ind] = True
+
+        flag_force_zero_mat=np.reshape(flag_force_zero,(self.Nyg,self.Nxg),'F');
+        flag_force_zero_mat=flag_force_zero_mat.T
+        [gxc,gyc]=np.gradient(np.double(flag_force_zero_mat));
+        gradmodc=abs(gxc)+abs(gyc);
+        flag_border_mat_c=np.logical_and((gradmodc>0), flag_force_zero_mat);
+
+        sumcurr = np.sum(flag_border_mat_c, axis=0)
+        self.jj_max_border = np.max((np.where(sumcurr>0))[0])
+        self.jj_min_border = np.min((np.where(sumcurr>0))[0])
+
+        sumcurr = np.sum(flag_border_mat_c, axis=1)
+        self.ii_max_border = np.max((np.where(sumcurr>0))[0])
+        self.ii_min_border = np.min((np.where(sumcurr>0))[0])
+
+        return A.tocsc()
+
+    def gradient(self, dummy):
+        ''' Function which returns a function to compute the gradient specific
+        to this Shortley Weller approximation
+        '''
+        def _gradient(phi):
+            efx = self.Dx*phi
+            efy = self.Dy*phi
+            efx=np.reshape(efx, (self.Nxg, self.Nyg))
+            efy=np.reshape(efy, (self.Nxg, self.Nyg))
+            for jj in xrange(self.jj_max_border, self.Nyg):
+                efx[:, jj]=efx[:, self.jj_max_border-1]
+            for jj in xrange(0, self.jj_min_border+1):
+                efx[:, jj]=efx[:, self.jj_min_border+1]
+            for ii in xrange(self.ii_max_border, self.Nxg):
+                efy[ii, :]=efy[self.ii_max_border-1, :]
+            for ii in xrange(0, self.ii_min_border+1):
+                efy[ii,:]=efy[self.ii_min_border+1,:]
+            plt.figure()
+            plt.imshow(efx)
+            plt.figure()
+            plt.imshow(efy)
+            plt.show()
+            efx = efx.flatten()
+            efy = efy.flatten()
+            efx, efy = efy, efx
+            return [efx, efy]
+        return _gradient
 
 

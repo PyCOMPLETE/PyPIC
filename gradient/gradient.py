@@ -68,3 +68,11 @@ def make_GPU_gradient(mesh, context):
         return (d_deriv_x, d_deriv_y, d_deriv_z)[:mesh.dimension]
     return _gradient
 
+def numpy_gradient(mesh):
+    ''' Return a gradient function'''
+    def _gradient(scalar_values):
+        '''Return the gradient of the scalar_values on the mesh'''
+        D = np.gradient(-scalar_values.reshape(list(reversed(mesh.shape))))
+        return list(reversed(D))
+    return _gradient
+
