@@ -465,8 +465,9 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         return A
 
 
-    def poisson_solve(self, rho):
+    def poisson_solve(self, mesh_charges):
         print 'poisson_solve of FiniteDifferences_Staircase_SquareGrid'
+        rho = mesh_charges / mesh.volume_elem
         b=-rho.flatten()/epsilon_0;
         b[~(self.flag_inside_n)]=0.; #boundary condition
         b_sel = self.Msel_T*b
