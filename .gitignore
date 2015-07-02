@@ -6,3 +6,4 @@
 norepository_*
 PyPIC.egg-info
 build
+.ipynb_checkpoints/

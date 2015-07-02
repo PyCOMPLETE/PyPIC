@@ -345,13 +345,19 @@ class GPUCPUFiniteDifferencePoissonSolver(PoissonSolver):
 ###############################################################################
 
 def compute_new_mesh_properties(x_aper=None, y_aper=None, Dh=None, xg=None,
-                                yg=None):
+                                yg=None, ext_boundary=False):
     '''Function which returns (Dh, xg, Nxg, bias_x, yg, Nyg, bias_y)
     Guarantees backwards compatibility
     '''
     #TODO put this into the PyPIC class, the Solver should use the grid it
     # gets and not change it!
-    if xg!=None and xg!=None:
+    if ext_boundary:
+        x_aper += 5.*Dh
+        y_aper += 4.*Dh
+    else:
+        x_aper += 1e-10*Dh
+        y_aper += 1e-10*Dh
+    if xg!=None and yg!=None:
         assert(x_aper==None and y_aper==None and Dh==None)
         Nxg=len(xg);
         bias_x=min(xg);
@@ -359,16 +365,14 @@ def compute_new_mesh_properties(x_aper=None, y_aper=None, Dh=None, xg=None,
         bias_y=min(yg);
         Dh = xg[1]-xg[0]
     else:
-        assert(xg==None and xg==None)
-        #xg=np.arange(0, x_aper+5.*Dh,Dh,float)
-        xg=np.arange(0, x_aper+0.01*Dh,Dh,float)
+        assert(xg==None and yg==None)
+        xg=np.arange(0, x_aper,Dh,float)
         xgr=xg[1:]
         xgr=xgr[::-1]#reverse array
         xg=np.concatenate((-xgr,xg),0)
         Nxg=len(xg);
         bias_x=min(xg);
-        #yg=np.arange(0,y_aper+4.*Dh,Dh,float)
-        yg=np.arange(0,y_aper+0.01*Dh,Dh,float)
+        yg=np.arange(0,y_aper,Dh,float)
         ygr=yg[1:]
         ygr=ygr[::-1]#reverse array
         yg=np.concatenate((-ygr,yg),0)
@@ -380,10 +384,10 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
     '''Finite difference solver using KLU on a square grid. (2d only)
     functionality as class in the old PyPIC with the same name
     '''
-    def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
+    def __init__(self, chamb, Dh, sparse_solver='scipy_slu', ext_boundary=False):
         # mimics the super() call in the old version
         params = compute_new_mesh_properties(
-                chamb.x_aper, chamb.y_aper, Dh)
+                chamb.x_aper, chamb.y_aper, Dh, ext_boundary=ext_boundary)
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         self.chamb = chamb
 
@@ -448,7 +452,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         Dh = self.Dh
         flag_inside_n = self.flag_inside_n
         A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
-        for u in range(0,Nxg*Nyg):
+        for u in xrange(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg/20)==0:
                 print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
@@ -465,7 +469,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
 
 
     def poisson_solve(self, mesh_charges):
-        rho = mesh_charges / mesh.volume_elem
+        rho = mesh_charges.reshape(self.Nyg, self.Nxg).T / (self.Dh*self.Dh)
         b=-rho.flatten()/epsilon_0;
         b[~(self.flag_inside_n)]=0.; #boundary condition
         #TODO debug only
@@ -473,7 +477,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         b_sel = self.Msel_T*b
         phi_sel = self.luobj.solve(b_sel)
         phi = self.Msel*phi_sel
-        return phi
+        return phi.reshape(self.Nxg, self.Nyg).T.flatten()
 
 
 class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_SquareGrid):
@@ -509,7 +513,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         xn = self.xn
         yn = self.yn
         Dh = self.Dh
-        for u in range(0,Nxg*Nyg):
+        for u in xrange(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg/20)==0:
                 print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
@@ -600,7 +604,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
     '''
     def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
         super(FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation, self).__init__(
-                chamb, Dh, sparse_solver)
+                chamb, Dh, sparse_solver, ext_boundary=True)
 
     def handle_border(self, u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy):
         #print u
@@ -757,7 +761,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
         list_internal_force_zero = []
 
         # Build A Dx Dy matrices
-        for u in range(0,Nxg*Nyg):
+        for u in xrange(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg/20)==0:
                     print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
