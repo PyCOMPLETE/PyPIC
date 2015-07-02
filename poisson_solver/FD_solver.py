@@ -544,7 +544,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
                 # Build A matrix
                 if hn<Dh/100. or hs<Dh/100. or hw<Dh/100. or he<Dh/100.: # nodes very close to the bounday
                     A[u,u] =1.
-                    list_internal_force_zero.append(u)
+                    #list_internal_force_zero.append(u)
                 #print u, xn[u], yn[u]
                 else:
                     A[u,u] = -(2./(he*hw)+2/(hs*hn))
