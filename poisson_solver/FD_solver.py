@@ -360,15 +360,15 @@ def compute_new_mesh_properties(x_aper=None, y_aper=None, Dh=None, xg=None,
         Dh = xg[1]-xg[0]
     else:
         assert(xg==None and xg==None)
-        xg=np.arange(0, x_aper+5.*Dh,Dh,float)
-        #xg=np.arange(0, x_aper+0.01*Dh,Dh,float)
+        #xg=np.arange(0, x_aper+5.*Dh,Dh,float)
+        xg=np.arange(0, x_aper+0.01*Dh,Dh,float)
         xgr=xg[1:]
         xgr=xgr[::-1]#reverse array
         xg=np.concatenate((-xgr,xg),0)
         Nxg=len(xg);
         bias_x=min(xg);
-        yg=np.arange(0,y_aper+4.*Dh,Dh,float)
-        #yg=np.arange(0,y_aper+0.01*Dh,Dh,float)
+        #yg=np.arange(0,y_aper+4.*Dh,Dh,float)
+        yg=np.arange(0,y_aper+0.01*Dh,Dh,float)
         ygr=yg[1:]
         ygr=ygr[::-1]#reverse array
         yg=np.concatenate((-ygr,yg),0)
@@ -384,7 +384,6 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         # mimics the super() call in the old version
         params = compute_new_mesh_properties(
                 chamb.x_aper, chamb.y_aper, Dh)
-        print('params: ' + str(params))
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         self.chamb = chamb
 
@@ -466,10 +465,11 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
 
 
     def poisson_solve(self, mesh_charges):
-        print 'poisson_solve of FiniteDifferences_Staircase_SquareGrid'
         rho = mesh_charges / mesh.volume_elem
         b=-rho.flatten()/epsilon_0;
         b[~(self.flag_inside_n)]=0.; #boundary condition
+        #TODO debug only
+        self.b = b
         b_sel = self.Msel_T*b
         phi_sel = self.luobj.solve(b_sel)
         phi = self.Msel*phi_sel

@@ -85,8 +85,8 @@ class PyPIC_GPU(object):
         Further keyword arguments are
         mesh_indices=None, mesh_distances=None, mesh_weights=None .
 
-        Return the charge distribution on the mesh
-        (which is mesh_charges = rho * volume).
+        Return the charge distribution on the mesh (which is mesh_charges =
+        rho*volume)
         '''
         mesh_indices = kwargs.get("mesh_indices",
                                   self.mesh.get_indices(*mp_coords))
@@ -99,30 +99,28 @@ class PyPIC_GPU(object):
         charge = kwargs.get("charge", e)
         n_macroparticles = len(mp_coords[0])
         mesh_count = gpuarray.zeros(shape=self.mesh.shape, #self.mesh.n_nodes,
-                                      dtype=np.float64)
+                                    dtype=np.float64)
 
         self._particles_to_mesh_kernel(
             mesh_count, *(self.mesh.shape[:-1] + mesh_weights + mesh_indices),
             block=(16, 16, 1), grid=(n_macroparticles // 16**2,1,1) # 32x32: too few registers
         )
         self._context.synchronize()
-        mesh_charges = mesh_count*charge
+        mesh_charges = mesh_density*charge
         return mesh_charges
 
     def poisson_solve(self, mesh_charges):
         '''Solve the discrete Poisson equation with the charge
-        distribution on the mesh, mesh_charges = rho * volume:
-
-        -divgrad phi = rho / epsilon_0 .
+        distribution rho on the mesh, -divgrad phi = rho / epsilon_0 .
+        mesh_charges  =rho*volume
 
         Return the potential phi.
         '''
         # does self._context.synchronize() within solve
         return self.poissonsolver.poisson_solve(mesh_charges)
-
-    def poisson_cholsolve(self, mesh_charges):
+    def poisson_cholsolve(self, rho):
         '''test only'''
-        return self.poissonsolver.poisson_cholsolve(mesh_charges)
+        return self.poissonsolver.poisson_cholsolve(rho)
 
     def get_electric_fields(self, phi):
         '''Return electric fields on the mesh given
@@ -408,32 +406,10 @@ class PyPIC(object):
         )
         charge = kwargs.get("charge", e)
 
-        rho = self.particles_to_mesh(*mp_coords, charge=charge,
+        mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
                                      mesh_indices=mesh_indices,
                                      mesh_weights=mesh_weights)
-        # debug
-        plt.figure()
-        plt.imshow(rho.reshape(self.mesh.ny, self.mesh.nx))
-        plt.colorbar()
-        plt.title('Rho')
-        plt.show()
-
-
-        phi = self.poisson_solve(rho)
-
-        print('shape phi: ' + str(phi.shape))
-        #phi = np.asfortranarray(phi)
-        print('shape phi: ' + str(phi.shape))
-        #debug
-        plt.figure()
-        plt.imshow(phi.reshape(self.mesh.ny, self.mesh.nx), interpolation='none')
-        plt.colorbar()
-        plt.title('Phi')
-        plt.show()
-
-
-
-
+        phi = self.poisson_solve(mesh_charges)
         mesh_e_fields = self.get_electric_fields(phi)
         for i, field in enumerate(mesh_e_fields):
             mesh_e_fields[i] = field.flatten()
@@ -444,8 +420,21 @@ class PyPIC(object):
         return fields
 
     # PyPIC backwards compatibility
-    scatter = particles_to_mesh
-    gather = field_to_particles
+    def scatter(self, x_part, y_part, nel_part):
+        assert(np.all(nel_part == nel_part[0])) # all must have same charge
+        rho = self.particles_to_mesh(x_part, y_part, charge=nel_part*e)
+        return rho
+
+    # PyPIC backwards compatiblity
+    def solve(self, rho=None):
+        if rho == None:
+            rho = self.rho.flatten()
+        phi = self.poisson_solve(rho)
+        mesh_e_fields = self.get_electric_fields(phi)
+        return mesh_e_fields
+
+    def gather(self):
+        print ('Nothing to see here')
 
 
 class PyPIC_Fortran_M2P_P2M(PyPIC):
