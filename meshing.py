@@ -29,6 +29,10 @@ class Mesh(object):
     shape = []
     '''Volume element(s) of the mesh.'''
     volume_elem = 0
+    '''Distances between nodes in the mesh, list with entries for each
+    dimension (each entry may be a list by itself).
+    '''
+    distances = []
     '''Total number of nodes in this mesh.'''
     n_nodes = 0
     '''Number of boundary nodes in this mesh.'''
@@ -146,6 +150,7 @@ class RectMesh3D(Mesh):
         self.x0 = x0
         self.y0 = y0
         self.z0 = z0
+        self.distances = (dx, dy, dz)
         self.dx = dx
         self.dy = dy
         self.dz = dz
@@ -274,6 +279,7 @@ class RectMesh2D(Mesh):
         self.mathlib = mathlib
         self.x0 = x0
         self.y0 = y0
+        self.distances = (dx, dy)
         self.dx = dx
         self.dy = dy
         self.volume_elem = dx*dy
@@ -379,6 +385,7 @@ class UniformMesh1D(Mesh):
     def __init__(self, x0, dx, nx, mathlib=np):
         self.mathlib = mathlib
         self.x0 = x0
+        self.distances = (dx,)
         self.dx = dx
         self.volume_elem = dx
         self.nx = np.int32(nx)
