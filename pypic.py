@@ -452,17 +452,16 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
 
     def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
         [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
-        ex = ex.reshape((self.mesh.ny, self.mesh.nx))
-        ey = ey.reshape((self.mesh.ny, self.mesh.nx))
-        print(ex.shape)
-        Ex, Ey = iff.int_field(x, y, self.mesh.y0, self.mesh.x0, self.mesh.dx,
-                               self.mesh.dx, ey, ex) # exchange x/y!
+        ex = ex.reshape((self.mesh.ny, self.mesh.nx)).T
+        ey = ey.reshape((self.mesh.ny, self.mesh.nx)).T
+        Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0, self.mesh.dx,
+                               self.mesh.dx, ex, ey) # exchange x/y!
         return [Ex, Ey]
 
     def particles_to_mesh(self, *mp_coords, **kwargs):
         x, y = mp_coords #only 2 dimensions are supported
         charge = kwargs.get("charge", e)
         nel_mp = charge * np.ones(x.shape)
-        rho = rhocom.compute_sc_rho(x, y, nel_mp, self.mesh.y0, self.mesh.x0, #change x/y (Fortran/C!)
-                                    self.mesh.dx, self.mesh.ny, self.mesh.nx)
-        return rho
+        rho = rhocom.compute_sc_rho(x, y, nel_mp, self.mesh.x0, self.mesh.y0, #change x/y (Fortran/C!)
+                                    self.mesh.dx, self.mesh.nx, self.mesh.ny)
+        return rho.reshape(self.mesh.nx, self.mesh.ny).T
