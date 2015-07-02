@@ -12,9 +12,6 @@ from scipy.constants import epsilon_0
 
 from poisson_solver import PoissonSolver
 
-#debug
-import matplotlib.pyplot as plt
-
 try:
     import PyKLU.klu as klu
 except ImportError:
@@ -493,8 +490,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         # which sets the matrices self.Dx, self.Dy
         super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(
                 chamb, Dh, sparse_solver)
-        print(self.Dx.shape)
-        print(self.Dy.shape)
 
 
     def assemble_laplacian(self):
@@ -595,7 +590,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         def _gradient(phi):
             efx = self.Dx*phi
             efy = self.Dy*phi
-            efx, efy = efy, efx  # something is wrong...
+            #efx, efy = efy, efx  # something is wrong...
             return [efx, efy]
         return _gradient
 
@@ -888,11 +883,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
                 efy[ii, :]=efy[self.ii_max_border-1, :]
             for ii in xrange(0, self.ii_min_border+1):
                 efy[ii,:]=efy[self.ii_min_border+1,:]
-            plt.figure()
-            plt.imshow(efx)
-            plt.figure()
-            plt.imshow(efy)
-            plt.show()
             efx = efx.flatten()
             efy = efy.flatten()
             efx, efy = efy, efx

@@ -19,8 +19,6 @@ from p2m.p2m import particles_to_mesh_CPU_2d, particles_to_mesh_CPU_3d
 import rhocompute as rhocom
 import int_field_for as iff
 
-#debug
-import matplotlib.pyplot as plt
 
 class PyPIC_GPU(object):
     '''Encodes the algorithm of PyPIC for a static mesh
