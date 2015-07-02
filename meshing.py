@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 
 from abc import ABCMeta, abstractmethod
@@ -368,3 +369,94 @@ class RectMesh2D(Mesh):
         weight_ij1=  (dx/self.dx)  *(1-dy/self.dy)
         weight_i1j1= (dx/self.dx)  *(dy/self.dy)
         return (weight_ij, weight_i1j, weight_ij1, weight_i1j1)
+
+
+
+class UniformMesh1D(Mesh):
+    '''One-dimensional mesh with uniformly spaced nodes.'''
+    dimension = 1
+
+    def __init__(self, x0, dx, nx, mathlib=np):
+        self.mathlib = mathlib
+        self.x0 = x0
+        self.dx = dx
+        self.volume_elem = dx
+        self.nx = np.int32(nx)
+        self.shape = (self.nx,)
+        self.n_nodes = self.nx
+        self.n_boundary_nodes = 2
+
+    def decompose_id(self, node_id):
+        '''Return decomposition of node_id into (i,). (Trivial!)'''
+        if node_id >= self.n_nodes:
+            raise IndexError("Given node_id is outside of the range of nodes.")
+        return node_id
+
+    def is_boundary(self, node_id):
+        '''Return boolean whether the given node_id
+        lies on the outer boundary of the mesh.
+        '''
+        i, = self.decompose_id(node_id)
+        return (i == 0 or i == self.nx - 1)
+
+    def get_indices(self, x):
+        '''Return indices of particles on mesh.
+        Calculate indices of each particle on the 2D mesh nodes as
+        (i,) where i counts to the right.
+        '''
+        i = self.mathlib.floor((x - self.x0)/self.dx).astype(np.int32)
+
+        # clip them to the range [0, mesh.nx]
+        i = clip(self.nx-2, 0, i)  # -2: -1 (# cells = # nodes -1) -1 (zero based)
+        return (i,)
+
+    def get_node_ids(self, x, indices=None):
+        '''Return unique node IDs for particles calculated from
+        the i index. Goes in x from left to right with i.
+        If indices are given, they are used instead of calling
+        get_indices(x). These indices (i,) may already have
+        been determined by a previous call to
+        self.get_indices(x).
+        '''
+        # TODO: implement sorting mechanism in addition to node id
+        if indices:
+            i, = indices
+        else:
+            i, = self.get_indices(x)
+        return i
+
+    def get_distances(self, x, indices=None):
+        '''Return distances of particles to next mesh node.
+        If indices are given, they are used instead of calling
+        get_indices(x). These indices (i,) may already have
+        been determined by a previous call to
+        self.get_indices(x).
+        '''
+        if indices:
+            i, = indices
+        else:
+            i, = self.get_indices(x)
+        dx = x - (self.x0 + i*self.dx) #self.dx[i] if dx are not uniform
+        return (dx,)
+
+    def get_weights(self, x, distances=None, indices=None):
+        '''Return weights of mesh nodes surrounding a particle
+        when distributing particles onto the mesh nodes.
+        Calculates weights of surrounding nodes in the following order:
+            (i,  )
+            (i+1,)
+        If indices are given, they are used instead of calling
+        get_indices(x). These indices (i,) may already have
+        been determined by a previous call to
+        get_indices(x) .
+        Alternatively, distances may be given and used instead of
+        calling get_distances(x). Again, the given (dx,)
+        may come from a previous call to get_distances(x) .
+        '''
+        if distances:
+            dx, = distances
+        else:
+            dx, = self.get_distances(x, indices)
+        weight_i = 1 - dx/self.dx
+        weight_i1 = dx/self.dx
+        return (weight_i, weight_i1)
