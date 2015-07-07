@@ -590,7 +590,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         def _gradient(phi):
             efx = self.Dx*phi
             efy = self.Dy*phi
-            #efx, efy = efy, efx  # something is wrong...
+            efx, efy = efy, efx  # something is wrong...
             return [efx, efy]
         return _gradient
 
