@@ -482,14 +482,14 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
     TODO
     '''
     #TODO: check how we want to use the Dx/Dy matrices (efx = Dx*phi...)
-    def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
+    def __init__(self, chamb, Dh, sparse_solver='scipy_slu', ext_boundary=False):
         #do all the basic stuff, including creating the A matrix by using the
         #assemble_laplacian function from this child class. the only thing
         # to be done in this constructor is the construction of the Dx,Dy mats
         # luckily this also happens in the assemble_laplacian of this class
         # which sets the matrices self.Dx, self.Dy
         super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(
-                chamb, Dh, sparse_solver)
+                chamb, Dh, sparse_solver, ext_boundary)
 
 
     def assemble_laplacian(self):
