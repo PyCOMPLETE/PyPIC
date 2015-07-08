@@ -469,8 +469,6 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         rho = mesh_charges.reshape(self.Nyg, self.Nxg).T / (self.Dh*self.Dh)
         b=-rho.flatten()/epsilon_0;
         b[~(self.flag_inside_n)]=0.; #boundary condition
-        #TODO debug only
-        self.b = b
         b_sel = self.Msel_T*b
         phi_sel = self.luobj.solve(b_sel)
         phi = self.Msel*phi_sel
@@ -588,9 +586,11 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         for this Shortley Weller approximation
         '''
         def _gradient(phi):
+            phi = phi.reshape(self.Nyg, self.Nxg).T.flatten()
             efx = self.Dx*phi
             efy = self.Dy*phi
-            efx, efy = efy, efx  # something is wrong...
+            efx = efx.reshape(self.Nxg, self.Nyg).T.flatten()
+            efy = efy.reshape(self.Nxg, self.Nyg).T.flatten()
             return [efx, efy]
         return _gradient
 
@@ -815,7 +815,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
                     Dx[u,u+Nyg]=-1./(2*hn)
 
 
-                # Build Dy matrix
+                ## Build Dy matrix
                 if he<Dh/100.:
                     if hw>=Dh/100.:
                         Dy[u,u] = -1./hw
@@ -824,10 +824,10 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
                     if he>=Dh/100.:
                         Dy[u,u] = 1./he
                         Dy[u,u+1]=-1./(he)
-                    else:
-                        Dy[u,u] = (1./(2*he)-1./(2*hw))
-                        Dy[u,u-1]=1./(2*hw)
-                        Dy[u,u+1]=-1./(2*he)
+                else:
+                    Dy[u,u] = (1./(2*he)-1./(2*hw))
+                    Dy[u,u-1]=1./(2*hw)
+                    Dy[u,u+1]=-1./(2*he)
 
             else:
                 # external nodes
@@ -871,6 +871,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
         to this Shortley Weller approximation
         '''
         def _gradient(phi):
+            phi = phi.reshape(self.Nyg, self.Nxg).T.flatten()
             efx = self.Dx*phi
             efy = self.Dy*phi
             efx=np.reshape(efx, (self.Nxg, self.Nyg))
@@ -883,9 +884,8 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
                 efy[ii, :]=efy[self.ii_max_border-1, :]
             for ii in xrange(0, self.ii_min_border+1):
                 efy[ii,:]=efy[self.ii_min_border+1,:]
-            efx = efx.flatten()
-            efy = efy.flatten()
-            efx, efy = efy, efx
+            efx = efx.reshape(self.Nxg, self.Nyg).T.flatten()
+            efy = efy.reshape(self.Nxg, self.Nyg).T.flatten()
             return [efx, efy]
         return _gradient
 
