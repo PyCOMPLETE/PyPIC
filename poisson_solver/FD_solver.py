@@ -433,7 +433,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
             except StandardError, e:
                 print "Got exception: ", e
                 print "Falling back on scipy superlu solver:"
-                self.luobj = ssl.splu(Asel.tocsc())
+                self.luobj = spl.splu(Asel.tocsc())
         else:
             raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
         self.Msel = Msel.tocsc()
