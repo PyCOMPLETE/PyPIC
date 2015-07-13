@@ -19,7 +19,7 @@ except ImportError:
 try:
     from pycuda.compiler import SourceModule
     from pycuda import gpuarray
-    import libs.cusolver_Rf as curf
+    import cusolver_Rf as curf
 except ImportError:
     print('GPU libraries (pycuda, cusolver_RF) not found. GPU functionality ' +
           'not available.')
