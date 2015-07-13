@@ -105,7 +105,7 @@ class PyPIC_GPU(object):
             block=(16, 16, 1), grid=(n_macroparticles // 16**2,1,1) # 32x32: too few registers
         )
         self._context.synchronize()
-        mesh_charges = mesh_density*charge
+        mesh_charges = mesh_count*charge
         return mesh_charges
 
     def poisson_solve(self, mesh_charges):
