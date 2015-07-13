@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.constants import e
 
+import os
+where = os.path.dirname(os.path.abspath(__file__)) + '/'
+
 try:
     from pycuda import driver as cuda
     from pycuda import gpuarray
@@ -28,7 +31,7 @@ def make_GPU_gradient(mesh, context):
     dzInv = np.array(1./getattr(mesh, 'dz', 1), dtype=np.float64)
 
     sizeof_double = 8
-    with open('gradient2.cu') as fdlib:
+    with open(where + 'gradient2.cu') as fdlib:
         source = fdlib.read()
     module = SourceModule(source)
 

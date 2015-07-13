@@ -2,6 +2,7 @@ import numpy as np
 from scipy.constants import e
 import os
 
+where = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 try:
     from pycuda import driver as cuda
@@ -49,10 +50,10 @@ class PyPIC_GPU(object):
         # prepare calls to kernels!!!
 
         # load kernels
-        with open('p2m/p2m_kernels.cu') as stream:
+        with open(where + 'p2m/p2m_kernels.cu') as stream:
             source = stream.read()
         p2m_kernels = SourceModule(source)
-        with open('m2p/m2p_kernels.cu') as stream:
+        with open(where + 'm2p/m2p_kernels.cu') as stream:
             source = stream.read()
         m2p_kernels = SourceModule(source)
 
@@ -62,13 +63,13 @@ class PyPIC_GPU(object):
         # without having a running pycuda context
         # depending on the dimension, the correct funtions are loaded
         self._particles_to_mesh_kernel = (
-            p2m_kernels.get_function('particles_to_mesh' +
+            p2m_kernels.get_function('particles_to_mesh_' +
                                      str(mesh.dimension) + 'd'))
         self._mesh_to_particles_kernel = (
-            m2p_kernels.get_function("mesh_to_particles" +
+            m2p_kernels.get_function('mesh_to_particles_' +
                                      str(mesh.dimension) + 'd'))
         self._field_to_particles_kernel = (
-            m2p_kernels.get_function("field_to_particles" +
+            m2p_kernels.get_function('field_to_particles_' +
                                      str(mesh.dimension) + 'd'))
 
         self._gradient = gradient(mesh, context)
