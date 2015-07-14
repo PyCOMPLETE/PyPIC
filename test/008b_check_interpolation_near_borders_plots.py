@@ -1,4 +1,7 @@
-
+import sys, os
+BIN=os.path.expanduser('../')
+sys.path.append(BIN)
+from backwards_compatibility_1_02 import *
 Dh_mm=.5
 import myloadmat_to_obj as mlo
 import numpy as np

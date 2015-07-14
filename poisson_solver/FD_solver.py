@@ -450,7 +450,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         flag_inside_n = self.flag_inside_n
         A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
         for u in xrange(0,Nxg*Nyg):
-            if np.mod(u, Nxg*Nyg/20)==0:
+            if np.mod(u, Nxg*Nyg//20)==0:
                 print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
                 A[u,u] = -(4./(Dh*Dh))
@@ -507,7 +507,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         yn = self.yn
         Dh = self.Dh
         for u in xrange(0,Nxg*Nyg):
-            if np.mod(u, Nxg*Nyg/20)==0:
+            if np.mod(u, Nxg*Nyg//20)==0:
                 print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
                 #Compute Shortley-Weller coefficients
@@ -757,7 +757,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
 
         # Build A Dx Dy matrices
         for u in xrange(0,Nxg*Nyg):
-            if np.mod(u, Nxg*Nyg/20)==0:
+            if np.mod(u, Nxg*Nyg//20)==0:
                     print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
 

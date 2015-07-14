@@ -123,10 +123,7 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
         self.j_max = np.max(np.where(self.yg<=y_aper)[0])+1
 
         dummy = np.zeros((self.Nxg,self.Nyg))
-
-
         m, n = dummy[self.i_min:self.i_max,self.j_min:self.j_max].shape;
-
         xx = np.arange(1,m+0.5,1);
         yy = np.arange(1,n+0.5,1);
 
@@ -178,7 +175,6 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
 
     def dst2(self, x):
         m, n = x.shape;
-
         #transform along i
         tmp = np.zeros((2*m + 2, n))
         tmp[1:m+1, :] = x
@@ -194,11 +190,10 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
         return x_bar
 
     def poisson_solve(self, mesh_charges):
-        mesh_charges = mesh_charges.reshape(self.Nyg, self.Nxg) / (self.Dh*self.Dh)
-        #rhocut = mesh_charges[self.i_min:self.i_max,self.j_min:self.j_max]
-        rhocut = mesh_charges[self.j_min:self.j_max, self.i_min:self.i_max]
+        mesh_charges = mesh_charges.reshape(self.Nyg, self.Nxg).T / (self.Dh*self.Dh)
+        rhocut = mesh_charges[self.i_min:self.i_max,self.j_min:self.j_max]
         rho_bar =  self.dst2(rhocut)
-        phi_bar = rho_bar.T/self.green
+        phi_bar = rho_bar/self.green
         phi = np.zeros((self.Nxg, self.Nyg))
         phi[self.i_min:self.i_max,self.j_min:self.j_max] = self.dst2(phi_bar).copy()
         phi = phi.reshape(self.Nxg, self.Nyg).T.flatten()
