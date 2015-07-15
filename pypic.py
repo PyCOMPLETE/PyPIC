@@ -418,23 +418,6 @@ class PyPIC(object):
                                          mesh_weights=mesh_weights)
         return fields
 
-    # PyPIC backwards compatibility
-    def scatter(self, x_part, y_part, nel_part):
-        assert(np.all(nel_part == nel_part[0])) # all must have same charge
-        rho = self.particles_to_mesh(x_part, y_part, charge=nel_part*e)
-        return rho
-
-    # PyPIC backwards compatiblity
-    def solve(self, rho=None):
-        if rho == None:
-            rho = self.rho.flatten()
-        phi = self.poisson_solve(rho)
-        mesh_e_fields = self.get_electric_fields(phi)
-        return mesh_e_fields
-
-    def gather(self):
-        print ('Nothing to see here')
-
 
 class PyPIC_Fortran_M2P_P2M(PyPIC):
     ''' Uses the fast M2P/P2M Fortran routines
