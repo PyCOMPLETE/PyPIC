@@ -15,6 +15,83 @@ from scipy.constants import epsilon_0
 from poisson_solver import PoissonSolver
 from FD_solver import compute_new_mesh_properties
 
+try:
+    from pycuda import gpuarray
+    import scikits.cuda.fft as cu_fft
+
+except ImportError:
+    print('GPU libraries (pycuda, scikits.cuda.fft) not found. GPU functionality ' +
+          'not available.')
+
+
+
+class GPU_FFT_OpenBoundary(PoissonSolver):
+    """
+    FFT openboundary solver on the GPU
+
+    3d integrated greens function:
+    Qiang, Lidia, Ryne,Limborg-Deprey, PRSTAB 10, 129901 (2007)
+    Erratum: Three-dimensional quasistatic model
+    for high brightness beam dynamics simulation[PRSTAB 9, 044204 (2006)]
+    """
+    def __init__(self, mesh, something_deciding_2d_3d):
+        #TODO: if somethings wrong, try: mx = -dx/2+arange(nx+1)*dx
+        mx = np.arange(mesh.nx) * mesh.dx
+        my = np.arange(mesh.ny) * mesh.dy
+        mz = np.arange(mesh.nz) * mesh.dz
+        x, y, z = np.meshgrid(mx, my, mz, indices='ij') #TODO check indices=..
+        nx = mesh.nx
+        ny = mesh.ny
+        nz = mesh.nz
+        ### define the 3d free space green function
+        abs_r = np.sqrt(x * x + y * y + z * z)
+        inv_abs_r = 1./abs_r
+        tmpfgreen = -(  z*z * np.arctan(x*y*inv_abs_r/z)
+                      + y*y * np.arctan(x*z*inv_abs_r/y)
+                      + x*x * np.arctan(y*z*inv_abs_r/x)
+                     )/2.
+                    + y*z*np.log(x+abs_r)
+                    + x*z*np.log(y+abs_r)
+                    + x*y*np.log(z+abs_r)
+        fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx))
+        fgreen[:nz, :ny, :nx] = +tmpfgreen[ 1:,  1:,  1:]
+                                -tmpfgreen[-1:,  1:,  1:]
+                                -tmpfgreen[ 1:, -1:,  1:]
+                                +tmpfgreen[-1:, -1:,  1:]
+                                -tmpfgreen[ 1:,  1:, -1:]
+                                +tmpfgreen[-1:,  1:, -1:]
+                                +tmpfgreen[ 1:, -1:, -1:]
+                                -tmpfgreen[-1:, -1:, -1:]
+        # mirror the artificially added regions
+        fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
+        fgreen[:nz, ny:, :nx] = fgreen[:nz,      :ny:0:-1, :nx]
+        fgreen[nz:, ny:, :nx] = fgreen[:nz:-:-1, :ny:0:-1, :nx]
+        fgreen[:nz, :ny, nx:] = fgreen[:nz,      :ny,      :nx:0:-1]
+        fgreen[nz:, :ny, nx:] = fgreen[:nz:0:-1, :ny,      :nx:0:-1]
+        fgreen[:nz, ny:, nx:] = fgreen[:nz,      :ny:0:-1, :nx:0:-1]
+        fgreen[nz:, ny:, nx:] = fgreen[:nz:0:-1, :ny:0:-1, :nx:0:-1]
+        self.plan_forward = cu_fft.Plan(fgreen.shape, in_dtype=np.float64,
+                                   out_dtype=np.complex128)
+        self.plan_backward = cu_fft.Plan(fgreen.shape, in_dtype=np.complex128,
+                                    out_dtype=np.float64)
+
+        self.fgreentr = gpuarray.empty(fgreen.shape)
+        self.tmpspace = gpuarray.empty_like(self.fgreentr)
+        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
+
+    def poisson_solve(self, rho):
+        self.tmspace[:self.nz, :self.ny, :self.nx] = rho
+        phi_big = gpuarray.empty_like(tmpspace)
+        cu_fft.fft(self.tmpspace, phi_big, plan=self.plan_forward)
+        cu_fft.ifft(phi_big * self.fgreentr, tmpspace)
+        phi = tmpspace[:self.nz, :self.ny, :self.nx]
+        del phi_big
+        return phi
+
+
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     '''
