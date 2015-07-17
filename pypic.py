@@ -129,7 +129,10 @@ class PyPIC_GPU(object):
         Returns asynchronously from the device.
         (You may potentially want to call context.synchronize()!)
         '''
-        return self._gradient(-phi)
+        grad = self._gradient(-phi)
+        grad = [g.reshape(self.mesh.nz,self.mesh.ny, self.mesh.nx) for g in grad]
+        return grad
+
 
     def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):
         '''Interpolate the mesh_quantity (whose shape is the mesh shape)

@@ -17,6 +17,7 @@ from FD_solver import compute_new_mesh_properties
 
 try:
     from pycuda import gpuarray
+    import pycuda.driver as drv
     import scikits.cuda.fft as cu_fft
 
 except ImportError:
@@ -24,6 +25,20 @@ except ImportError:
           'not available.')
 
 
+def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
+                     src_pitch, dst_pitch):
+    ''' src on host, dst on device, both 3-dimensional '''
+    cpy = drv.Memcpy3D()
+    cpy.set_src_device(src.ptr)
+    cpy.set_dst_device(dst.ptr)
+    cpy.height = np.int64(height)
+    cpy.width_in_bytes = np.int64(width_in_bytes)
+    cpy.depth = np.int64(depth)
+    cpy.src_pitch = src_pitch
+    cpy.dst_pitch = dst_pitch
+    cpy.src_height = np.int64(src.shape[1])
+    cpy.dst_height = np.int64(dst.shape[1])
+    return cpy
 
 class GPU_FFT_OpenBoundary(PoissonSolver):
     """
@@ -34,63 +49,95 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
     Erratum: Three-dimensional quasistatic model
     for high brightness beam dynamics simulation[PRSTAB 9, 044204 (2006)]
     """
-    def __init__(self, mesh, something_deciding_2d_3d):
-        #TODO: if somethings wrong, try: mx = -dx/2+arange(nx+1)*dx
-        mx = np.arange(mesh.nx) * mesh.dx
-        my = np.arange(mesh.ny) * mesh.dy
-        mz = np.arange(mesh.nz) * mesh.dz
-        x, y, z = np.meshgrid(mx, my, mz, indices='ij') #TODO check indices=..
+    def __init__(self, mesh, something_deciding_2d_3d, free_memory=True):
+        '''
+        mesh:           mesh on which the operator operates
+        free_memory:    flag determining whether the memory on the GPU should
+                        be freed if possible after each call to solve
+        '''
+        self.free_memory = free_memory
+        mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
+        my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
+        mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
+        x, y, z = np.meshgrid(mx, my, mz, indexing='ij') #TODO check indices=..
         nx = mesh.nx
         ny = mesh.ny
         nz = mesh.nz
+        self.mesh = mesh
         ### define the 3d free space green function
         abs_r = np.sqrt(x * x + y * y + z * z)
         inv_abs_r = 1./abs_r
-        tmpfgreen = -(  z*z * np.arctan(x*y*inv_abs_r/z)
+        tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
                       + y*y * np.arctan(x*z*inv_abs_r/y)
                       + x*x * np.arctan(y*z*inv_abs_r/x)
-                     )/2.
+                      )/2.
                     + y*z*np.log(x+abs_r)
                     + x*z*np.log(y+abs_r)
-                    + x*y*np.log(z+abs_r)
+                    + x*y*np.log(z+abs_r))
         fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx))
-        fgreen[:nz, :ny, :nx] = +tmpfgreen[ 1:,  1:,  1:]
+        fgreen[:nz, :ny, :nx] =  tmpfgreen[1:, 1:, 1:]
+        fgreen[:nz, :ny, :nx] =(+tmpfgreen[ 1:,  1:,  1:]
                                 -tmpfgreen[-1:,  1:,  1:]
                                 -tmpfgreen[ 1:, -1:,  1:]
                                 +tmpfgreen[-1:, -1:,  1:]
                                 -tmpfgreen[ 1:,  1:, -1:]
                                 +tmpfgreen[-1:,  1:, -1:]
                                 +tmpfgreen[ 1:, -1:, -1:]
-                                -tmpfgreen[-1:, -1:, -1:]
+                                -tmpfgreen[-1:, -1:, -1:])
         # mirror the artificially added regions
         fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
-        fgreen[:nz, ny:, :nx] = fgreen[:nz,      :ny:0:-1, :nx]
-        fgreen[nz:, ny:, :nx] = fgreen[:nz:-:-1, :ny:0:-1, :nx]
-        fgreen[:nz, :ny, nx:] = fgreen[:nz,      :ny,      :nx:0:-1]
-        fgreen[nz:, :ny, nx:] = fgreen[:nz:0:-1, :ny,      :nx:0:-1]
-        fgreen[:nz, ny:, nx:] = fgreen[:nz,      :ny:0:-1, :nx:0:-1]
-        fgreen[nz:, ny:, nx:] = fgreen[:nz:0:-1, :ny:0:-1, :nx:0:-1]
-        self.plan_forward = cu_fft.Plan(fgreen.shape, in_dtype=np.float64,
-                                   out_dtype=np.complex128)
-        self.plan_backward = cu_fft.Plan(fgreen.shape, in_dtype=np.complex128,
-                                    out_dtype=np.float64)
+        fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
+        fgreen[nz:, ny:, :nx] = fgreen[nz:0:-1,   ny:0:-1, :nx]
+        fgreen[:nz, :ny, nx:] = fgreen[:nz,      :ny,       nx:0:-1]
+        fgreen[nz:, :ny, nx:] = fgreen[nz:0:-1,  :ny,       nx:0:-1]
+        fgreen[:nz, ny:, nx:] = fgreen[:nz,       ny:0:-1,  nx:0:-1]
+        fgreen[nz:, ny:, nx:] = fgreen[nz:0:-1,   ny:0:-1,  nx:0:-1]
+        self.fgreentr = gpuarray.empty(fgreen.shape, dtype=np.complex128)
+        self.tmpspace = gpuarray.zeros_like(self.fgreentr)
 
-        self.fgreentr = gpuarray.empty(fgreen.shape)
-        self.tmpspace = gpuarray.empty_like(self.fgreentr)
+        self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
+                                        out_dtype=np.complex128)
+        self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
+                                         out_dtype=np.complex128)
         cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
+        print self.fgreentr.get().shape
         self.nx = nx
         self.ny = ny
         self.nz = nz
+        # allocate memory if free_memory is not set
+        if not self.free_memory:
+            self.phi_big = gpuarray.empty_like(self.fgreentr)
+
 
     def poisson_solve(self, rho):
-        self.tmspace[:self.nz, :self.ny, :self.nx] = rho
-        phi_big = gpuarray.empty_like(tmpspace)
+        rho = rho.astype(np.complex128)
+        # print (type(rho)) # is gpuarray
+        sizeof_complex = np.dtype(np.complex128).itemsize
+        copy_d2d_rho2tmp = get_Memcpy3D_d2d(
+                width_in_bytes=self.nx*sizeof_complex,
+                height=self.ny, depth=self.nz, src=rho, dst=self.tmpspace,
+                src_pitch=self.nx*sizeof_complex, dst_pitch=self.tmpspace.strides[1])
+        copy_d2d_tmp2rho = get_Memcpy3D_d2d(
+                width_in_bytes=self.nx*sizeof_complex,
+                height=self.ny, depth=self.nz,
+                src=self.tmpspace, dst=rho,
+                src_pitch=self.tmpspace.strides[1],
+                dst_pitch=self.nx*sizeof_complex)
+        #self.tmpspace[:self.nz, :self.ny, :self.nx] = rho
+        copy_d2d_rho2tmp()
+        phi_big = getattr(self, 'phi_big', gpuarray.empty_like(self.tmpspace))
+        #phi_big = gpuarray.zeros(self.tmpspace.shape, dtype=np.complex128)
         cu_fft.fft(self.tmpspace, phi_big, plan=self.plan_forward)
-        cu_fft.ifft(phi_big * self.fgreentr, tmpspace)
-        phi = tmpspace[:self.nz, :self.ny, :self.nx]
-        del phi_big
+        cu_fft.ifft(phi_big * self.fgreentr, self.tmpspace,
+                    plan=self.plan_backward)
+        # store the result in the rho gpuarray to save space
+        copy_d2d_tmp2rho()
+        #phi = self.tmpspace[:self.nz, :self.ny, :self.nx]
+        phi = rho.real # alias for convenience
+        if self.free_memory: # free memory on GPU if flag is set
+            del phi_big
+        phi = 1./(4*np.pi*epsilon_0)*phi
         return phi
-
 
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
