@@ -97,7 +97,7 @@ class PyPIC_GPU(object):
         )
         charge = kwargs.get("charge", e)
         n_macroparticles = len(mp_coords[0])
-        mesh_count = gpuarray.zeros(shape=self.mesh.shape, #self.mesh.n_nodes,
+        mesh_count = gpuarray.zeros(shape=list(reversed(self.mesh.shape)), #self.mesh.n_nodes,
                                     dtype=np.float64)
 
         self._particles_to_mesh_kernel(
