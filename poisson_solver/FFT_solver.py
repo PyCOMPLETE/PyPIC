@@ -42,35 +42,39 @@ def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
 
 
 class DEBUG_FFT3_OpenBoundary(PoissonSolver):
-    def __init__(self, mesh, something):
+    def __init__(self, mesh, IGF=True):
         mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
         my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
         mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
         z, y, x = np.meshgrid(mz, my, mx, indexing='ij') #TODO check indices=..
+
         nx = mesh.nx
         ny = mesh.ny
         nz = mesh.nz
         self.mesh = mesh
         abs_r = np.sqrt(x * x + y * y + z * z)
         inv_abs_r = 1./abs_r
-        tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
-                      +   y*y * np.arctan(x*z*inv_abs_r/y)
-                      +   x*x * np.arctan(y*z*inv_abs_r/x)
-                      )/2.
-                    + y*z*np.log(x+abs_r)
-                    + x*z*np.log(y+abs_r)
-                    + x*y*np.log(z+abs_r))
-        tmpfgreen = inv_abs_r
-        fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128)
+        if IGF:
+            tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
+                          +   y*y * np.arctan(x*z*inv_abs_r/y)
+                          +   x*x * np.arctan(y*z*inv_abs_r/x)
+                          )/2.
+                        + y*z*np.log(x+abs_r)
+                        + x*z*np.log(y+abs_r)
+                        + x*y*np.log(z+abs_r))
+            tmpfgreen *= 1
+        else:
+            tmpfgreen = inv_abs_r
+        fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128) + 1000
         fgreen[:nz, :ny, :nx] =  tmpfgreen[1:, 1:, 1:]
-        #fgreen[:nz, :ny, :nx] =(+tmpfgreen[ 1:,  1:,  1:]
-        #                        -tmpfgreen[-1:,  1:,  1:]
-        #                        -tmpfgreen[ 1:, -1:,  1:]
-        #                        +tmpfgreen[-1:, -1:,  1:]
-        #                        -tmpfgreen[ 1:,  1:, -1:]
-        #                        +tmpfgreen[-1:,  1:, -1:]
-        #                        +tmpfgreen[ 1:, -1:, -1:]
-        #                        -tmpfgreen[-1:, -1:, -1:])
+        fgreen[:nz, :ny, :nx] =(+tmpfgreen[ 1:,  1:,  1:]
+                                -tmpfgreen[-1:,  1:,  1:]
+                                -tmpfgreen[ 1:, -1:,  1:]
+                                +tmpfgreen[-1:, -1:,  1:]
+                                -tmpfgreen[ 1:,  1:, -1:]
+                                +tmpfgreen[-1:,  1:, -1:]
+                                +tmpfgreen[ 1:, -1:, -1:]
+                                -tmpfgreen[-1:, -1:, -1:])
         # mirror the artificially added regions
         fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
         fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
@@ -111,15 +115,19 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
     Erratum: Three-dimensional quasistatic model
     for high brightness beam dynamics simulation[PRSTAB 9, 044204 (2006)]
     """
-    def __init__(self, mesh, something_deciding_2d_3d):
+    def __init__(self, mesh, IGF=False):
         '''
         mesh:           mesh on which the operator operates
         free_memory:    flag determining whether the memory on the GPU should
                         be freed if possible after each call to solve
+        IGF:            Use integrated greens function (True/False)
         '''
         mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
         my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
         mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
+        #mx = -mesh.dx/2 + mesh.x0 + np.arange(mesh.nx+1) * mesh.dx
+        #my = -mesh.dy/2 + mesh.y0 + np.arange(mesh.ny+1) * mesh.dy
+        #mz = -mesh.dz/2 + mesh.z0 + np.arange(mesh.nz+1) * mesh.dz
         z, y, x = np.meshgrid(mz, my, mx, indexing='ij') #TODO check indices=..
         nx = mesh.nx
         ny = mesh.ny
@@ -128,15 +136,18 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
         ### define the 3d free space green function
         #abs_r = np.sqrt(mesh.dx*mesh.dx*x * x + mesh.dy*mesh.dy*y * y + mesh.dz*mesh.dz*z * z)
         abs_r = np.sqrt(x * x + y * y + z * z)
-        inv_abs_r = 1./abs_r
-        tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
-                      +   y*y * np.arctan(x*z*inv_abs_r/y)
-                      +   x*x * np.arctan(y*z*inv_abs_r/x)
-                      )/2.
-                    + y*z*np.log(x+abs_r)
-                    + x*z*np.log(y+abs_r)
-                    + x*y*np.log(z+abs_r))
-        tmpfgreen = inv_abs_r
+        inv_abs_r = 1./abs_r#**np.sqrt(2)
+        if IGF:
+            tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
+                          +   y*y * np.arctan(x*z*inv_abs_r/y)
+                          +   x*x * np.arctan(y*z*inv_abs_r/x)
+                          )/2.
+                        + y*z*np.log(x+abs_r)
+                        + x*z*np.log(y+abs_r)
+                        + x*y*np.log(z+abs_r))
+        else:
+            tmpfgreen = inv_abs_r
+
         fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128)
         fgreen[:nz, :ny, :nx] =  tmpfgreen[1:, 1:, 1:]
         #fgreen[:nz, :ny, :nx] =(+tmpfgreen[ 1:,  1:,  1:]
