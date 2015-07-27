@@ -27,7 +27,9 @@ except ImportError:
 
 def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
                      src_pitch, dst_pitch):
-    ''' src on host, dst on device, both 3-dimensional '''
+    ''' Wrapper for the pycuda.driver.Memcpy3d() function (same args)
+    Returns a callable object which copies the arrays on invocation of ()
+    '''
     cpy = drv.Memcpy3D()
     cpy.set_src_device(src.ptr)
     cpy.set_dst_device(dst.ptr)
@@ -41,127 +43,30 @@ def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
     return cpy
 
 
-class DEBUG_FFT3_OpenBoundary(PoissonSolver):
-    def __init__(self, mesh, IGF=True):
-        mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
-        my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
-        mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
-        z, y, x = np.meshgrid(mz, my, mx, indexing='ij') #TODO check indices=..
-
-        nx = mesh.nx
-        ny = mesh.ny
-        nz = mesh.nz
-        self.mesh = mesh
-        abs_r = np.sqrt(x * x + y * y + z * z)
-        inv_abs_r = 1./abs_r
-        if IGF:
-            tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
-                          +   y*y * np.arctan(x*z*inv_abs_r/y)
-                          +   x*x * np.arctan(y*z*inv_abs_r/x)
-                          )/2.
-                        + y*z*np.log(x+abs_r)
-                        + x*z*np.log(y+abs_r)
-                        + x*y*np.log(z+abs_r))
-            tmpfgreen *= 1
-        else:
-            tmpfgreen = inv_abs_r
-        fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128) + 1000
-        fgreen[:nz, :ny, :nx] =  tmpfgreen[1:, 1:, 1:]
-        #fgreen[:nz, :ny, :nx] =(-tmpfgreen[ 1:,  1:,  1:]
-        #                        +tmpfgreen[-1:,  1:,  1:]
-        #                        +tmpfgreen[ 1:, -1:,  1:]
-        #                        -tmpfgreen[-1:, -1:,  1:]
-        #                        +tmpfgreen[ 1:,  1:, -1:]
-        #                        -tmpfgreen[-1:,  1:, -1:]
-        #                        -tmpfgreen[ 1:, -1:, -1:]
-        #                        +tmpfgreen[-1:, -1:, -1:])
-
-        #import scipy.integrate as sci
-        #tmp = sci.cumtrapz(tmpfgreen, dx=1.)
-        #fgreen[:nz, :ny, :nx] = tmp
-
-
-        fgreen[:nz, :ny, :nx] =(
-                 tmpfgreen[ 1:,  1:,  1:]
-                -tmpfgreen[:-1,  1:,  1:]
-                -tmpfgreen[ 1:, :-1,  1:]
-                +tmpfgreen[:-1, :-1,  1:]
-                -tmpfgreen[ 1:,  1:, :-1]
-                +tmpfgreen[:-1,  1:, :-1]
-                +tmpfgreen[ 1:, :-1, :-1]
-                -tmpfgreen[:-1, :-1, :-1])
-        # mirror the artificially added regions
-        fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
-        fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
-        fgreen[nz:, ny:, :nx] = fgreen[nz:0:-1,   ny:0:-1, :nx]
-        fgreen[:nz, :ny, nx:] = fgreen[:nz,      :ny,       nx:0:-1]
-        fgreen[nz:, :ny, nx:] = fgreen[nz:0:-1,  :ny,       nx:0:-1]
-        fgreen[:nz, ny:, nx:] = fgreen[:nz,       ny:0:-1,  nx:0:-1]
-        fgreen[nz:, ny:, nx:] = fgreen[nz:0:-1,   ny:0:-1,  nx:0:-1]
-        self.fgreentr = np.fft.fftn(fgreen,s=fgreen.shape)
-        self.nx = nx
-        self.ny = ny
-        self.nz = nz
-
-
-    def poisson_solve(self, rho):
-        ''' Solve the poisson equation using hockney's algorithm:
-            phi = ifft(fft(rho*green))
-            fft/ifft are in place 2d-C2C-fft using cuFFT
-        '''
-        rho = rho.get().astype(np.complex128)
-        tmp = np.zeros((2*self.nz, 2*self.ny, 2*self.nx), dtype=np.complex128)
-        tmp[:self.nz, :self.ny, :self.nx] = rho
-        phi = np.fft.ifftn(np.fft.fftn(tmp, tmp.shape)*self.fgreentr)
-        phi = np.real(phi[:self.nz, :self.ny, :self.nx]).copy()
-        phi *= 1./(4*np.pi*epsilon_0)
-        phi_gpu = gpuarray.zeros(phi.shape, dtype=np.float64)
-        phi_gpu.set(phi)
-        return phi_gpu
-
-
-
-class GPU_FFT_OpenBoundary(PoissonSolver):
+class GPUFFTPoissonSolverIGF(PoissonSolver):
     """
-    FFT openboundary solver on the GPU
-
-    3d integrated greens function:
+    FFT openboundary solver on the GPU using the integrated Green's function
+    3d integrated Green's function:
     Qiang, Lidia, Ryne,Limborg-Deprey, PRSTAB 10, 129901 (2007)
     Erratum: Three-dimensional quasistatic model
     for high brightness beam dynamics simulation[PRSTAB 9, 044204 (2006)]
     """
-    def __init__(self, mesh, IGF=False):
+    def __init__(self, mesh):
         '''
         mesh:           mesh on which the operator operates
-        free_memory:    flag determining whether the memory on the GPU should
-                        be freed if possible after each call to solve
-        IGF:            Use integrated greens function (True/False)
         '''
         mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
         my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
         mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
-        z, y, x = np.meshgrid(mz, my, mx, indexing='ij') #TODO check indices=..
+        z, y, x = np.meshgrid(mz, my, mx, indexing='ij')
         nx = mesh.nx
         ny = mesh.ny
         nz = mesh.nz
-        self.mesh = mesh
-        ### define the 3d free space green function
-        #abs_r = np.sqrt(mesh.dx*mesh.dx*x * x + mesh.dy*mesh.dy*y * y + mesh.dz*mesh.dz*z * z)
-        abs_r = np.sqrt(x * x + y * y + z * z)
-        inv_abs_r = 1./abs_r#**np.sqrt(2)
-        if IGF:
-            tmpfgreen = +(-(  z*z * np.arctan(x*y*inv_abs_r/z)
-                          +   y*y * np.arctan(x*z*inv_abs_r/y)
-                          +   x*x * np.arctan(y*z*inv_abs_r/x)
-                          )/2.
-                        + y*z*np.log(x+abs_r)
-                        + x*z*np.log(y+abs_r)
-                        + x*y*np.log(z+abs_r))
-        else:
-            tmpfgreen = inv_abs_r
-
+        # define the 3d free space green function
+        tmpfgreen = self._green(x, y, z)
         fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128)
-        fgreen[:nz, :ny, :nx] =(
+        # evaluate the indefinite integral per cell (int_a^b f = F(b) - F(a))
+        fgreen[:nz, :ny, :nx] = (
                  tmpfgreen[ 1:,  1:,  1:]
                 -tmpfgreen[:-1,  1:,  1:]
                 -tmpfgreen[ 1:, :-1,  1:]
@@ -169,7 +74,8 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
                 -tmpfgreen[ 1:,  1:, :-1]
                 +tmpfgreen[:-1,  1:, :-1]
                 +tmpfgreen[ 1:, :-1, :-1]
-                -tmpfgreen[:-1, :-1, :-1])
+                -tmpfgreen[:-1, :-1, :-1]
+                )
         # mirror the artificially added regions
         fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
         fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
@@ -180,7 +86,6 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
         fgreen[nz:, ny:, nx:] = fgreen[nz:0:-1,   ny:0:-1,  nx:0:-1]
         self.fgreentr = gpuarray.empty(fgreen.shape, dtype=np.complex128)
         self.tmpspace = gpuarray.zeros_like(self.fgreentr)
-
         self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
                                         out_dtype=np.complex128)
         self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
@@ -189,12 +94,27 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
         self.nx = nx
         self.ny = ny
         self.nz = nz
+        self.mesh = mesh
 
+    def _green(self, x, y, z):
+        ''' Evaluate the IGF on x, y, z (3d-arrays)
+        Qiang, Lidia, Ryne,Limborg-Deprey, PRSTAB 10, 129901 (2007)
+        '''
+        abs_r = np.sqrt(x * x + y * y + z * z)
+        inv_abs_r = 1./abs_r
+        green =  (-(  +    z*z * np.arctan(x*y*inv_abs_r/z)
+                      +   y*y * np.arctan(x*z*inv_abs_r/y)
+                      +   x*x * np.arctan(y*z*inv_abs_r/x)
+                   )/2.
+                    + y*z*np.log(x+abs_r)
+                    + x*z*np.log(y+abs_r)
+                    + x*y*np.log(z+abs_r))
+        return green
 
     def poisson_solve(self, rho):
-        ''' Solve the poisson equation using hockney's algorithm:
+        ''' Solve the poisson equation using Hockney's algorithm:
             phi = ifft(fft(rho*green))
-            fft/ifft are in place 2d-C2C-fft using cuFFT
+            fft/ifft are in-place 3d-C2C-ffts using cuFFT
         '''
         rho = rho.astype(np.complex128)
         # set to 0 since it might be filled with the old potential
@@ -214,10 +134,9 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
         cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
         cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
                     plan=self.plan_backward)
-
         # store the result in the rho gpuarray to save space
         copy_d2d_tmp2rho()
-        phi = rho.real/(8.*self.mesh.n_nodes) # scale (cuFFT is unscaled) and real()
+        phi = rho.real/(8.*self.mesh.n_nodes) # scale (cuFFT is unscaled)
         phi *= 1./(4*np.pi*epsilon_0)
         return phi
 
