@@ -67,14 +67,29 @@ class DEBUG_FFT3_OpenBoundary(PoissonSolver):
             tmpfgreen = inv_abs_r
         fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128) + 1000
         fgreen[:nz, :ny, :nx] =  tmpfgreen[1:, 1:, 1:]
-        fgreen[:nz, :ny, :nx] =(+tmpfgreen[ 1:,  1:,  1:]
-                                -tmpfgreen[-1:,  1:,  1:]
-                                -tmpfgreen[ 1:, -1:,  1:]
-                                +tmpfgreen[-1:, -1:,  1:]
-                                -tmpfgreen[ 1:,  1:, -1:]
-                                +tmpfgreen[-1:,  1:, -1:]
-                                +tmpfgreen[ 1:, -1:, -1:]
-                                -tmpfgreen[-1:, -1:, -1:])
+        #fgreen[:nz, :ny, :nx] =(-tmpfgreen[ 1:,  1:,  1:]
+        #                        +tmpfgreen[-1:,  1:,  1:]
+        #                        +tmpfgreen[ 1:, -1:,  1:]
+        #                        -tmpfgreen[-1:, -1:,  1:]
+        #                        +tmpfgreen[ 1:,  1:, -1:]
+        #                        -tmpfgreen[-1:,  1:, -1:]
+        #                        -tmpfgreen[ 1:, -1:, -1:]
+        #                        +tmpfgreen[-1:, -1:, -1:])
+
+        #import scipy.integrate as sci
+        #tmp = sci.cumtrapz(tmpfgreen, dx=1.)
+        #fgreen[:nz, :ny, :nx] = tmp
+
+
+        fgreen[:nz, :ny, :nx] =(
+                 tmpfgreen[ 1:,  1:,  1:]
+                -tmpfgreen[:-1,  1:,  1:]
+                -tmpfgreen[ 1:, :-1,  1:]
+                +tmpfgreen[:-1, :-1,  1:]
+                -tmpfgreen[ 1:,  1:, :-1]
+                +tmpfgreen[:-1,  1:, :-1]
+                +tmpfgreen[ 1:, :-1, :-1]
+                -tmpfgreen[:-1, :-1, :-1])
         # mirror the artificially added regions
         fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
         fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
@@ -125,9 +140,6 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
         mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
         my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
         mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
-        #mx = -mesh.dx/2 + mesh.x0 + np.arange(mesh.nx+1) * mesh.dx
-        #my = -mesh.dy/2 + mesh.y0 + np.arange(mesh.ny+1) * mesh.dy
-        #mz = -mesh.dz/2 + mesh.z0 + np.arange(mesh.nz+1) * mesh.dz
         z, y, x = np.meshgrid(mz, my, mx, indexing='ij') #TODO check indices=..
         nx = mesh.nx
         ny = mesh.ny
@@ -149,15 +161,15 @@ class GPU_FFT_OpenBoundary(PoissonSolver):
             tmpfgreen = inv_abs_r
 
         fgreen = np.zeros((2 * nz, 2 * ny, 2 * nx), dtype=np.complex128)
-        fgreen[:nz, :ny, :nx] =  tmpfgreen[1:, 1:, 1:]
-        #fgreen[:nz, :ny, :nx] =(+tmpfgreen[ 1:,  1:,  1:]
-        #                        -tmpfgreen[-1:,  1:,  1:]
-        #                        -tmpfgreen[ 1:, -1:,  1:]
-        #                        +tmpfgreen[-1:, -1:,  1:]
-        #                        -tmpfgreen[ 1:,  1:, -1:]
-        #                        +tmpfgreen[-1:,  1:, -1:]
-        #                        +tmpfgreen[ 1:, -1:, -1:]
-        #                        -tmpfgreen[-1:, -1:, -1:])
+        fgreen[:nz, :ny, :nx] =(
+                 tmpfgreen[ 1:,  1:,  1:]
+                -tmpfgreen[:-1,  1:,  1:]
+                -tmpfgreen[ 1:, :-1,  1:]
+                +tmpfgreen[:-1, :-1,  1:]
+                -tmpfgreen[ 1:,  1:, :-1]
+                +tmpfgreen[:-1,  1:, :-1]
+                +tmpfgreen[ 1:, :-1, :-1]
+                -tmpfgreen[:-1, :-1, :-1])
         # mirror the artificially added regions
         fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
         fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
