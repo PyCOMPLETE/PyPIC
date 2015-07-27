@@ -43,7 +43,7 @@ def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
     return cpy
 
 
-class GPUFFTPoissonSolverIGF(PoissonSolver):
+class GPUFFTPoissonSolver3D(PoissonSolver):
     """
     FFT openboundary solver on the GPU using the integrated Green's function
     3d integrated Green's function:
@@ -139,6 +139,28 @@ class GPUFFTPoissonSolverIGF(PoissonSolver):
         phi = rho.real/(8.*self.mesh.n_nodes) # scale (cuFFT is unscaled)
         phi *= 1./(4*np.pi*epsilon_0)
         return phi
+
+
+class GPUFFTPoissonSolverNonIGF3D(GPUFFTPoissonSolver3D):
+    """
+    FFT openboundary solver on the GPU NOT using the integrated Greens function
+    Do not use this solver for high aspect ratios of the mesh/beam!
+    The only difference to the super class is the _green() function, which
+    automatically gets called when the __init__ of the base class is called.
+    """
+    def __init__(self, mesh):
+        '''
+        mesh:           mesh on which the operator operates
+        '''
+        super(GPUFFTPoissonSolverNonIGF3D, self).__init__(mesh)
+
+
+    def _green(self, x, y, z):
+        ''' Return the greens function (-1/r) evaluated on x, y, z '''
+        abs_r = np.sqrt(x * x + y * y + z * z)
+        green = -1./abs_r
+        print '_green from non IGF'
+        return green
 
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
