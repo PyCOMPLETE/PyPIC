@@ -27,6 +27,9 @@ class Mesh(object):
 
     '''Shape of the mesh.'''
     shape = []
+    '''Origin of the mesh, position in as many coordinates as
+    there are dimensions.'''
+    origin = []
     '''Volume element(s) of the mesh.'''
     volume_elem = 0
     '''Distances between nodes in the mesh, list with entries for each
@@ -147,6 +150,7 @@ class RectMesh3D(Mesh):
     '''
     def __init__(self, x0, y0, z0, dx, dy, dz, nx, ny, nz, mathlib=np):
         self.mathlib = mathlib
+        self.origin = (x0, y0, z0)
         self.x0 = x0
         self.y0 = y0
         self.z0 = z0
@@ -193,9 +197,9 @@ class RectMesh3D(Mesh):
         k = self.mathlib.floor((z - self.z0)/self.dz).astype(np.int32)
 
          # clip to [0, mesh.nx]
-        i = clip(self.ny-2, 0, i) # -2: -1 (# cells = # nodes -1) -1 (zero based)
-        j = clip(self.nx-2, 0, j)
-        k = clip(self.nz-2, 0, k)
+        # i = clip(self.ny-2, 0, i) # -2: -1 (# cells = # nodes -1) -1 (zero based)
+        # j = clip(self.nx-2, 0, j)
+        # k = clip(self.nz-2, 0, k)
         return (i, j, k)
 
     def get_node_ids(self, x, y, z, indices=None):
@@ -277,6 +281,7 @@ class RectMesh2D(Mesh):
 
     def __init__(self, x0, y0, dx, dy, nx, ny, mathlib=np):
         self.mathlib = mathlib
+        self.origin = (x0, y0)
         self.x0 = x0
         self.y0 = y0
         self.distances = (dx, dy)
@@ -384,6 +389,7 @@ class UniformMesh1D(Mesh):
 
     def __init__(self, x0, dx, nx, mathlib=np):
         self.mathlib = mathlib
+        self.origin = (x0,)
         self.x0 = x0
         self.distances = (dx,)
         self.dx = dx

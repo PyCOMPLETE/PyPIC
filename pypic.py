@@ -2,6 +2,8 @@ import numpy as np
 from scipy.constants import e
 import os
 
+from operator import itemgetter
+
 where = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 try:
@@ -47,8 +49,6 @@ class PyPIC_GPU(object):
         self.poissonsolver = poissonsolver
 
 
-        # prepare calls to kernels!!!
-
         # load kernels
         with open(where + 'p2m/p2m_kernels.cu') as stream:
             source = stream.read()
@@ -57,6 +57,7 @@ class PyPIC_GPU(object):
             source = stream.read()
         m2p_kernels = SourceModule(source)
 
+        self._gradient = gradient(mesh, context)
 
         # initialize in init because otherwise it tries to compile even if
         # no instance of the class is created -> errors if you import the module
@@ -65,6 +66,12 @@ class PyPIC_GPU(object):
         self._particles_to_mesh_kernel = (
             p2m_kernels.get_function('particles_to_mesh_' +
                                      str(mesh.dimension) + 'd'))
+        self._sorted_particles_to_guard_mesh_kernel = (
+            p2m_kernels.get_function('cic_guard_cell_weights_' +
+                                     str(mesh.dimension) + 'd'))
+        self._join_guard_cells_kernel = (
+            p2m_kernels.get_function('join_guard_cells_' +
+                                     str(mesh.dimension) + 'd'))
         self._mesh_to_particles_kernel = (
             m2p_kernels.get_function('mesh_to_particles_' +
                                      str(mesh.dimension) + 'd'))
@@ -72,7 +79,10 @@ class PyPIC_GPU(object):
             m2p_kernels.get_function('field_to_particles_' +
                                      str(mesh.dimension) + 'd'))
 
-        self._gradient = gradient(mesh, context)
+        # prepare calls to kernels!!!
+        self._sorted_particles_to_guard_mesh_kernel.prepare('PPPddddddiiiPP'
+                                                            'P'*8)
+        self._join_guard_cells_kernel.prepare('P'*8 + 'iiiiP')
 
 
     def particles_to_mesh(self, *mp_coords, **kwargs):
@@ -81,11 +91,11 @@ class PyPIC_GPU(object):
         the macro-particles, e.g. in 3D
             mp_coords = (x, y, z)
         The keyword argument charge=e is the charge per macro-particle.
-        Further keyword arguments are
+        Further possible keyword arguments are
         mesh_indices=None, mesh_distances=None, mesh_weights=None .
 
         Return the charge distribution on the mesh (which is mesh_charges =
-        rho*volume)
+        rho*volume).
         '''
         mesh_indices = kwargs.get("mesh_indices",
                                   self.mesh.get_indices(*mp_coords))
@@ -108,6 +118,74 @@ class PyPIC_GPU(object):
         mesh_charges = mesh_count*charge
         return mesh_charges
 
+    def sorted_particles_to_mesh(self, *mp_coords, **kwargs):
+        '''Scatter the macro-particles onto the mesh nodes.
+        Assumes the macro-particles to be sorted by mesh node id.
+
+        The argument list mp_coords defines the coordinate arrays of
+        the macro-particles, e.g. in 3D
+            mp_coords = (x, y, z)
+
+        The two mandatory keyword arguments lower_bounds and upper_bounds
+        are index arrays. They indicate the start and end indices
+        within the sorted particle arrays for each node id.
+        The respective node id is identical to the index within
+        lower_bounds and upper_bounds.
+
+        The keyword argument charge=e is the charge per macro-particle.
+
+        Return the charge distribution on the mesh (which is mesh_charges =
+        rho*volume).
+        '''
+        lower_bounds = kwargs['lower_bounds']
+        upper_bounds = kwargs['upper_bounds']
+        charge = kwargs.get("charge", e)
+
+        guard_charge_pointers = [
+            gpuarray.empty(mesh.n_nodes, dtype=np.float64).gpudata
+            for _ in xrange(2**mesh.dimension)
+        ]
+        block = (256, 1, 1)
+        grid = (mesh.n_nodes // block[0], 1, 1)
+        self._sorted_particles_to_guard_mesh_kernel.prepared_call(*(
+            [grid, block,] +
+            # particles
+            map(itemgetter('gpudata'), mp_coords) +
+            # mesh
+            mesh.origin +
+            mesh.distances +
+            mesh.shape[:-1] + [mesh.n_nodes] +
+            [lower_bounds.gpudata, upper_bounds.gpudata] +
+            # guard cells
+            guard_charge_pointers
+        ))
+        mesh_charges = gpuarray.zeros(mesh.n_nodes, dtype=np.float64)
+        self._context.synchronize()
+        block = (256, 1, 1)
+        grid = (mesh.n_nodes // block[0], 1, 1)
+        self._join_guard_cells_kernel.prepared_call(*(
+            [grid, block,] +
+            guard_charge_pointers +
+            [mesh.n_nodes] + mesh.shape +
+            [mesh_charges.gpudata]
+        ))
+        context.synchronize()
+        mesh_charges *= e
+
+        # # example on how to use the sorted one with PyHEADTAIL:
+        # idx = gpuarray.zeros(n_particles, dtype=np.int32)
+        # mod.get_sort_perm_int(mesh.get_node_ids(beam.x, beam.y, beam.z), idx)
+        # beam.reorder(idx)
+        # node_ids = mesh.get_node_ids(beam.x, beam.y, beam.z)
+        # lower_bounds = gpuarray.empty(mesh.n_nodes, dtype=np.int32)
+        # upper_bounds = gpuarray.empty(mesh.n_nodes, dtype=np.int32)
+        # seq = gpuarray.arange(mesh.n_nodes, dtype=np.int32)
+        # mod.lower_bound_int(node_ids, seq, lower_bounds)
+        # mod.upper_bound_int(node_ids, seq, upper_bounds)
+
+        # mesh_charges = pypicalg.particles_to_mesh(beam.x, beam.y, beam.z)
+        # context.synchronize()
+
     def poisson_solve(self, mesh_charges):
         '''Solve the discrete Poisson equation with the charge
         distribution rho on the mesh, -divgrad phi = rho / epsilon_0 .
@@ -117,6 +195,7 @@ class PyPIC_GPU(object):
         '''
         # does self._context.synchronize() within solve
         return self.poissonsolver.poisson_solve(mesh_charges)
+
     def poisson_cholsolve(self, rho):
         '''test only'''
         return self.poissonsolver.poisson_cholsolve(rho)
@@ -132,7 +211,6 @@ class PyPIC_GPU(object):
         grad = self._gradient(-phi)
         grad = [g.reshape(self.mesh.nz,self.mesh.ny, self.mesh.nx) for g in grad]
         return grad
-
 
     def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):
         '''Interpolate the mesh_quantity (whose shape is the mesh shape)
