@@ -130,7 +130,7 @@ class PyPIC_GPU(object):
         (You may potentially want to call context.synchronize()!)
         '''
         grad = self._gradient(-phi)
-        grad = [g.reshape(self.mesh.nz,self.mesh.ny, self.mesh.nx) for g in grad]
+        grad = [g.reshape(list(reversed(self.mesh.shape))) for g in grad]
         return grad
 
 

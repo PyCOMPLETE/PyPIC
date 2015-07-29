@@ -42,6 +42,20 @@ def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
     cpy.dst_height = np.int64(dst.shape[1])
     return cpy
 
+def get_Memcpy2D_d2d(width_in_bytes, height, src, dst, src_pitch, dst_pitch):
+    ''' Wrapper for the pycuda.driver.Memcpy2d() function (same args)
+    Returns a callable object which copies the arrays on invocation of ()
+    '''
+    cpy = drv.Memcpy2D()
+    cpy.set_src_device(src.gpudata)
+    cpy.set_dst_device(dst.gpudata)
+    cpy.src_pitch = src_pitch
+    cpy.dst_pitch = dst_pitch
+    cpy.height = np.int64(height)
+    cpy.width_in_bytes = np.int64(width_in_bytes)
+    return cpy
+
+
 
 class GPUFFTPoissonSolver3D(PoissonSolver):
     """
@@ -53,7 +67,7 @@ class GPUFFTPoissonSolver3D(PoissonSolver):
     """
     def __init__(self, mesh):
         '''
-        mesh:           mesh on which the operator operates
+        mesh:           3d mesh on which the operator operates
         '''
         mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
         my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
@@ -152,7 +166,7 @@ class GPUFFTPoissonSolverNonIGF3D(GPUFFTPoissonSolver3D):
     """
     def __init__(self, mesh):
         '''
-        mesh:           mesh on which the operator operates
+        mesh:          3d  mesh on which the operator operates
         '''
         super(GPUFFTPoissonSolverNonIGF3D, self).__init__(mesh)
 
@@ -166,11 +180,136 @@ class GPUFFTPoissonSolverNonIGF3D(GPUFFTPoissonSolver3D):
         fgreen = np.zeros((2 * self.mesh.nz,
                            2 * self.mesh.ny,
                            2 * self.mesh.nx), dtype=np.complex128)
-        # integrate 1/r over dx*dy*dz, assuming a pw-constant function
         fgreen[:self.mesh.nz, :self.mesh.ny, :self.mesh.nx] = green[1:, 1:, 1:]
-        print '_green from non IGF'
         return fgreen
 
+
+
+class GPUFFTPoissonSolver2D(PoissonSolver):
+    """
+    FFT openboundary solver on the GPU using the integrated Green's function
+    2D integrated Green's function:
+    J. Qiang, M. A. Furman, and R.D. Ryne, J. Comput. Phys 198, 278 (2004)
+    """
+    def __init__(self, mesh):
+        '''
+        mesh:           2d mesh on which the operator operates
+        '''
+        mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
+        my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
+        y, x = np.meshgrid(my, mx, indexing='ij')
+        self.mesh = mesh
+        nx = self.mesh.nx
+        ny = self.mesh.ny
+        # define the 4x bigger domain and compute the greens function
+        # on the first (original) domain
+        fgreen = self._green(x, y)
+        # mirror to the artificially added regions
+        fgreen[ny:, :nx]  = fgreen[ ny:0:-1, :nx]
+        fgreen[:ny,  nx:] = fgreen[:ny,       nx:0:-1]
+        fgreen[ny:,  nx:] = fgreen[ ny:0:-1,  nx:0:-1]
+        self.fgreentr = gpuarray.zeros(fgreen.shape, dtype=np.complex128)
+        self.tmpspace = gpuarray.zeros_like(self.fgreentr)
+        self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
+                                        out_dtype=np.complex128)
+        self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
+                                         out_dtype=np.complex128)
+        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
+
+    def _green(self, x, y):
+        ''' Return the periodic integrated greens funcion on the 'original'
+        domain
+        '''
+        abs_r = np.sqrt(x * x + y * y)
+        inv_abs_r = 1./abs_r
+        tmpfgreen = (-3 * x * y + x * x * np.arctan2(y, x)
+                     + y * y * np.arctan2(x, y) + x * y * np.log(x * x + y * y)
+                    )
+        tmpfgreen = (-3*x*y + x*x*np.arctan(y/x)
+                     + y*y*np.arctan(x/y) + x*y*np.log(x*x + y*y)
+                    )
+        fgreen = np.zeros((2 * self.mesh.ny,
+                           2 * self.mesh.nx), dtype=np.complex128)
+        # evaluate the indefinite integral per cell (int_a^b f = F(b) - F(a))
+        fgreen[:self.mesh.ny, :self.mesh.nx] = (
+                  tmpfgreen[1:, 1:]   - tmpfgreen[1:, :-1]
+                + tmpfgreen[:-1, :-1] - tmpfgreen[:-1, 1:]
+                ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
+        #fgreen[:self.mesh.ny+1, :self.mesh.nx+1] = 1/2 * np.log(x*x + y*y)
+        #fgreen[:self.mesh.ny+1, :self.mesh.nx+1] = inv_abs_r
+        return fgreen
+
+    def poisson_solve(self, rho):
+        ''' Solve the poisson equation using Hockney's algorithm:
+            phi = ifft(fft(rho*green))
+            fft/ifft are in-place 3d-C2C-ffts using cuFFT
+        '''
+        rho = rho.astype(np.complex128).copy()
+        # set to 0 since it might be filled with the old potential
+        self.tmpspace.fill(0)
+        sizeof_complex = np.dtype(np.complex128).itemsize
+        #copy_d2d_rho2tmp = get_Memcpy2D_d2d(
+        #        width_in_bytes=rho.shape[1]*sizeof_complex,
+        #        height=rho.shape[0], src=rho, dst=self.tmpspace,
+        #        src_pitch=rho.shape[1]* sizeof_complex,
+        #        dst_pitch=self.tmpspace.shape[1] * sizeof_complex)
+        #copy_d2d_tmp2rho = get_Memcpy2D_d2d(
+        #        width_in_bytes=rho.shape[1]*sizeof_complex,
+        #        height=rho.shape[0], src=self.tmpspace, dst=rho,
+        #        src_pitch=self.tmpspace.strides[0],
+        #        dst_pitch=rho.strides[0])
+        from pycuda import gpuarray
+        mat = rho
+        itemsize = np.dtype(np.complex128).itemsize
+        self.tmpspace += 1
+        target = self.tmpspace
+        print mat.shape
+        print target.shape
+        copy = drv.Memcpy2D()
+        copy.set_src_device(mat.gpudata)
+        copy.set_dst_device(target.gpudata)
+        copy.src_pitch = mat.shape[1] * itemsize
+        copy.dst_pitch =  target.shape[1] * itemsize
+        copy.width_in_bytes = np.int64(rho.shape[1])*itemsize
+        copy.height = np.int64(rho.shape[0])#256
+        print target.real
+        print '-------'
+        copy(aligned=True)
+        print target.real
+
+
+
+
+        #copy_d2d_rho2tmp()
+        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
+        cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
+                    plan=self.plan_backward)
+        #self.tmpspace.fill(100)
+        mat = self.tmpspace
+        target = rho
+        copy2 = drv.Memcpy2D()
+        copy2.set_src_device(mat.gpudata)
+        copy2.set_dst_device(target.gpudata)
+        copy2.src_pitch = mat.shape[1] * itemsize
+        copy2.dst_pitch =  target.shape[1] * itemsize
+        copy2.width_in_bytes = rho.shape[1]*itemsize
+        copy2.height = np.int64(rho.shape[0])
+        copy2(aligned=True)
+
+
+
+
+        # store the result in the rho gpuarray to save space
+        #copy_d2d_tmp2rho()
+        #phi = rho.real/(4.*self.mesh.n_nodes) # scale (cuFFT is unscaled)
+        #phi *= self.mesh.volume_elem/(2*np.pi*epsilon_0) #TODO check 1/4 or 1/2
+        phi = rho.real
+        return phi
+
+
+
+
+################################ Old implementations / Wrappers for them ######
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     '''
