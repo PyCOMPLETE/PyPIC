@@ -187,4 +187,105 @@ __global__ void join_guard_cells_3d(
     }
 }
 
+
+__global__ void cic_guard_cell_weights_2d(
+        // particle positions sorted by cell ids
+        double *x_sorted, double *y_sorted,
+        // mesh
+        double x0, double y0,
+        double dx, double dy,
+        int nx, int n_nodes,
+        int* lower_bounds, int* upper_bounds,
+        // output: cumulative mesh charges for guard cells
+        double* cumweight_ij, double* cumweight_i1j,
+        double* cumweight_ij1, double* cumweight_i1j1)
+/**
+    Calculate the Cloud-in-Cell weights for all particles within a
+    guard cell.
+
+    This node-based algorithm expects particle arrays sorted
+    by their node id. For each node, the corresponding guard cell
+    is spanned from the nodes spatial indices i, j to i+1, j+1,
+    (Therefore, the guard cells at the rear boundary nodes do not
+    get any contribution for the guard cell nodes that lie outside of
+    the original mesh. E.g. i+1 == ny gets a zero entry for sure!)
+    Within a guard cell, all particles are weighted according to
+    their distance to the respective bounding node.
+
+    The weights of each particle are summed up per guard cell node and
+    written back to the global arrays cumweight_ij etc.
+
+    The index arrays lower_bounds and upper_bounds
+    indicate the start and end indices
+    within the sorted particle arrays for each node id. The respective
+    node id is identical to the index within lower_bounds and
+    upper_bounds.
+*/
+{
+    double l_cumweight_ij,  l_cumweight_i1j,  l_cumweight_ij1,  l_cumweight_i1j1;
+    int i, j;
+    double x0bydx = x0/dx;
+    double y0bydy = y0/dy;
+    double dx_rel, dy_rel;
+    // grid-stride loop
+    for (int nid = blockIdx.x * blockDim.x + threadIdx.x;
+         nid < n_nodes;
+         nid += blockDim.x * gridDim.x)
+    {
+        j = nid % nx; //& (nx-1); //
+        i = ((nid - j) / nx); //& (ny-1); //
+
+        l_cumweight_ij = 0.;   l_cumweight_i1j = 0.; l_cumweight_ij1 = 0.;
+        l_cumweight_i1j1 = 0.;
+        for (int pid = lower_bounds[nid]; pid < upper_bounds[nid]; pid++)
+        {
+            dx_rel = x_sorted[pid]/dx - x0bydx - j;
+            dy_rel = y_sorted[pid]/dy - y0bydy - i;
+
+            // locally calculate the weights for all 8 nodes of current guard cell
+            l_cumweight_ij +=    (1-dx_rel)*(1-dy_rel);
+            l_cumweight_i1j +=   (1-dx_rel)*(dy_rel)  ;
+            l_cumweight_ij1 +=   (dx_rel)  *(1-dy_rel);
+            l_cumweight_i1j1 +=  (dx_rel)  *(dy_rel)  ;
+        }
+        cumweight_ij[nid] =   l_cumweight_ij;   cumweight_i1j[nid] =   l_cumweight_i1j;
+        cumweight_ij1[nid] =  l_cumweight_ij1;  cumweight_i1j1[nid] =  l_cumweight_i1j1;
+    }
+}
+
+__global__ void join_guard_cells_2d(
+        double* cumweight_ij, double* cumweight_i1j,
+        double* cumweight_ij1, double* cumweight_i1j1,
+        int n_nodes, int nx, int ny,
+        double* mesh_charges)
+/**
+
+*/
+{
+    int i, j, ij, i1j, ij1, i1j1;
+    // grid-stride loop
+    for (int nid = blockIdx.x * blockDim.x + threadIdx.x;
+         nid < n_nodes;
+         nid += blockDim.x * gridDim.x)
+    {
+        j = nid % nx; //& (nx-1); //
+        i = ((nid - j) / nx); //& (ny-1); //
+        if (j == 0 || j == nx - 1 || i == 0 || i == ny - 1)
+        {
+            continue;
+        }
+
+        ij = nid;                     // nx*i     + j
+        i1j = nid - nx;               // nx*(i-1) + j
+        ij1 = nid - 1;                // nx*i     + j-1
+        i1j1 = nid - nx - 1;          // nx*(i-1) + j-1
+
+
+        mesh_charges[nid] =   cumweight_ij[ij]     + cumweight_i1j[i1j]
+                            + cumweight_ij1[ij1]   + cumweight_i1j1[i1j1];
+
+    }
+}
+
+
 } /* end extern C */
