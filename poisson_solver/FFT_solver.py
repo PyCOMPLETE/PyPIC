@@ -25,11 +25,13 @@ except ImportError:
           'not available.')
 
 
-def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
-                     src_pitch, dst_pitch):
+def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args):
     ''' Wrapper for the pycuda.driver.Memcpy3d() function (same args)
     Returns a callable object which copies the arrays on invocation of ()
+    dim_args: list, [width, height, depth] !not width_in_bytes
     '''
+    width, height, depth = dim_args
+    width_in_bytes = width * src.strides[2]
     cpy = drv.Memcpy3D()
     cpy.set_src_device(src.ptr)
     cpy.set_dst_device(dst.ptr)
@@ -42,10 +44,13 @@ def get_Memcpy3D_d2d(width_in_bytes, height, depth, src, dst,
     cpy.dst_height = np.int64(dst.shape[1])
     return cpy
 
-def get_Memcpy2D_d2d(width_in_bytes, height, src, dst, src_pitch, dst_pitch):
+def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args):
     ''' Wrapper for the pycuda.driver.Memcpy2d() function (same args)
     Returns a callable object which copies the arrays on invocation of ()
+    dim_args: list, [width, height, depth] !not width_in_bytes
     '''
+    width, height = dim_args
+    width_in_bytes = width * src.strides[1]
     cpy = drv.Memcpy2D()
     cpy.set_src_device(src.gpudata)
     cpy.set_dst_device(dst.gpudata)
@@ -53,12 +58,12 @@ def get_Memcpy2D_d2d(width_in_bytes, height, src, dst, src_pitch, dst_pitch):
     cpy.width_in_bytes = np.int64(width_in_bytes)
     cpy.src_pitch = src_pitch
     cpy.dst_pitch = dst_pitch
-    def copy():
+    def _copy():
         ''' Wrap the call to pass aligned=True which seems to be necessary
         in the 2D version (compared to 3D where it doesn't work with this arg
         '''
         cpy(aligned=True)
-    return copy
+    return _copy
 
 class GPUFFTPoissonSolver(PoissonSolver):
     '''
@@ -86,42 +91,25 @@ class GPUFFTPoissonSolver(PoissonSolver):
                         dtype=np.complex128)
         self.tmpspace = gpuarray.zeros_like(self.fgreentr)
         sizeof_complex = np.dtype(np.complex128).itemsize
-        # dispatch the correct functions depending on the dimensionality
-        # not the nicest solution but it doesn't have to be expandable since
-        # we do not go to arbitrary dimensions
-        if self.mesh.dimension == 3:
-            self._fgreen = self._fgreen3d
-            self._mirror = self._mirror3d
-            self._cpyrho2tmp = get_Memcpy3D_d2d(
-                width_in_bytes=self.mesh.nx*sizeof_complex,
-                height=self.mesh.ny, depth=self.mesh.nz, src=self._rho,
-                dst=self.tmpspace,
-                src_pitch=self.mesh.nx*sizeof_complex,
-                dst_pitch=self.tmpspace.strides[1])
-            self._cpytmp2rho = get_Memcpy3D_d2d(
-                width_in_bytes=self.mesh.nx*sizeof_complex,
-                height=self.mesh.ny, depth=self.mesh.nz,
-                src=self.tmpspace, dst=self._rho,
-                src_pitch=self.tmpspace.strides[1],
-                dst_pitch=self.mesh.nx*sizeof_complex)
-        elif self.mesh.dimension == 2:
-            self._fgreen = self._fgreen2d
-            self._mirror = self._mirror2d
-            self._cpyrho2tmp = get_Memcpy2D_d2d(
-                width_in_bytes=self.mesh.nx*sizeof_complex,
-                height=self.mesh.ny, src=self._rho,
-                dst=self.tmpspace,
-                src_pitch=self.mesh.nx*sizeof_complex,
-                dst_pitch=2*self.mesh.nx*sizeof_complex)
-            self._cpytmp2rho = get_Memcpy2D_d2d(
-                width_in_bytes=self.mesh.nx*sizeof_complex,
-                height=self.mesh.ny,
-                src=self.tmpspace, dst=self._rho,
-                src_pitch=2*self.mesh.nx*sizeof_complex,
-                dst_pitch=self.mesh.nx*sizeof_complex)
-        else:
-            raise RuntimeError('Mesh must have dimension 2 or three, aborting')
-            return -1
+ 
+        # dimensionality function dispatch
+        dim = self.mesh.dimension
+        self._fgreen = getattr(self, '_fgreen' + str(dim) + 'd')
+        self._mirror = getattr(self, '_mirror' + str(dim) + 'd')
+        copy_fn = {'3d' : get_Memcpy3D_d2d, '2d': get_Memcpy2D_d2d}
+        memcpy_nd = copy_fn[str(dim) + 'd']
+        dim_args = self.mesh.shape
+        self._cpyrho2tmp = memcpy_nd(
+            src=self._rho, dst=self.tmpspace,
+            src_pitch=self.mesh.nx*sizeof_complex,
+            dst_pitch=2*self.mesh.nx*sizeof_complex,
+            dim_args=dim_args)
+        self._cpytmp2rho = memcpy_nd(
+            src=self.tmpspace, dst=self._rho,
+            src_pitch=2*self.mesh.nx*sizeof_complex,
+            dst_pitch=self.mesh.nx*sizeof_complex,
+            dim_args=dim_args)
+
         mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1)
                                             * mesh_distances[i]
                     for i in xrange(self.mesh.dimension)
@@ -148,13 +136,11 @@ class GPUFFTPoissonSolver(PoissonSolver):
         self.tmpspace.fill(0)
         mat = self._rho
         target = self.tmpspace
-        #self._cpyrho2tmp(aligned=True)
         self._cpyrho2tmp()
         cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
         cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
                     plan=self.plan_backward)
         # store the result in the rho gpuarray to save space
-        #self._cpytmp2rho(aligned=True)
         self._cpytmp2rho()
         self._buf = self._rho.get()
         phi = self._rho.real/(2**self.mesh.dimension *self.mesh.n_nodes) # scale (cuFFT is unscaled)
