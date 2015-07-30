@@ -49,57 +49,183 @@ def get_Memcpy2D_d2d(width_in_bytes, height, src, dst, src_pitch, dst_pitch):
     cpy = drv.Memcpy2D()
     cpy.set_src_device(src.gpudata)
     cpy.set_dst_device(dst.gpudata)
-    cpy.src_pitch = src_pitch
-    cpy.dst_pitch = dst_pitch
     cpy.height = np.int64(height)
     cpy.width_in_bytes = np.int64(width_in_bytes)
-    return cpy
+    cpy.src_pitch = src_pitch
+    cpy.dst_pitch = dst_pitch
+    def copy():
+        ''' Wrap the call to pass aligned=True which seems to be necessary
+        in the 2D version (compared to 3D where it doesn't work with this arg
+        '''
+        cpy(aligned=True)
+    return copy
 
-
-
-class GPUFFTPoissonSolver3D(PoissonSolver):
-    """
+class GPUFFTPoissonSolver(PoissonSolver):
+    '''
     FFT openboundary solver on the GPU using the integrated Green's function
-    3d integrated Green's function:
-    Qiang, Lidia, Ryne,Limborg-Deprey, PRSTAB 10, 129901 (2007)
-    Erratum: Three-dimensional quasistatic model
-    for high brightness beam dynamics simulation[PRSTAB 9, 044204 (2006)]
-    """
+    The class works for 2 and 3 dimensional systems.
+    The corresponding greens functions/ algorithms are set (monkey patching)
+    during the initialization of the class and depend on the dimension of the
+    mesh.
+    '''
     def __init__(self, mesh):
         '''
-        mesh:           3d mesh on which the operator operates
+        Args:
+            mesh The mesh on which the solver will operate. The dimensionality
+                 is deducted from mesh.dimension
         '''
-        mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
-        my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
-        mz = -mesh.dz/2 + np.arange(mesh.nz+1) * mesh.dz
-        z, y, x = np.meshgrid(mz, my, mx, indexing='ij')
+        # create the mesh grid and compute the greens function on it
         self.mesh = mesh
-        nx = self.mesh.nx
-        ny = self.mesh.ny
-        nz = self.mesh.nz
-        # define the 8x bigger domain and compute the greens function
-        # on the first (original) domain
-        fgreen = self._green(x, y, z)
-        # mirror to the artificially added regions
-        fgreen[nz:, :ny, :nx] = fgreen[nz:0:-1,  :ny,      :nx]
-        fgreen[:nz, ny:, :nx] = fgreen[:nz,       ny:0:-1, :nx]
-        fgreen[nz:, ny:, :nx] = fgreen[nz:0:-1,   ny:0:-1, :nx]
-        fgreen[:nz, :ny, nx:] = fgreen[:nz,      :ny,       nx:0:-1]
-        fgreen[nz:, :ny, nx:] = fgreen[nz:0:-1,  :ny,       nx:0:-1]
-        fgreen[:nz, ny:, nx:] = fgreen[:nz,       ny:0:-1,  nx:0:-1]
-        fgreen[nz:, ny:, nx:] = fgreen[nz:0:-1,   ny:0:-1,  nx:0:-1]
-        self.fgreentr = gpuarray.empty(fgreen.shape, dtype=np.complex128)
+        mesh_shape = self.mesh.shape # nx, ny, (nz)
+        mesh_shape2 = [2*n for n in mesh_shape] # 2*nx, 2*ny, (2*nz)
+        mesh_distances = self.mesh.distances
+        #preallocate for fast d2d copies
+        self._rho = gpuarray.empty(list(reversed(mesh_shape)),
+                    dtype=np.complex128)
+        self.fgreentr = gpuarray.empty(list(reversed(mesh_shape2)),
+                        dtype=np.complex128)
         self.tmpspace = gpuarray.zeros_like(self.fgreentr)
+        sizeof_complex = np.dtype(np.complex128).itemsize
+        # dispatch the correct functions depending on the dimensionality
+        # not the nicest solution but it doesn't have to be expandable since
+        # we do not go to arbitrary dimensions
+        if self.mesh.dimension == 3:
+            self._fgreen = self._fgreen3d
+            self._mirror = self._mirror3d
+            self._cpyrho2tmp = get_Memcpy3D_d2d(
+                width_in_bytes=self.mesh.nx*sizeof_complex,
+                height=self.mesh.ny, depth=self.mesh.nz, src=self._rho,
+                dst=self.tmpspace,
+                src_pitch=self.mesh.nx*sizeof_complex,
+                dst_pitch=self.tmpspace.strides[1])
+            self._cpytmp2rho = get_Memcpy3D_d2d(
+                width_in_bytes=self.mesh.nx*sizeof_complex,
+                height=self.mesh.ny, depth=self.mesh.nz,
+                src=self.tmpspace, dst=self._rho,
+                src_pitch=self.tmpspace.strides[1],
+                dst_pitch=self.mesh.nx*sizeof_complex)
+        elif self.mesh.dimension == 2:
+            self._fgreen = self._fgreen2d
+            self._mirror = self._mirror2d
+            self._cpyrho2tmp = get_Memcpy2D_d2d(
+                width_in_bytes=self.mesh.nx*sizeof_complex,
+                height=self.mesh.ny, src=self._rho,
+                dst=self.tmpspace,
+                src_pitch=self.mesh.nx*sizeof_complex,
+                dst_pitch=2*self.mesh.nx*sizeof_complex)
+            self._cpytmp2rho = get_Memcpy2D_d2d(
+                width_in_bytes=self.mesh.nx*sizeof_complex,
+                height=self.mesh.ny,
+                src=self.tmpspace, dst=self._rho,
+                src_pitch=2*self.mesh.nx*sizeof_complex,
+                dst_pitch=self.mesh.nx*sizeof_complex)
+        else:
+            raise RuntimeError('Mesh must have dimension 2 or three, aborting')
+            return -1
+        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1)
+                                            * mesh_distances[i]
+                    for i in xrange(self.mesh.dimension)
+                   ]
+        mesh_grids = np.meshgrid(*list(reversed(mesh_arr)), indexing='ij')
+        fgreen = self._fgreen(*mesh_grids)
+        fgreen = self._mirror(fgreen)
         self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
                                         out_dtype=np.complex128)
         self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
                                          out_dtype=np.complex128)
         cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
 
-    def _green(self, x, y, z):
+    def poisson_solve(self, rho):
+        ''' Solve the poisson equation with the given charge distribution
+        Args:
+            rho: Charge distribution (same dimensions as mesh)
+        Returns:
+            Phi (same dimensions as rho)
+        '''
+        drv.memcpy_dtod(self._rho.gpudata, rho.astype(np.complex128).gpudata,
+                        self._rho.nbytes)
+        # set to 0 since it might be filled with the old potential
+        self.tmpspace.fill(0)
+        mat = self._rho
+        target = self.tmpspace
+        #self._cpyrho2tmp(aligned=True)
+        self._cpyrho2tmp()
+        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
+        cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
+                    plan=self.plan_backward)
+        # store the result in the rho gpuarray to save space
+        #self._cpytmp2rho(aligned=True)
+        self._cpytmp2rho()
+        self._buf = self._rho.get()
+        phi = self._rho.real/(2**self.mesh.dimension *self.mesh.n_nodes) # scale (cuFFT is unscaled)
+        phi *= self.mesh.volume_elem/(2**(self.mesh.dimension-1)*np.pi*epsilon_0)
+        return phi
+
+
+
+    def _mirror2d(self, green):
+        ''' Mirror the greens function in the big domain
+        The area in the lower left (:ny, :nx) must contain the greens function
+        green:  (2*ny, 2*nx) shaped array
+        returns: the same array (in place transformation)
+        '''
+        nx = self.mesh.nx
+        ny = self.mesh.ny
+        green[ny:, :nx]  = green[ ny:0:-1, :nx]
+        green[:ny,  nx:] = green[:ny,       nx:0:-1]
+        green[ny:,  nx:] = green[ ny:0:-1,  nx:0:-1]
+        return green
+
+    def _mirror3d(self, green):
+        ''' Mirror the greens function in the big domain
+        The area in the lower left front (:nz, :ny, :nx) must contain the
+        greens function
+        green:  (2*nz, 2*ny, 2*nx) shaped array
+        returns: the same array (in place transformation)
+        '''
+        nz = self.mesh.nz
+        ny = self.mesh.ny
+        nx = self.mesh.nx
+        green[nz:, :ny, :nx] = green[nz:0:-1,  :ny,      :nx]
+        green[:nz, ny:, :nx] = green[:nz,       ny:0:-1, :nx]
+        green[nz:, ny:, :nx] = green[nz:0:-1,   ny:0:-1, :nx]
+        green[:nz, :ny, nx:] = green[:nz,      :ny,       nx:0:-1]
+        green[nz:, :ny, nx:] = green[nz:0:-1,  :ny,       nx:0:-1]
+        green[:nz, ny:, nx:] = green[:nz,       ny:0:-1,  nx:0:-1]
+        green[nz:, ny:, nx:] = green[nz:0:-1,   ny:0:-1,  nx:0:-1]
+        return green
+
+    def _fgreen2d(self, x, y):
+        '''
+        Return the periodic integrated greens funcion on the 'original'
+        domain
+        J. Qiang, M. A. Furman, and R.D. Ryne, J. Comput. Phys 198, 278 (2004)
+        [times a factor of -1/2 !?]
+        Args:
+            x,y: arrays, e.g. x,y = np.meshgrid(xx,yy)
+        '''
+        abs_r = np.sqrt(x * x + y * y)
+        inv_abs_r = 1./abs_r
+        tmpfgreen = -1./2*(-3*x*y + x*x*np.arctan(y/x)
+                     + y*y*np.arctan(x/y) + x*y*np.log(x*x + y*y)
+                    )
+        fgreen = np.zeros((2 * self.mesh.ny,
+                           2 * self.mesh.nx), dtype=np.complex128)
+        # evaluate the indefinite integral per cell (int_a^b f = F(b) - F(a))
+        fgreen[:self.mesh.ny, :self.mesh.nx] = (
+                  tmpfgreen[1:, 1:]   - tmpfgreen[1:, :-1]
+                + tmpfgreen[:-1, :-1] - tmpfgreen[:-1, 1:]
+                ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
+        return fgreen
+
+
+
+    def _fgreen3d(self, x, y, z):
         ''' Return the periodic integrated greens funcion on the 'original'
         domain
         Qiang, Lidia, Ryne,Limborg-Deprey, PRSTAB 10, 129901 (2007)
+        Args:
+            x,y,z: arrays, e.g. x, y, z = np.meshgrid(xx, yy, zz)
         '''
         abs_r = np.sqrt(x * x + y * y + z * z)
         inv_abs_r = 1./abs_r
@@ -126,188 +252,32 @@ class GPUFFTPoissonSolver3D(PoissonSolver):
                 ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
         return fgreen
 
-    def poisson_solve(self, rho):
-        ''' Solve the poisson equation using Hockney's algorithm:
-            phi = ifft(fft(rho*green))
-            fft/ifft are in-place 3d-C2C-ffts using cuFFT
-        '''
-        rho = rho.astype(np.complex128)
-        # set to 0 since it might be filled with the old potential
-        self.tmpspace.fill(0)
-        sizeof_complex = np.dtype(np.complex128).itemsize
-        copy_d2d_rho2tmp = get_Memcpy3D_d2d(
-                width_in_bytes=self.mesh.nx*sizeof_complex,
-                height=self.mesh.ny, depth=self.mesh.nz, src=rho,
-                dst=self.tmpspace,
-                src_pitch=self.mesh.nx*sizeof_complex, dst_pitch=self.tmpspace.strides[1])
-        copy_d2d_tmp2rho = get_Memcpy3D_d2d(
-                width_in_bytes=self.mesh.nx*sizeof_complex,
-                height=self.mesh.ny, depth=self.mesh.nz,
-                src=self.tmpspace, dst=rho,
-                src_pitch=self.tmpspace.strides[1],
-                dst_pitch=self.mesh.nx*sizeof_complex)
-        copy_d2d_rho2tmp()
-        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
-        cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
-                    plan=self.plan_backward)
-        # store the result in the rho gpuarray to save space
-        copy_d2d_tmp2rho()
-        phi = rho.real/(8.*self.mesh.n_nodes) # scale (cuFFT is unscaled)
-        phi *= self.mesh.volume_elem/(4*np.pi*epsilon_0)
-        return phi
 
-
-class GPUFFTPoissonSolverNonIGF3D(GPUFFTPoissonSolver3D):
-    """
-    FFT openboundary solver on the GPU NOT using the integrated Greens function
-    Do not use this solver for high aspect ratios of the mesh/beam!
-    The only difference to the super class is the _green() function, which
-    automatically gets called when the __init__ of the base class is called.
-    """
-    def __init__(self, mesh):
-        '''
-        mesh:          3d  mesh on which the operator operates
-        '''
-        super(GPUFFTPoissonSolverNonIGF3D, self).__init__(mesh)
-
-
-    def _green(self, x, y, z):
-        ''' Return the greens function (-1/r) evaluated on x, y, z, returns
-        a 8x bigger domain with the greens function in the 'original' part
-        '''
-        abs_r = np.sqrt(x * x + y * y + z * z)
-        green = 1./abs_r
-        fgreen = np.zeros((2 * self.mesh.nz,
-                           2 * self.mesh.ny,
-                           2 * self.mesh.nx), dtype=np.complex128)
-        fgreen[:self.mesh.nz, :self.mesh.ny, :self.mesh.nx] = green[1:, 1:, 1:]
-        return fgreen
-
-
-
-class GPUFFTPoissonSolver2D(PoissonSolver):
-    """
-    FFT openboundary solver on the GPU using the integrated Green's function
-    2D integrated Green's function:
-    J. Qiang, M. A. Furman, and R.D. Ryne, J. Comput. Phys 198, 278 (2004)
-    """
-    def __init__(self, mesh):
-        '''
-        mesh:           2d mesh on which the operator operates
-        '''
-        mx = -mesh.dx/2 + np.arange(mesh.nx+1) * mesh.dx
-        my = -mesh.dy/2 + np.arange(mesh.ny+1) * mesh.dy
-        y, x = np.meshgrid(my, mx, indexing='ij')
-        self.mesh = mesh
-        nx = self.mesh.nx
-        ny = self.mesh.ny
-        # define the 4x bigger domain and compute the greens function
-        # on the first (original) domain
-        fgreen = self._green(x, y)
-        # mirror to the artificially added regions
-        fgreen[ny:, :nx]  = fgreen[ ny:0:-1, :nx]
-        fgreen[:ny,  nx:] = fgreen[:ny,       nx:0:-1]
-        fgreen[ny:,  nx:] = fgreen[ ny:0:-1,  nx:0:-1]
-        self.fgreentr = gpuarray.zeros(fgreen.shape, dtype=np.complex128)
-        self.tmpspace = gpuarray.zeros_like(self.fgreentr)
-        self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
-                                        out_dtype=np.complex128)
-        self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
-                                         out_dtype=np.complex128)
-        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
-
-    def _green(self, x, y):
-        ''' Return the periodic integrated greens funcion on the 'original'
-        domain
-        '''
-        abs_r = np.sqrt(x * x + y * y)
-        inv_abs_r = 1./abs_r
-        tmpfgreen = (-3 * x * y + x * x * np.arctan2(y, x)
-                     + y * y * np.arctan2(x, y) + x * y * np.log(x * x + y * y)
-                    )
-        tmpfgreen = (-3*x*y + x*x*np.arctan(y/x)
-                     + y*y*np.arctan(x/y) + x*y*np.log(x*x + y*y)
-                    )
-        fgreen = np.zeros((2 * self.mesh.ny,
-                           2 * self.mesh.nx), dtype=np.complex128)
-        # evaluate the indefinite integral per cell (int_a^b f = F(b) - F(a))
-        fgreen[:self.mesh.ny, :self.mesh.nx] = (
-                  tmpfgreen[1:, 1:]   - tmpfgreen[1:, :-1]
-                + tmpfgreen[:-1, :-1] - tmpfgreen[:-1, 1:]
-                ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
-        #fgreen[:self.mesh.ny+1, :self.mesh.nx+1] = 1/2 * np.log(x*x + y*y)
-        #fgreen[:self.mesh.ny+1, :self.mesh.nx+1] = inv_abs_r
-        return fgreen
-
-    def poisson_solve(self, rho):
-        ''' Solve the poisson equation using Hockney's algorithm:
-            phi = ifft(fft(rho*green))
-            fft/ifft are in-place 3d-C2C-ffts using cuFFT
-        '''
-        rho = rho.astype(np.complex128).copy()
-        # set to 0 since it might be filled with the old potential
-        self.tmpspace.fill(0)
-        sizeof_complex = np.dtype(np.complex128).itemsize
-        #copy_d2d_rho2tmp = get_Memcpy2D_d2d(
-        #        width_in_bytes=rho.shape[1]*sizeof_complex,
-        #        height=rho.shape[0], src=rho, dst=self.tmpspace,
-        #        src_pitch=rho.shape[1]* sizeof_complex,
-        #        dst_pitch=self.tmpspace.shape[1] * sizeof_complex)
-        #copy_d2d_tmp2rho = get_Memcpy2D_d2d(
-        #        width_in_bytes=rho.shape[1]*sizeof_complex,
-        #        height=rho.shape[0], src=self.tmpspace, dst=rho,
-        #        src_pitch=self.tmpspace.strides[0],
-        #        dst_pitch=rho.strides[0])
-        from pycuda import gpuarray
-        mat = rho
-        itemsize = np.dtype(np.complex128).itemsize
-        self.tmpspace += 1
-        target = self.tmpspace
-        print mat.shape
-        print target.shape
-        copy = drv.Memcpy2D()
-        copy.set_src_device(mat.gpudata)
-        copy.set_dst_device(target.gpudata)
-        copy.src_pitch = mat.shape[1] * itemsize
-        copy.dst_pitch =  target.shape[1] * itemsize
-        copy.width_in_bytes = np.int64(rho.shape[1])*itemsize
-        copy.height = np.int64(rho.shape[0])#256
-        print target.real
-        print '-------'
-        copy(aligned=True)
-        print target.real
-
-
-
-
-        #copy_d2d_rho2tmp()
-        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
-        cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
-                    plan=self.plan_backward)
-        #self.tmpspace.fill(100)
-        mat = self.tmpspace
-        target = rho
-        copy2 = drv.Memcpy2D()
-        copy2.set_src_device(mat.gpudata)
-        copy2.set_dst_device(target.gpudata)
-        copy2.src_pitch = mat.shape[1] * itemsize
-        copy2.dst_pitch =  target.shape[1] * itemsize
-        copy2.width_in_bytes = rho.shape[1]*itemsize
-        copy2.height = np.int64(rho.shape[0])
-        copy2(aligned=True)
-
-
-
-
-        # store the result in the rho gpuarray to save space
-        #copy_d2d_tmp2rho()
-        #phi = rho.real/(4.*self.mesh.n_nodes) # scale (cuFFT is unscaled)
-        #phi *= self.mesh.volume_elem/(2*np.pi*epsilon_0) #TODO check 1/4 or 1/2
-        phi = rho.real
-        return phi
-
-
-
+#class GPUFFTPoissonSolverNonIGF3D(GPUFFTPoissonSolver):
+#    """
+#    FFT openboundary solver on the GPU NOT using the integrated Greens function
+#    Do not use this solver for high aspect ratios of the mesh/beam!
+#    The only difference to the super class is the _green() function, which
+#    automatically gets called when the __init__ of the base class is called.
+#    """
+#    def __init__(self, mesh):
+#        '''
+#        mesh:          3d  mesh on which the operator operates
+#        '''
+#        super(GPUFFTPoissonSolverNonIGF3D, self).__init__(mesh)
+#
+#
+#    def _green(self, x, y, z):
+#        ''' Return the greens function (-1/r) evaluated on x, y, z, returns
+#        a 8x bigger domain with the greens function in the 'original' part
+#        '''
+#        abs_r = np.sqrt(x * x + y * y + z * z)
+#        green = 1./abs_r
+#        fgreen = np.zeros((2 * self.mesh.nz,
+#                           2 * self.mesh.ny,
+#                           2 * self.mesh.nx), dtype=np.complex128)
+#        fgreen[:self.mesh.nz, :self.mesh.ny, :self.mesh.nx] = green[1:, 1:, 1:]
+#        return fgreen
 
 ################################ Old implementations / Wrappers for them ######
 
