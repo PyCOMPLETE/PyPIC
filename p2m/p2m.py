@@ -24,6 +24,7 @@ def particles_to_mesh_CPU_3d(mesh, n_macroparticles, mesh_indices, weights):
         mesh_density [jp   + stridex*(ip+1) + stridex*stridey*(kp+1)] += weights[5][p]
         mesh_density [jp+1 + stridex*ip     + stridex*stridey*(kp+1)] += weights[6][p]
         mesh_density [jp+1 + stridex*(ip+1) + stridex*stridey*(kp+1)] += weights[7][p]
+    mesh_density = mesh_density.reshape(mesh.shape)
     return mesh_density
 
 
@@ -40,4 +41,5 @@ def particles_to_mesh_CPU_2d(mesh, n_macroparticles, mesh_indices, weights):
             mesh_density [jp   + stridex*(ip+1)] += weights[1][p]
             mesh_density [jp+1 + stridex*ip    ] += weights[2][p]
             mesh_density [jp+1 + stridex*(ip+1)] += weights[3][p]
+    mesh_density = mesh_density.reshape(mesh.shape)
     return mesh_density

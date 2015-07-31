@@ -306,9 +306,10 @@ class PyPIC_GPU(object):
         )
         charge = kwargs.get("charge", e)
 
-        rho = self.particles_to_mesh(*mp_coords, charge=charge,
-                                     mesh_indices=mesh_indices,
-                                     mesh_weights=mesh_weights)
+        mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
+                                              mesh_indices=mesh_indices,
+                                              mesh_weights=mesh_weights)
+        rho = mesh_charges / self.mesh.volume_elem
         phi = self.poisson_solve(rho)
         mesh_e_fields = self.get_electric_fields(phi)
         self._context.synchronize()
@@ -489,7 +490,8 @@ class PyPIC(object):
         mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
                                      mesh_indices=mesh_indices,
                                      mesh_weights=mesh_weights)
-        phi = self.poisson_solve(mesh_charges)
+        rho = 1./self.mesh.volume_elem * mesh_charges
+        phi = self.poisson_solve(rho)
         mesh_e_fields = self.get_electric_fields(phi)
         for i, field in enumerate(mesh_e_fields):
             mesh_e_fields[i] = field.flatten()

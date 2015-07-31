@@ -224,7 +224,7 @@ class GPUFiniteDifferencePoissonSolver(PoissonSolver):
             bh = b.get()
             bh = self.Msel*bh
             b = gpuarray.to_gpu(bh)
-        return b
+        return b.reshape(self.mesh.shape)
 
 
 class CPUFiniteDifferencePoissonSolver(PoissonSolver):
@@ -256,8 +256,8 @@ class CPUFiniteDifferencePoissonSolver(PoissonSolver):
 
     def poisson_solve(self, rho):
         """ Return the potential (Phi)"""
-        b = self.assemble_rhs(rho)
-        return self.lu_obj.solve(b)
+        b = self.assemble_rhs(rho.ravel())
+        return self.lu_obj.solve(b).reshape(self.mesh.shape)
 
 
 ########## CPU/GPU MIX
@@ -321,7 +321,7 @@ class GPUCPUFiniteDifferencePoissonSolver(PoissonSolver):
         '''Return potential phi calculated with LU factorisation.
         compute b on gpu, move to CPU, solve, move back'''
         # b = self.m_sel * rho * self.inv_eps
-        b = self.assemble_rhs(rho)
+        b = self.assemble_rhs(rho.ravel())
         self._context.synchronize()
 
         if self.symmetrize:
@@ -335,7 +335,7 @@ class GPUCPUFiniteDifferencePoissonSolver(PoissonSolver):
             # not optimized, simply to check correctness
             bh = self.Msel*bh
             b = gpuarray.to_gpu(bh)
-        return b
+        return b.reshape(self.mesh.shape)
 
 ###############################################################################
 # code below adapted from PyPIC v1.0.2, @author Giovanni Iadarola
@@ -465,8 +465,8 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         return A
 
 
-    def poisson_solve(self, mesh_charges):
-        rho = mesh_charges.reshape(self.Nyg, self.Nxg).T / (self.Dh*self.Dh)
+    def poisson_solve(self, rho):
+        #rho = mesh_charges.reshape(self.Nyg, self.Nxg).T / (self.Dh*self.Dh)
         b=-rho.flatten()/epsilon_0;
         b[~(self.flag_inside_n)]=0.; #boundary condition
         b_sel = self.Msel_T*b

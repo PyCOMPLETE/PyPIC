@@ -10,6 +10,7 @@ def mesh_to_particles_CPU_3d(mesh, mesh_quantity, indices, weights):
     ip, jp, kp = indices
     stridex = mesh.nx
     stridey = mesh.ny
+    mesh_quantity = np.ravel(mesh_quantity)
     particles_quantity = (mesh_quantity[jp   + stridex*ip     + stridex*stridey*kp    ] * weights[0]
                         + mesh_quantity[jp   + stridex*(ip+1) + stridex*stridey*kp    ] * weights[1]
                         + mesh_quantity[jp+1 + stridex*ip     + stridex*stridey*kp    ] * weights[2]
@@ -29,6 +30,7 @@ def mesh_to_particles_CPU_2d(mesh, mesh_quantity, indices, weights):
     check_out = np.vectorize(check_outside)
     outside_idx = check_out(ip,jp)
 
+    mesh_quantity = np.ravel(mesh_quantity)
     stridex = mesh.nx
     particles_quantity = (mesh_quantity[jp   + stridex*ip    ] * weights[0]
                         + mesh_quantity[jp   + stridex*(ip+1)] * weights[1]
