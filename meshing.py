@@ -162,7 +162,7 @@ class RectMesh3D(Mesh):
         self.nx = np.int32(nx)
         self.ny = np.int32(ny)
         self.nz = np.int32(nz)
-        self.shape = (self.nx, self.ny, self.nz)
+        self.shape = (self.nz, self.ny, self.nx)
         self.n_nodes = self.nx * self.ny * self.nz
 #         self.n_boundary_nodes = (2*self.nx*self.ny +
 #                                  2*(self.nx-1 + self.ny-1) * (self.nz-2))
@@ -290,7 +290,7 @@ class RectMesh2D(Mesh):
         self.volume_elem = dx*dy
         self.nx = np.int32(nx)
         self.ny = np.int32(ny)
-        self.shape = (self.nx, self.ny)
+        self.shape = (self.ny, self.nx)
         self.n_nodes = self.nx * self.ny
         self.n_boundary_nodes = self.n_nodes - max(
             0, (self.nx-2)*(self.ny-2))

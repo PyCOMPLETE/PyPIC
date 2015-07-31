@@ -31,7 +31,7 @@ def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
     Returns a callable object which copies the arrays on invocation of ()
     dim_args: list, [width, height, depth] !not width_in_bytes
     '''
-    width, height, depth = dim_args
+    depth, height, width = dim_args
     width_in_bytes = width * itemsize
     src_ptr = getattr(src, 'gpudata', 0) # set to NULL if no valid ptr
     dst_ptr = getattr(dst, 'gpudata', 0) # set to NULL if no valid ptr
@@ -54,7 +54,7 @@ def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
     dim_args: list, [width, height, depth] !not width_in_bytes
     kwargs: gets ignored, exists to provide a uniform interface with 3d
     '''
-    width, height = dim_args
+    height, width = dim_args
     width_in_bytes = width * itemsize
     src_ptr = getattr(src, 'gpudata', 0) # set to NULL if no valid ptr
     dst_ptr = getattr(dst, 'gpudata', 0) # set to NULL if no valid ptr
@@ -98,10 +98,10 @@ class GPUFFTPoissonSolver(PoissonSolver):
         '''
         # create the mesh grid and compute the greens function on it
         self.mesh = mesh
-        mesh_shape = self.mesh.shape # nx, ny, (nz)
-        mesh_shape2 = [2*n for n in mesh_shape] # 2*nx, 2*ny, (2*nz)
+        mesh_shape = self.mesh.shape # nz, ny, (nx)
+        mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
         mesh_distances = self.mesh.distances
-        self.fgreentr = gpuarray.empty(list(reversed(mesh_shape2)),
+        self.fgreentr = gpuarray.empty(mesh_shape2,
                         dtype=np.complex128)
         self.tmpspace = gpuarray.zeros_like(self.fgreentr)
         sizeof_complex = np.dtype(np.complex128).itemsize
@@ -114,7 +114,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
         memcpy_nd = copy_fn[str(dim) + 'd']
         dim_args = self.mesh.shape
         self._cpyrho2tmp = memcpy_nd(
-            src=None, dst=self.tmpspace,
+            src=None, dst=self.tmpspace, # None because src(rho) not yet known
             src_pitch=self.mesh.nx*sizeof_complex,
             dst_pitch=2*self.mesh.nx*sizeof_complex,
             dim_args=dim_args,
@@ -122,7 +122,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
             src_height=self.mesh.ny,
             dst_height=2*self.mesh.ny)
         self._cpytmp2rho = memcpy_nd(
-            src=self.tmpspace, dst=None,
+            src=self.tmpspace, dst=None, # None because dst(rho) not yet know
             src_pitch=2*self.mesh.nx*sizeof_complex,
             dst_pitch=self.mesh.nx*sizeof_complex,
             dim_args=dim_args,
@@ -134,7 +134,8 @@ class GPUFFTPoissonSolver(PoissonSolver):
                                             * mesh_distances[i]
                     for i in xrange(self.mesh.dimension)
                    ]
-        mesh_grids = np.meshgrid(*list(reversed(mesh_arr)), indexing='ij')
+        # mesh_arr is [mz, my, mx]
+        mesh_grids = np.meshgrid(*mesh_arr, indexing='ij')
         fgreen = self._fgreen(*mesh_grids)
         fgreen = self._mirror(fgreen)
         self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,

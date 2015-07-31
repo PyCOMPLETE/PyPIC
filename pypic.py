@@ -107,11 +107,11 @@ class PyPIC_GPU(object):
         )
         charge = kwargs.get("charge", e)
         n_macroparticles = len(mp_coords[0])
-        mesh_count = gpuarray.zeros(shape=list(reversed(self.mesh.shape)), #self.mesh.n_nodes,
+        mesh_count = gpuarray.zeros(shape=self.mesh.shape, #self.mesh.n_nodes,
                                     dtype=np.float64)
-
         self._particles_to_mesh_kernel(
-            mesh_count, *(self.mesh.shape[:-1] + mesh_weights + mesh_indices),
+            mesh_count, *(tuple(reversed(self.mesh.shape[1:]))
+                          + mesh_weights + mesh_indices),
             block=(16, 16, 1), grid=(n_macroparticles // 16**2,1,1) # 32x32: too few registers
         )
         self._context.synchronize()
@@ -154,7 +154,7 @@ class PyPIC_GPU(object):
             # mesh
             mesh.origin +
             mesh.distances +
-            mesh.shape[:-1] + [mesh.n_nodes] +
+            list(reversed(mesh.shape[1:])) + [mesh.n_nodes] +
             [lower_bounds.gpudata, upper_bounds.gpudata] +
             # guard cells
             guard_charge_pointers
@@ -166,7 +166,7 @@ class PyPIC_GPU(object):
         self._join_guard_cells_kernel.prepared_call(*(
             [grid, block,] +
             guard_charge_pointers +
-            [mesh.n_nodes] + mesh.shape +
+            [mesh.n_nodes] + list(reversed(mesh.shape)) +
             [mesh_charges.gpudata]
         ))
         context.synchronize()
@@ -209,7 +209,7 @@ class PyPIC_GPU(object):
         (You may potentially want to call context.synchronize()!)
         '''
         grad = self._gradient(-phi)
-        grad = [g.reshape(list(reversed(self.mesh.shape))) for g in grad]
+        grad = [g.reshape(self.mesh.shape) for g in grad]
         return grad
 
     def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):
@@ -238,7 +238,7 @@ class PyPIC_GPU(object):
 
         self._mesh_to_particles_kernel(
             particles_quantity, mesh_quantity,
-            *(self.mesh.shape[:-1] + mesh_weights + mesh_indices),
+            *(tuple(reversed(self.mesh.shape[1:])) + mesh_weights + mesh_indices),
             block=(16, 16, 1), grid=(n_macroparticles // (16*16),1,1)
         )
         return particles_quantity
@@ -276,7 +276,7 @@ class PyPIC_GPU(object):
                            for _ in mesh_fields]
 
         args = particle_fields + list(mesh_fields)
-        args += self.mesh.shape[:-1] #strides
+        args += list(reversed(self.mesh.shape[1:])) #strides
         args += list(mesh_weights)
         args += list(mesh_indices)
         # interpolate to particles on gpu.
