@@ -1,8 +1,8 @@
 '''
 FFT Poisson solvers for PyPIC
 @author Stefan Hegglin, Adrian Oeftiger, Giovanni Iadarola
-Implementation/Logic: Giovanni Idadarola
-New interface: Stefan Hegglin, Adrian Oeftiger
+Implementation/Logic 2d: Giovanni Idadarola
+New interface/3d/GPU: Stefan Hegglin, Adrian Oeftiger
 '''
 
 from __future__ import division
@@ -25,45 +25,62 @@ except ImportError:
           'not available.')
 
 
-def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args):
+def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
+                     src_height, dst_height):
     ''' Wrapper for the pycuda.driver.Memcpy3d() function (same args)
     Returns a callable object which copies the arrays on invocation of ()
     dim_args: list, [width, height, depth] !not width_in_bytes
     '''
     width, height, depth = dim_args
-    width_in_bytes = width * src.strides[2]
+    width_in_bytes = width * itemsize
+    src_ptr = getattr(src, 'gpudata', 0) # set to NULL if no valid ptr
+    dst_ptr = getattr(dst, 'gpudata', 0) # set to NULL if no valid ptr
     cpy = drv.Memcpy3D()
-    cpy.set_src_device(src.ptr)
-    cpy.set_dst_device(dst.ptr)
+    cpy.set_src_device(src_ptr)
+    cpy.set_dst_device(dst_ptr)
     cpy.height = np.int64(height)
     cpy.width_in_bytes = np.int64(width_in_bytes)
     cpy.depth = np.int64(depth)
     cpy.src_pitch = src_pitch
     cpy.dst_pitch = dst_pitch
-    cpy.src_height = np.int64(src.shape[1])
-    cpy.dst_height = np.int64(dst.shape[1])
+    cpy.src_height = np.int64(src_height)
+    cpy.dst_height = np.int64(dst_height)
     return cpy
 
-def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args):
+def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
+                     **kwargs):
     ''' Wrapper for the pycuda.driver.Memcpy2d() function (same args)
     Returns a callable object which copies the arrays on invocation of ()
     dim_args: list, [width, height, depth] !not width_in_bytes
+    kwargs: gets ignored, exists to provide a uniform interface with 3d
     '''
     width, height = dim_args
-    width_in_bytes = width * src.strides[1]
+    width_in_bytes = width * itemsize
+    src_ptr = getattr(src, 'gpudata', 0) # set to NULL if no valid ptr
+    dst_ptr = getattr(dst, 'gpudata', 0) # set to NULL if no valid ptr
     cpy = drv.Memcpy2D()
-    cpy.set_src_device(src.gpudata)
-    cpy.set_dst_device(dst.gpudata)
+    cpy.set_src_device(src_ptr)
+    cpy.set_dst_device(dst_ptr)
     cpy.height = np.int64(height)
     cpy.width_in_bytes = np.int64(width_in_bytes)
     cpy.src_pitch = src_pitch
     cpy.dst_pitch = dst_pitch
-    def _copy():
-        ''' Wrap the call to pass aligned=True which seems to be necessary
+    class _copy():
+        ''' Proxy class for the memcpy2d object:
+        Wrap the call to pass aligned=True which seems to be necessary
         in the 2D version (compared to 3D where it doesn't work with this arg
+        Add the set_src_device and set_dst_device proxy methods to be able
+        to set the src/dst
         '''
-        cpy(aligned=True)
-    return _copy
+        def __init__(self, memcpy2d):
+            self.cpy = memcpy2d
+        def set_src_device(self, src_ptr):
+            self.cpy.set_src_device(src_ptr)
+        def set_dst_device(self, dst_ptr):
+            self.cpy.set_dst_device(dst_ptr)
+        def __call__(self):
+            self.cpy(aligned=True)
+    return _copy(cpy)
 
 class GPUFFTPoissonSolver(PoissonSolver):
     '''
@@ -84,14 +101,11 @@ class GPUFFTPoissonSolver(PoissonSolver):
         mesh_shape = self.mesh.shape # nx, ny, (nz)
         mesh_shape2 = [2*n for n in mesh_shape] # 2*nx, 2*ny, (2*nz)
         mesh_distances = self.mesh.distances
-        #preallocate for fast d2d copies
-        self._rho = gpuarray.empty(list(reversed(mesh_shape)),
-                    dtype=np.complex128)
         self.fgreentr = gpuarray.empty(list(reversed(mesh_shape2)),
                         dtype=np.complex128)
         self.tmpspace = gpuarray.zeros_like(self.fgreentr)
         sizeof_complex = np.dtype(np.complex128).itemsize
- 
+
         # dimensionality function dispatch
         dim = self.mesh.dimension
         self._fgreen = getattr(self, '_fgreen' + str(dim) + 'd')
@@ -100,15 +114,21 @@ class GPUFFTPoissonSolver(PoissonSolver):
         memcpy_nd = copy_fn[str(dim) + 'd']
         dim_args = self.mesh.shape
         self._cpyrho2tmp = memcpy_nd(
-            src=self._rho, dst=self.tmpspace,
+            src=None, dst=self.tmpspace,
             src_pitch=self.mesh.nx*sizeof_complex,
             dst_pitch=2*self.mesh.nx*sizeof_complex,
-            dim_args=dim_args)
+            dim_args=dim_args,
+            itemsize=np.dtype(np.complex128).itemsize,
+            src_height=self.mesh.ny,
+            dst_height=2*self.mesh.ny)
         self._cpytmp2rho = memcpy_nd(
-            src=self.tmpspace, dst=self._rho,
+            src=self.tmpspace, dst=None,
             src_pitch=2*self.mesh.nx*sizeof_complex,
             dst_pitch=self.mesh.nx*sizeof_complex,
-            dim_args=dim_args)
+            dim_args=dim_args,
+            itemsize=np.dtype(np.complex128).itemsize,
+            src_height=2*self.mesh.ny,
+            dst_height=self.mesh.ny)
 
         mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1)
                                             * mesh_distances[i]
@@ -130,24 +150,21 @@ class GPUFFTPoissonSolver(PoissonSolver):
         Returns:
             Phi (same dimensions as rho)
         '''
-        drv.memcpy_dtod(self._rho.gpudata, rho.astype(np.complex128).gpudata,
-                        self._rho.nbytes)
+        rho = rho.astype(np.complex128)
+        self._cpyrho2tmp.set_src_device(rho.gpudata)
+        self._cpytmp2rho.set_dst_device(rho.gpudata)
         # set to 0 since it might be filled with the old potential
         self.tmpspace.fill(0)
-        mat = self._rho
-        target = self.tmpspace
         self._cpyrho2tmp()
         cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
         cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
                     plan=self.plan_backward)
         # store the result in the rho gpuarray to save space
         self._cpytmp2rho()
-        self._buf = self._rho.get()
-        phi = self._rho.real/(2**self.mesh.dimension *self.mesh.n_nodes) # scale (cuFFT is unscaled)
+        # scale (cuFFT is unscaled)
+        phi = rho.real/(2**self.mesh.dimension * self.mesh.n_nodes)
         phi *= self.mesh.volume_elem/(2**(self.mesh.dimension-1)*np.pi*epsilon_0)
         return phi
-
-
 
     def _mirror2d(self, green):
         ''' Mirror the greens function in the big domain
@@ -204,8 +221,6 @@ class GPUFFTPoissonSolver(PoissonSolver):
                 ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
         return fgreen
 
-
-
     def _fgreen3d(self, x, y, z):
         ''' Return the periodic integrated greens funcion on the 'original'
         domain
@@ -238,34 +253,6 @@ class GPUFFTPoissonSolver(PoissonSolver):
                 ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
         return fgreen
 
-
-#class GPUFFTPoissonSolverNonIGF3D(GPUFFTPoissonSolver):
-#    """
-#    FFT openboundary solver on the GPU NOT using the integrated Greens function
-#    Do not use this solver for high aspect ratios of the mesh/beam!
-#    The only difference to the super class is the _green() function, which
-#    automatically gets called when the __init__ of the base class is called.
-#    """
-#    def __init__(self, mesh):
-#        '''
-#        mesh:          3d  mesh on which the operator operates
-#        '''
-#        super(GPUFFTPoissonSolverNonIGF3D, self).__init__(mesh)
-#
-#
-#    def _green(self, x, y, z):
-#        ''' Return the greens function (-1/r) evaluated on x, y, z, returns
-#        a 8x bigger domain with the greens function in the 'original' part
-#        '''
-#        abs_r = np.sqrt(x * x + y * y + z * z)
-#        green = 1./abs_r
-#        fgreen = np.zeros((2 * self.mesh.nz,
-#                           2 * self.mesh.ny,
-#                           2 * self.mesh.nx), dtype=np.complex128)
-#        fgreen[:self.mesh.nz, :self.mesh.ny, :self.mesh.nx] = green[1:, 1:, 1:]
-#        return fgreen
-
-################################ Old implementations / Wrappers for them ######
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     '''
