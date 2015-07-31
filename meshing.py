@@ -3,18 +3,6 @@ import numpy as np
 
 from abc import ABCMeta, abstractmethod
 
-
-def clip_single_element(high, low, val):
-    ''' returns low if val < low, high if val > high, else returns val'''
-    return low if val <= low else high if val >= high else val
-
-def clip(high, low, val):
-    ''' vectorized version of clip'''
-    fn = np.vectorize(clip_single_element)
-    #return fn(high, low, val)
-    return val
-
-
 class Mesh(object):
     '''Meshes are used for discretising a beam by distributing
     particles onto the mesh nodes. Each mesh node has a unique
@@ -26,16 +14,16 @@ class Mesh(object):
     __metaclass__ = ABCMeta
 
     '''Shape of the mesh.'''
-    shape = []
+    shape = ()
     '''Origin of the mesh, position in as many coordinates as
     there are dimensions.'''
-    origin = []
+    origin = ()
     '''Volume element(s) of the mesh.'''
     volume_elem = 0
     '''Distances between nodes in the mesh, list with entries for each
     dimension (each entry may be a list by itself).
     '''
-    distances = []
+    distances = ()
     '''Total number of nodes in this mesh.'''
     n_nodes = 0
     '''Number of boundary nodes in this mesh.'''
@@ -44,6 +32,10 @@ class Mesh(object):
     (e.g. for CPU numpy or for GPU cumath).
     '''
     mathlib = np
+
+    @property
+    def shape_r(self):
+        return tuple(reversed(self.shape))
 
     @property
     def dimension(self):
@@ -196,10 +188,6 @@ class RectMesh3D(Mesh):
         i = self.mathlib.floor((y - self.y0)/self.dy).astype(np.int32)
         k = self.mathlib.floor((z - self.z0)/self.dz).astype(np.int32)
 
-         # clip to [0, mesh.nx]
-        # i = clip(self.ny-2, 0, i) # -2: -1 (# cells = # nodes -1) -1 (zero based)
-        # j = clip(self.nx-2, 0, j)
-        # k = clip(self.nz-2, 0, k)
         return (i, j, k)
 
     def get_node_ids(self, x, y, z, indices=None):
@@ -319,9 +307,6 @@ class RectMesh2D(Mesh):
         j = self.mathlib.floor((x - self.x0)/self.dx).astype(np.int32)
         i = self.mathlib.floor((y - self.y0)/self.dy).astype(np.int32)
 
-        # clip them to the range [0, mesh.nx]
-        j = clip(self.nx-2, 0, j)  # -2: -1 (# cells = # nodes -1) -1 (zero based)
-        i = clip(self.ny-2, 0, i)
         return (i, j)
 
     def get_node_ids(self, x, y, indices=None):
@@ -419,8 +404,6 @@ class UniformMesh1D(Mesh):
         '''
         i = self.mathlib.floor((x - self.x0)/self.dx).astype(np.int32)
 
-        # clip them to the range [0, mesh.nx]
-        i = clip(self.nx-2, 0, i)  # -2: -1 (# cells = # nodes -1) -1 (zero based)
         return (i,)
 
     def get_node_ids(self, x, indices=None):
