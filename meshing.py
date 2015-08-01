@@ -65,6 +65,13 @@ class Mesh(object):
         '''
         pass
 
+    # @abstractmethod
+    # def node_location(self, node_id):
+    #     '''Return spatial location of the given node_id in terms of
+    #     distances and the origin.
+    #     '''
+    #     pass
+
     @abstractmethod
     def get_indices(self, *particle_coordinates):
         '''Return indices of particles on mesh.'''
