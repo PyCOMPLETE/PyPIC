@@ -8,8 +8,8 @@ class Mesh(object):
     particles onto the mesh nodes. Each mesh node has a unique
     node ID, they are assigned from 0 upwards in steps of 1.
     Quantities such as charge distributions, potentials and
-    electric fields etc. may be represented on a Mesh instance's nodes.
-    Dimension sizes are given by nx, (ny, nz,) ...
+    electric fields etc. may be defined on a Mesh instance's nodes.
+    Dimension sizes are given by the shape attribute.
     '''
     __metaclass__ = ABCMeta
 
@@ -51,6 +51,13 @@ class Mesh(object):
         '''
         return xrange(self.n_nodes)
 
+    # def node_location(self, node_id):
+    #     '''Return spatial location of the given node_id in terms of
+    #     distances and the origin.
+    #     '''
+    #     indices = np.array(self.decompose_id(node_id))
+    #     return np.array(self.origin) + indices * np.array(self.distances)
+
     @abstractmethod
     def decompose_id(self, node_id):
         '''Return decomposition of node_id into indices for
@@ -64,13 +71,6 @@ class Mesh(object):
         lies on the outer boundary of the mesh.
         '''
         pass
-
-    # @abstractmethod
-    # def node_location(self, node_id):
-    #     '''Return spatial location of the given node_id in terms of
-    #     distances and the origin.
-    #     '''
-    #     pass
 
     @abstractmethod
     def get_indices(self, *particle_coordinates):
