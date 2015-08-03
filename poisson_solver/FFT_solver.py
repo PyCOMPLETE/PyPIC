@@ -262,7 +262,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
         na = lambda x:np.array([x])
         params = compute_new_mesh_properties(
-                     x_aper, y_aper, Dh, ext_boundary=False) #change to true for bw-compatibility
+                     x_aper, y_aper, Dh, ext_boundary=True) #change to true for bw-compatibility
 
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         dx = self.xg[1] - self.xg[0]
@@ -335,6 +335,8 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
 
     def poisson_solve(self, rho):
         tmprho = 0.*self.fgreen
+        print self.Nyg, self.Nxg
+        print rho.shape
         rho = rho.reshape(self.Nyg, self.Nxg)
         tmprho[:self.ny, :self.nx] = rho
 
@@ -342,7 +344,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
 
         tmpphi = self.ifft2(fftphi)
         phi = 1./(4. * np.pi * epsilon_0)*np.real(tmpphi[:self.ny, :self.nx]).T
-        phi = phi.reshape(self.Nxg, self.Nyg).T.flatten()
+        phi = phi.reshape(self.Nxg, self.Nyg).T
         return phi*2 #magic number... TODO find out why this is needed!!
 
 
@@ -435,5 +437,5 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
         phi_bar = rho_bar/self.green
         phi = np.zeros((self.Nxg, self.Nyg))
         phi[self.i_min:self.i_max,self.j_min:self.j_max] = self.dst2(phi_bar).copy()
-        phi = phi.reshape(self.Nxg, self.Nyg).T.flatten()
+        phi = phi.reshape(self.Nxg, self.Nyg).T
         return phi

@@ -472,7 +472,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         b_sel = self.Msel_T*b
         phi_sel = self.luobj.solve(b_sel)
         phi = self.Msel*phi_sel
-        return phi.reshape(self.Nxg, self.Nyg).T.flatten()
+        return phi.reshape(self.Nxg, self.Nyg).T
 
 
 class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_SquareGrid):

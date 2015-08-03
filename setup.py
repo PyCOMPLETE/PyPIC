@@ -44,6 +44,7 @@ setup(
     ext_modules = [
         Extension('rhocompute', ['p2m/compute_rho.f']),
         Extension('int_field_for', ['m2p/interp_field_for.f']),
+        Extension('int_field_for_border', ['m2p/interp_field_for_with_border.f']),
         Extension('vectsum', ['vectsum.f']),
         ]
     )
