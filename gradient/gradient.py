@@ -75,7 +75,7 @@ def numpy_gradient(mesh):
     ''' Return a gradient function'''
     def _gradient(scalar_values):
         '''Return the gradient of the scalar_values on the mesh'''
-        D = np.gradient(-scalar_values.reshape(list(reversed(mesh.shape))),
+        D = np.gradient(-scalar_values.reshape(mesh.shape),
                         *(list(reversed(mesh.distances))))
         return list(reversed(D))
     return _gradient
