@@ -2,7 +2,7 @@ import numpy as np
 from scipy.constants import e
 import os
 
-from operator import itemgetter
+from operator import attrgetter
 
 where = os.path.dirname(os.path.abspath(__file__)) + '/'
 
@@ -80,7 +80,7 @@ class PyPIC_GPU(object):
                                      str(mesh.dimension) + 'd'))
 
         # prepare calls to kernels!!!
-        self._sorted_particles_to_guard_mesh_kernel.prepare('PPPddddddiiiPP'
+        self._sorted_particles_to_guard_mesh_kernel.prepare('PPPddddddiiiPP' +
                                                             'P'*8)
         self._join_guard_cells_kernel.prepare('P'*8 + 'iiiiP')
 
@@ -142,35 +142,36 @@ class PyPIC_GPU(object):
         charge = kwargs.get("charge", e)
 
         guard_charge_pointers = [
-            gpuarray.empty(mesh.n_nodes, dtype=np.float64).gpudata
-            for _ in xrange(2**mesh.dimension)
+            gpuarray.empty(self.mesh.n_nodes, dtype=np.float64).gpudata
+            for _ in xrange(2**self.mesh.dimension)
         ]
         block = (256, 1, 1)
-        grid = (mesh.n_nodes // block[0], 1, 1)
+        grid = (self.mesh.n_nodes // block[0], 1, 1)
         self._sorted_particles_to_guard_mesh_kernel.prepared_call(*(
             [grid, block,] +
             # particles
-            map(itemgetter('gpudata'), mp_coords) +
+            map(attrgetter('gpudata'), mp_coords) +
             # mesh
-            mesh.origin +
-            mesh.distances +
-            list(self.mesh.shape_r[:-1]) + [mesh.n_nodes] +
+            list(self.mesh.origin) +
+            list(self.mesh.distances) +
+            list(self.mesh.shape_r[:-1]) + [self.mesh.n_nodes] +
             [lower_bounds.gpudata, upper_bounds.gpudata] +
             # guard cells
             guard_charge_pointers
         ))
-        mesh_charges = gpuarray.zeros(mesh.n_nodes, dtype=np.float64)
+        mesh_charges = gpuarray.zeros(self.mesh.shape, dtype=np.float64)
         self._context.synchronize()
         block = (256, 1, 1)
-        grid = (mesh.n_nodes // block[0], 1, 1)
+        grid = (self.mesh.n_nodes // block[0], 1, 1)
         self._join_guard_cells_kernel.prepared_call(*(
             [grid, block,] +
             guard_charge_pointers +
-            [mesh.n_nodes] + list(self.mesh.shape_r) +
+            [self.mesh.n_nodes] + list(self.mesh.shape_r) +
             [mesh_charges.gpudata]
         ))
-        context.synchronize()
+        self._context.synchronize()
         mesh_charges *= e
+        return mesh_charges
 
         # # example on how to use the sorted one with PyHEADTAIL:
         # idx = gpuarray.zeros(n_particles, dtype=np.int32)
@@ -293,9 +294,18 @@ class PyPIC_GPU(object):
         Further keyword arguments are
         mesh_indices=None, mesh_distances=None, mesh_weights=None .
 
+        The optional keyword arguments lower_bounds=False and
+        upper_bounds=False trigger the use of sorted_particles_to_mesh
+        which assumes the particles to be sorted by the node ids of the
+        mesh. (see further info there.)
+        This results in particle deposition to be 3.5x quicker and
+        mesh to particle interpolation to be 0.25x quicker.
+        (Timing for 1e6 particles and a 64x64x32 mesh includes sorting.)
+
         Return as many interpolated fields per particle as
         dimensions in mp_coords are given.
         '''
+        charge = kwargs.get("charge", e)
         mesh_indices = kwargs.get("mesh_indices",
                                   self.mesh.get_indices(*mp_coords))
         mesh_weights = kwargs.get(
@@ -304,11 +314,21 @@ class PyPIC_GPU(object):
                 distances=kwargs.get("mesh_distances", None)
             )
         )
-        charge = kwargs.get("charge", e)
 
-        mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
-                                              mesh_indices=mesh_indices,
-                                              mesh_weights=mesh_weights)
+        lower_bounds = kwargs.get('lower_bounds', False)
+        upper_bounds = kwargs.get('upper_bounds', False)
+
+        if lower_bounds and upper_bounds:
+            mesh_charges = self.sorted_particles_to_mesh(
+                *mp_coords, charge=charge,
+                lower_bounds=lower_bounds, upper_bounds=upper_bounds
+            )
+        else: # particle arrays are not sorted by mesh node ids
+            mesh_charges = self.particles_to_mesh(
+                *mp_coords, charge=charge,
+                mesh_indices=mesh_indices,
+                mesh_weights=mesh_weights
+            )
         rho = mesh_charges / self.mesh.volume_elem
         phi = self.poisson_solve(rho)
         mesh_e_fields = self.get_electric_fields(phi)
