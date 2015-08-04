@@ -65,13 +65,13 @@ eps0=epsilon_0
 
 class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self, x_aper, y_aper, Dh, fftlib = 'pyfftw'):
+    def __init__(self, x_aper, y_aper, Dh, xg=None, yg=None, fftlib = 'pyfftw'):
         
 		print 'Start PIC init.:'
 		print 'FFT, Open Boundary, Square Grid'
 
 
-		super(FFT_OpenBoundary_SquareGrid, self).__init__(x_aper, y_aper, Dh)
+		super(FFT_OpenBoundary_SquareGrid, self).__init__(x_aper, y_aper, Dh, xg, yg)
 
 		
 		dx = self.Dh

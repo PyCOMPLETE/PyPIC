@@ -80,9 +80,21 @@ class PyPIC_GPU(object):
                                      str(mesh.dimension) + 'd'))
 
         # prepare calls to kernels!!!
-        self._sorted_particles_to_guard_mesh_kernel.prepare('PPPddddddiiiPP' +
-                                                            'P'*8)
-        self._join_guard_cells_kernel.prepare('P'*8 + 'iiiiP')
+        self._field_to_particles_kernel.prepare(
+                'PP' + 'i'*(mesh.dimension-1) + 'P'*2**mesh.dimension +
+                'P'*mesh.dimension)
+        self._mesh_to_particles_kernel.prepare(
+                'P'*mesh.dimension*2 + 'i'*(mesh.dimension-1) +
+                'P'*2**mesh.dimension + 'P'*mesh.dimension)
+        #self._sorted_particles_to_guard_mesh_kernel.prepare('PPPddddddiiiPP' +
+        #                                                    'P'*8)
+        self._sorted_particles_to_guard_mesh_kernel.prepare(
+                'P'*mesh.dimension + 'd'*2*mesh.dimension +
+                'i'*(mesh.dimension-1) + 'i' + 'PP' + 'P'*2**mesh.dimension)
+        #self._join_guard_cells_kernel.prepare('P'*8 + 'iiiiP')
+        self._join_guard_cells_kernel.prepare('P'*2**mesh.dimension
+                + 'i' + 'i'*mesh.dimension + 'P')
+
 
 
     def particles_to_mesh(self, *mp_coords, **kwargs):

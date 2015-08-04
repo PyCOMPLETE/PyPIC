@@ -90,7 +90,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
     during the initialization of the class and depend on the dimension of the
     mesh.
     '''
-    def __init__(self, mesh):
+    def __init__(self, mesh, context=None):
         '''
         Args:
             mesh The mesh on which the solver will operate. The dimensionality
@@ -98,6 +98,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
         '''
         # create the mesh grid and compute the greens function on it
         self.mesh = mesh
+        self._context = context
         mesh_shape = self.mesh.shape # nz, ny, (nx)
         mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
         mesh_distances = self.mesh.distances
@@ -262,7 +263,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
         na = lambda x:np.array([x])
         params = compute_new_mesh_properties(
-                     x_aper, y_aper, Dh, ext_boundary=True) #change to true for bw-compatibility
+                     x_aper, y_aper, Dh, ext_boundary=False) #change to true for bw-compatibility
 
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         dx = self.xg[1] - self.xg[0]
