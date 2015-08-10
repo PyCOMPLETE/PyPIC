@@ -264,8 +264,8 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
         na = lambda x:np.array([x])
         params = compute_new_mesh_properties(
                      x_aper, y_aper, Dh, ext_boundary=False) #change to true for bw-compatibility
-
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
+        print self.Nxg, self.Nyg, self.Dh
         dx = self.xg[1] - self.xg[0]
         dy = self.yg[1] - self.yg[0]
 
@@ -336,8 +336,8 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
 
     def poisson_solve(self, rho):
         tmprho = 0.*self.fgreen
-        print self.Nyg, self.Nxg
-        print rho.shape
+        print 'Nyg, Nxg open fft' ,self.Nyg, self.Nxg
+        print 'rho.shape', rho.shape
         rho = rho.reshape(self.Nyg, self.Nxg)
         tmprho[:self.ny, :self.nx] = rho
 
@@ -356,7 +356,7 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
         na = lambda x:np.array([x])
         params = compute_new_mesh_properties(
-                     x_aper, y_aper, Dh, ext_boundary=True) #always True!
+                     x_aper, y_aper, Dh, ext_boundary=False) #always True!
 
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         self.i_min = np.min(np.where(self.xg>=-x_aper)[0])

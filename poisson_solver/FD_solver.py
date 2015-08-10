@@ -396,6 +396,9 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         yn=yn.T
         yn=yn.flatten()
         self.yn = yn
+
+        print 'Nxg', self.Nxg
+        print 'Nyg', self.Nyg
         #% xn and yn are stored such that the external index is on x
 
         self.flag_outside_n=chamb.is_outside(xn,yn)
@@ -467,6 +470,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
 
     def poisson_solve(self, rho):
         #rho = mesh_charges.reshape(self.Nyg, self.Nxg).T / (self.Dh*self.Dh)
+        rho = rho.reshape(self.Nyg, self.Nxg).T
         b=-rho.flatten()/epsilon_0;
         b[~(self.flag_inside_n)]=0.; #boundary condition
         b_sel = self.Msel_T*b
@@ -589,8 +593,8 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
             phi = phi.reshape(self.Nyg, self.Nxg).T.flatten()
             efx = self.Dx*phi
             efy = self.Dy*phi
-            efx = efx.reshape(self.Nxg, self.Nyg).T.flatten()
-            efy = efy.reshape(self.Nxg, self.Nyg).T.flatten()
+            efx = efx.reshape(self.Nxg, self.Nyg).T#.flatten()
+            efy = efy.reshape(self.Nxg, self.Nyg).T#.flatten()
             return [efx, efy]
         return _gradient
 
