@@ -550,10 +550,8 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
 
     def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
         [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
-        #ex = ex.reshape((self.mesh.nx, self.mesh.ny))
-        #ey = ey.reshape((self.mesh.nx, self.mesh.ny))
-        ex = ex.reshape((self.mesh.ny, self.mesh.nx))
-        ey = ey.reshape((self.mesh.ny, self.mesh.nx))
+        ex = ex.reshape((self.mesh.ny, self.mesh.nx)).T
+        ey = ey.reshape((self.mesh.ny, self.mesh.nx)).T
         Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0, self.mesh.dx,
                                self.mesh.dx, ex, ey)
         return [Ex, Ey]
