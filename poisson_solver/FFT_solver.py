@@ -260,10 +260,10 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     '''
     Wrapper for the old PyPIC FFT open boundary solver
     '''
-    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
+    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw', ext_boundary=False):
         na = lambda x:np.array([x])
         params = compute_new_mesh_properties(
-                     x_aper, y_aper, Dh, ext_boundary=False) #change to true for bw-compatibility
+                     x_aper, y_aper, Dh, ext_boundary=ext_boundary) #change to true for bw-compatibility
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         print self.Nxg, self.Nyg, self.Dh
         dx = self.xg[1] - self.xg[0]
@@ -353,10 +353,10 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
     '''
     Wrapper for the old PyPIC FFT perdiodic boundary solver
     '''
-    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
+    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw', ext_boundary=False):
         na = lambda x:np.array([x])
         params = compute_new_mesh_properties(
-                     x_aper, y_aper, Dh, ext_boundary=False) #always True!
+                     x_aper, y_aper, Dh, ext_boundary=ext_boundary) #always True!
 
         self.Dh, self.xg, self.Nxg, self.bias_x, self.yg, self.Nyg, self.bias_y = params
         self.i_min = np.min(np.where(self.xg>=-x_aper)[0])

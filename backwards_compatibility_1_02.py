@@ -8,19 +8,20 @@ Main idea: 1) Wrap the new classes with the old interface
 @author Stefan Hegglin
 @date 12.07.2015
 '''
-import imp
+
+
+# provide a way to use modules from the parent directory
 import sys
+sys.path.append('../')
+import imp
 from scipy.constants import e, epsilon_0
 import numpy as np
-
 from pypic import PyPIC_Fortran_M2P_P2M
 from meshing import RectMesh2D
 from poisson_solver import FD_solver as FD
 from poisson_solver import FFT_solver as FFT
 
 
-# provide a way to use modules from the parent directory
-sys.path.append('../')
 
 
 
@@ -158,7 +159,8 @@ class _FFT_OpenBoundary_SquareGrid(_Proxy_v102):
         poissonsolver = FFT.FFT_OpenBoundary_SquareGrid(x_aper=x_aper,
                                                         y_aper=y_aper,
                                                         Dh=Dh,
-                                                        fftlib=fftlib)
+                                                        fftlib=fftlib,
+                                                        ext_boundary=True)
         super(_FFT_OpenBoundary_SquareGrid, self).__init__(poissonsolver)
         self.fgreen = poissonsolver.fgreen
         self.fgreentr = poissonsolver.fgreentr
@@ -175,7 +177,8 @@ class _FFT_PEC_Boundary_SquareGrid(_Proxy_v102):
         poissonsolver = FFT.FFT_PEC_Boundary_SquareGrid(x_aper=x_aper,
                                                         y_aper=y_aper,
                                                         Dh=Dh,
-                                                        fftlib=fftlib)
+                                                        fftlib=fftlib,
+                                                        ext_boundary=True)
         super(_FFT_PEC_Boundary_SquareGrid, self).__init__(poissonsolver)
 
 # this is where the magic happens

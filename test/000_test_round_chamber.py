@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../')
+sys.path.append('../../')
 from backwards_compatibility_1_02 import *
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
