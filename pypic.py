@@ -21,6 +21,7 @@ from p2m.p2m import particles_to_mesh_CPU_2d, particles_to_mesh_CPU_3d
 # Fortran versions of P2M, M2p
 import rhocompute as rhocom
 import int_field_for as iff
+import int_field_for_border as iffb
 
 
 class PyPIC_GPU(object):
@@ -552,8 +553,14 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
         [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
         ex = ex.reshape((self.mesh.ny, self.mesh.nx)).T
         ey = ey.reshape((self.mesh.ny, self.mesh.nx)).T
-        Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0, self.mesh.dx,
-                               self.mesh.dx, ex, ey)
+        if hasattr(self.poissonsolver, 'flag_inside_n_mat'):
+            flag_inside_n_mat = self.poissonsolver.flag_inside_n_mat
+            Ex, Ey = iffb.int_field_border(x, y, self.mesh.x0, self.mesh.y0,
+                                   self.mesh.dx, self.mesh.dx, ex, ey,
+                                   flag_inside_n_mat)
+        else:
+            Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0,
+                                   self.mesh.dx, self.mesh.dx, ex, ey)
         return [Ex, Ey]
 
     def particles_to_mesh(self, *mp_coords, **kwargs):

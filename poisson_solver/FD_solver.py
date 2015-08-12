@@ -404,11 +404,11 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         self.flag_outside_n=chamb.is_outside(xn,yn)
         self.flag_inside_n=~(self.flag_outside_n)
 
-        self.flag_outside_n_mat=np.reshape(self.flag_outside_n,(self.Nyg,self.Nxg),'F');
-        self.flag_outside_n_mat=self.flag_outside_n_mat.T
-        [gx,gy]=np.gradient(np.double(self.flag_outside_n_mat));
+        flag_outside_n_mat=np.reshape(self.flag_outside_n,(self.Nyg,self.Nxg),'F')
+        flag_outside_n_mat=flag_outside_n_mat.T
+        [gx,gy]=np.gradient(np.double(flag_outside_n_mat))
         gradmod=abs(gx)+abs(gy);
-        self.flag_border_mat=np.logical_and((gradmod>0), self.flag_outside_n_mat);
+        self.flag_border_mat=np.logical_and((gradmod>0), flag_outside_n_mat);
         self.flag_border_n = self.flag_border_mat.flatten()
 
         A = self.assemble_laplacian()
@@ -492,6 +492,10 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         # which sets the matrices self.Dx, self.Dy
         super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(
                 chamb, Dh, sparse_solver, ext_boundary)
+
+        flag_outside_n_mat=np.reshape(self.flag_outside_n,
+                (self.Nyg,self.Nxg),'F').T
+        self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
 
 
     def assemble_laplacian(self):
@@ -590,10 +594,13 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         for this Shortley Weller approximation
         '''
         def _gradient(phi):
-            phi = phi.reshape(self.Nyg, self.Nxg).T.flatten()
+            #phi = phi.reshape(self.Nyg, self.Nxg).T.flatten()
+            phi = phi.T.flatten()
             efx = self.Dx*phi
             efy = self.Dy*phi
+
             efx = efx.reshape(self.Nxg, self.Nyg).T#.flatten()
+            #efx[:,-6] = -100
             efy = efy.reshape(self.Nxg, self.Nyg).T#.flatten()
             return [efx, efy]
         return _gradient
@@ -604,6 +611,11 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
     def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
         super(FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation, self).__init__(
                 chamb, Dh, sparse_solver, ext_boundary=True)
+        flag_outside_n_mat=np.reshape(self.flag_outside_n,
+                (self.Nyg,self.Nxg),'F').T
+        self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
+
+
 
     def handle_border(self, u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy):
         #print u

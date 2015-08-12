@@ -432,7 +432,8 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
         return x_bar
 
     def poisson_solve(self, rho):
-        rho = rho.reshape(self.Nyg, self.Nxg).T
+        #rho = rho.reshape(self.Nyg, self.Nxg).T
+        rho = rho.T
         rhocut = rho[self.i_min:self.i_max,self.j_min:self.j_max]
         rho_bar =  self.dst2(rhocut)
         phi_bar = rho_bar/self.green
