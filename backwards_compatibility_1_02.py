@@ -65,7 +65,7 @@ class _Proxy_v102(object):
             mesh_charges = self.pypic.particles_to_mesh(x_mp, y_mp,
                     charge=charge)
             self.rho = mesh_charges.T / self.pypic.mesh.volume_elem
-            phi = self.pypic.poisson_solve(mesh_charges)
+            phi = self.pypic.poisson_solve(self.rho.T)
             self.phi = phi.reshape((self.Nyg, self.Nxg)).T
             mesh_e_fields = self.pypic.get_electric_fields(phi)
             self.efx = mesh_e_fields[0].reshape(self.Nyg, self.Nxg).T
@@ -91,8 +91,7 @@ class _Proxy_v102(object):
             rho = self.rho.T
         else:
             rho = rho.T
-        mesh_charges = rho * self.pypic.mesh.volume_elem
-        phi = self.pypic.poisson_solve(mesh_charges)
+        phi = self.pypic.poisson_solve(rho)
         self.phi = phi.reshape((self.Nyg, self.Nxg)).T
         mesh_e_fields = self.pypic.get_electric_fields(phi)
         self.efx = mesh_e_fields[0].reshape(self.Nyg, self.Nxg).T
@@ -100,7 +99,8 @@ class _Proxy_v102(object):
 
     def gather(self, x_mp, y_mp):
         if len(x_mp) > 0:
-            mesh_e_fields = [self.efx.flatten(), self.efy.flatten()]
+            #mesh_e_fields = [self.efx.flatten(), self.efy.flatten()]
+            mesh_e_fields = [self.efx.T, self.efy.T]
             mesh_e_fields_and_mp_coords = zip(list(mesh_e_fields),[x_mp, y_mp])
             E = self.pypic.field_to_particles(*mesh_e_fields_and_mp_coords)
             Ex_sc_n = E[0]
