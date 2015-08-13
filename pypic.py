@@ -539,6 +539,9 @@ class PyPIC(object):
 class PyPIC_Fortran_M2P_P2M(PyPIC):
     ''' Uses the fast M2P/P2M Fortran routines
     2D only!
+    Provide backwards compatibility and access to the fast Fortran M2P/P2M
+    If the poissonsolver has an 'flag_border_mat' attribute, the
+    int_field_for_border function is used instead of the int_field function.
     '''
 
     def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
@@ -559,6 +562,10 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
                                    self.mesh.dx, self.mesh.dx, ex, ey,
                                    flag_inside_n_mat)
         else:
+            if hasattr(self.poissonsolver, 'flag_border_mat'):
+                #Only for Staircase_SquareGrid solver
+                ex[self.poissonsolver.flag_border_mat] *= 2
+                ey[self.poissonsolver.flag_border_mat] *= 2
             Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0,
                                    self.mesh.dx, self.mesh.dx, ex, ey)
         return [Ex, Ey]
