@@ -1,12 +1,7 @@
 #!/usr/bin/python
-
 import numpy as np
-
 import re, os, sys, subprocess
 import numpy as np
-
-from setuptools import setup, Extension
-
 from numpy.distutils.core import setup, Extension
 
 args = sys.argv[1:]
