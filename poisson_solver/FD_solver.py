@@ -397,8 +397,6 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         yn=yn.flatten()
         self.yn = yn
 
-        print 'Nxg', self.Nxg
-        print 'Nyg', self.Nyg
         #% xn and yn are stored such that the external index is on x
 
         self.flag_outside_n=chamb.is_outside(xn,yn)

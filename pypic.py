@@ -432,7 +432,6 @@ class PyPIC(object):
         the potential phi on the mesh via
         E = - grad phi .
         '''
-        print self._gradient(phi)[0].shape
         return self._gradient(phi)
 
     def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):

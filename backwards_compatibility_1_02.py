@@ -24,7 +24,6 @@ from poisson_solver import FFT_solver as FFT
 
 
 
-
 class _Proxy_v102(object):
     '''
     Base Class providing the interface of PyPIC 1.0.2 solvers while
@@ -52,36 +51,34 @@ class _Proxy_v102(object):
         self.bias_y = poissonsolver.bias_y
         self.Nxg = poissonsolver.Nxg
         self.Nyg = poissonsolver.Nyg
+
         self.rho = np.zeros((self.Nxg, self.Nyg))
         self.phi = np.zeros((self.Nxg, self.Nyg))
         self.efx = np.zeros((self.Nxg, self.Nyg))
         self.efy = np.zeros((self.Nxg, self.Nyg))
+        self.xn = getattr(poissonsolver, 'xn', None)
+        self.yn = getattr(poissonsolver, 'yn', None)
 
     def scatter_and_solve(self, x_mp, y_mp, nel_mp, charge=-e):
-        # all mp must consist of the same number of particles
-        assert((nel_mp == nel_mp[0]).all())
-        if len(x_mp) > 0:
-            charge *= nel_mp[0] # multiply the charge by the # particles per mp
-            mesh_charges = self.pypic.particles_to_mesh(x_mp, y_mp,
-                    charge=charge)
-            self.rho = mesh_charges.T / self.pypic.mesh.volume_elem
-            phi = self.pypic.poisson_solve(self.rho.T)
-            self.phi = phi.reshape((self.Nyg, self.Nxg)).T
-            mesh_e_fields = self.pypic.get_electric_fields(phi)
-            self.efx = mesh_e_fields[0].reshape(self.Nyg, self.Nxg).T
-            self.efy = mesh_e_fields[1].reshape(self.Nyg, self.Nxg).T
-        else:
-            self.rho *= 0
-            self.phi *= 0
-            self.efx *= 0
-            self.efy *= 0
+        ''' Calls scatter and solve '''
+        self.scatter(x_mp, y_mp, nel_mp, charge)
+        self.solve()
 
     def scatter(self, x_mp, y_mp, nel_mp, charge=-e):
-        assert((nel_mp == nel_mp[0]).all())
+        ''' Difficulties: not all entires in nel_mp are the same, however our
+        solver can only handle the same charge for all mp.
+        Solution: Call p2m seperately for all particles with different nel_mp
+                  and add the charge densities
+        '''
         if len(x_mp) > 0:
-            charge *= nel_mp[0] # multiply the charge by the # particles per mp
-            mesh_charges = self.pypic.particles_to_mesh(x_mp, y_mp,
-                    charge=charge)
+            nel_mp_uniques = np.unique(nel_mp)
+            mesh_charges = self.rho.T*0
+            for n_mp in nel_mp_uniques:
+                idx = np.where(np.isclose(n_mp, nel_mp))[0]
+                charge_ = charge * n_mp
+                mesh_charges += self.pypic.particles_to_mesh(x_mp[idx],
+                                                             y_mp[idx],
+                                                             charge=charge_)
             self.rho = mesh_charges.T / self.pypic.mesh.volume_elem
         else:
             self.rho *= 0
@@ -96,10 +93,10 @@ class _Proxy_v102(object):
         mesh_e_fields = self.pypic.get_electric_fields(phi)
         self.efx = mesh_e_fields[0].reshape(self.Nyg, self.Nxg).T
         self.efy = mesh_e_fields[1].reshape(self.Nyg, self.Nxg).T
+        self.rho = rho.T
 
     def gather(self, x_mp, y_mp):
         if len(x_mp) > 0:
-            #mesh_e_fields = [self.efx.flatten(), self.efy.flatten()]
             mesh_e_fields = [self.efx.T, self.efy.T]
             mesh_e_fields_and_mp_coords = zip(list(mesh_e_fields),[x_mp, y_mp])
             E = self.pypic.field_to_particles(*mesh_e_fields_and_mp_coords)
@@ -109,6 +106,21 @@ class _Proxy_v102(object):
             Ex_sc_n = 0.
             Ey_sc_n = 0.
         return Ex_sc_n, Ey_sc_n
+
+class _PyPIC_Scatter_Gather(_Proxy_v102):
+    ''' Wrapper which can be used in the PyHEADTAIL TransverseEfield_map
+    The initializer has to take xg, yg
+    Internally Dh, x_aper and y_aper get computed and a FFT poissonsolver
+    is instantiated (which takes care of the mesh/.. creation
+    '''
+    def __init__(self, xg, yg):
+        Dh = xg[1]-xg[0]
+        x_aper = max(xg) - 5.*Dh
+        y_aper = max(yg) - 4.*Dh
+        poissonsolver = FFT.FFT_OpenBoundary_SquareGrid(x_aper, y_aper, Dh,
+                                                        fftlib='pyfftw',
+                                                        ext_boundary=True)
+        super(_PyPIC_Scatter_Gather, self).__init__(poissonsolver)
 
 
 class _FiniteDifferences_Staircase_SquareGrid(_Proxy_v102):
@@ -181,23 +193,43 @@ class _FFT_PEC_Boundary_SquareGrid(_Proxy_v102):
                                                         ext_boundary=True)
         super(_FFT_PEC_Boundary_SquareGrid, self).__init__(poissonsolver)
 
-# this is where the magic happens
+''' @author Stefan... '''
+# this is where the magic happens: create new modules
+PyPIC_Scatter_Gather = imp.new_module('PyPIC_Scatter_Gather')
 FFT_OpenBoundary_SquareGrid = imp.new_module('FFT_OpenBoundary_SquareGrid')
 FFT_PEC_Boundary_SquareGrid = imp.new_module('FFT_PEC_Boundary_SquareGrid')
 FiniteDifferences_ShortleyWeller_SquareGrid = imp.new_module('FiniteDifferences_Shortleyweller_SquareGrid')
 FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation = imp.new_module('FiniteDifferences_Shortleyweller_SquareGrid_extrapolation')
 FiniteDifferences_Staircase_SquareGrid = imp.new_module('FiniteDifferences_Staircase_SquareGrid')
+
 # bind the classes to the correct names inside the modules
+PyPIC_Scatter_Gather.PyPIC_Scatter_Gather = _PyPIC_Scatter_Gather
 FFT_OpenBoundary_SquareGrid.FFT_OpenBoundary_SquareGrid = _FFT_OpenBoundary_SquareGrid
 FFT_PEC_Boundary_SquareGrid.FFT_PEC_Boundary_SquareGrid = _FFT_PEC_Boundary_SquareGrid
 FiniteDifferences_ShortleyWeller_SquareGrid.FiniteDifferences_ShortleyWeller_SquareGrid = _FiniteDifferences_ShortleyWeller_SquareGrid
 FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation.FiniteDifferences_ShortleyWeller_SquareGrid = _FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation
 FiniteDifferences_Staircase_SquareGrid.FiniteDifferences_Staircase_SquareGrid = _FiniteDifferences_Staircase_SquareGrid
+
 # add the modules to sys.modules to make statements like
-# from FFT_PEC_Boundary_SquareGrid import FFT_PEC_Boundary_Squaregrid valid
+# 'from FFT_PEC_Boundary_SquareGrid import FFT_PEC_Boundary_Squaregrid' valid
+sys.modules['PyPIC_Scatter_Gather'] = PyPIC_Scatter_Gather
 sys.modules['FFT_OpenBoundary_SquareGrid'] = FFT_OpenBoundary_SquareGrid
 sys.modules['FFT_PEC_Boundary_SquareGrid'] = FFT_PEC_Boundary_SquareGrid
-sys.modules['FiniteDifferences_ShortleyWeller_SquareGrid']=FiniteDifferences_ShortleyWeller_SquareGrid
-sys.modules['FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation']=FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation
+sys.modules['FiniteDifferences_ShortleyWeller_SquareGrid'] = FiniteDifferences_ShortleyWeller_SquareGrid
+sys.modules['FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation'] = FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation
 sys.modules['FiniteDifferences_Staircase_SquareGrid'] = FiniteDifferences_Staircase_SquareGrid
 
+# add to sys.modules to make import PyPIC.[solver] statements possible
+current_module = __import__(__name__)
+setattr(current_module,'FiniteDifferences_Staircase_SquareGrid', FiniteDifferences_Staircase_SquareGrid)
+setattr(current_module,'FiniteDifferences_ShortleyWeller_SquareGrid', FiniteDifferences_ShortleyWeller_SquareGrid)
+setattr(current_module,'FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation', FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation)
+setattr(current_module,'FFT_OpenBoundary_SquareGrid', FFT_OpenBoundary_SquareGrid)
+setattr(current_module,'FFT_PEC_Boundary_SquareGrid', FFT_PEC_Boundary_SquareGrid)
+setattr(current_module,'PyPIC_Scatter_Gather' , PyPIC_Scatter_Gather )
+sys.modules['PyPIC.FiniteDifferences_Staircase_SquareGrid'] = FiniteDifferences_Staircase_SquareGrid
+sys.modules['PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid'] = FiniteDifferences_ShortleyWeller_SquareGrid
+sys.modules['PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation'] = FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation
+sys.modules['PyPIC.FFT_OpenBoundary_SquareGrid'] = FFT_OpenBoundary_SquareGrid
+sys.modules['PyPIC.FFT_PEC_Boundary_SquareGrid'] = FFT_PEC_Boundary_SquareGrid
+sys.modules['PyPIC.PyPIC_Scatter_Gather'] = PyPIC_Scatter_Gather
