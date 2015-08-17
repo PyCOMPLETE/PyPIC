@@ -1,5 +1,5 @@
 '''
-Module providing backwards compatibility with PyPIC 1.0.2
+Module providing backwards compatibility with PyPIC 1.0.3
 How to: Add 'from backwards_compatibility_1_02 import *' to the beginning
         of your old scripts
 Main idea: 1) Wrap the new classes with the old interface
@@ -24,9 +24,9 @@ from poisson_solver import FFT_solver as FFT
 
 
 
-class _Proxy_v102(object):
+class _Proxy_v103(object):
     '''
-    Base Class providing the interface of PyPIC 1.0.2 solvers while
+    Base Class providing the interface of PyPIC 1.0.3 solvers while
     internally using the newer version
     '''
     def __init__(self, poissonsolver):
@@ -107,7 +107,7 @@ class _Proxy_v102(object):
             Ey_sc_n = 0.
         return Ex_sc_n, Ey_sc_n
 
-class _PyPIC_Scatter_Gather(_Proxy_v102):
+class _PyPIC_Scatter_Gather(_Proxy_v103):
     ''' Wrapper which can be used in the PyHEADTAIL TransverseEfield_map
     The initializer has to take xg, yg
     Internally Dh, x_aper and y_aper get computed and a FFT poissonsolver
@@ -123,9 +123,9 @@ class _PyPIC_Scatter_Gather(_Proxy_v102):
         super(_PyPIC_Scatter_Gather, self).__init__(poissonsolver)
 
 
-class _FiniteDifferences_Staircase_SquareGrid(_Proxy_v102):
+class _FiniteDifferences_Staircase_SquareGrid(_Proxy_v103):
     '''
-    Wrapper for the FiniteDifferences_Staircase_SquareGrid class v1.0.2
+    Wrapper for the FiniteDifferences_Staircase_SquareGrid class v1.0.3
     Provides the same functionality and interface
     '''
     def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
@@ -136,9 +136,9 @@ class _FiniteDifferences_Staircase_SquareGrid(_Proxy_v102):
                 self).__init__(poissonsolver)
 
 
-class _FiniteDifferences_ShortleyWeller_SquareGrid(_Proxy_v102):
+class _FiniteDifferences_ShortleyWeller_SquareGrid(_Proxy_v103):
     '''
-    Wrapper for the FiniteDifferences_ShortleyWeller_SquareGrid class v1.0.2
+    Wrapper for the FiniteDifferences_ShortleyWeller_SquareGrid class v1.0.3
     Provides the same functionality and interface
     '''
     def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
@@ -149,10 +149,10 @@ class _FiniteDifferences_ShortleyWeller_SquareGrid(_Proxy_v102):
                 self).__init__(poissonsolver)
 
 
-class _FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(_Proxy_v102):
+class _FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(_Proxy_v103):
     '''
     Wrapper for the FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation
-    class v1.0.2
+    class v1.0.3
     Provides the same functionality and interface
     '''
     def __init__(self, chamb, Dh, sparse_solver='scipy_slu'):
@@ -162,9 +162,9 @@ class _FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(_Proxy_v102):
                 self).__init__(poissonsolver)
 
 
-class _FFT_OpenBoundary_SquareGrid(_Proxy_v102):
+class _FFT_OpenBoundary_SquareGrid(_Proxy_v103):
     '''
-    Wrapper for the FFT_OpenBoundary_SquareGrid class v1.0.2
+    Wrapper for the FFT_OpenBoundary_SquareGrid class v1.0.3
     Provides the same functionality and interface
     '''
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
@@ -180,9 +180,9 @@ class _FFT_OpenBoundary_SquareGrid(_Proxy_v102):
         self.ny = len(self.yg)
         self.fft2 = poissonsolver.fft2
 
-class _FFT_PEC_Boundary_SquareGrid(_Proxy_v102):
+class _FFT_PEC_Boundary_SquareGrid(_Proxy_v103):
     '''
-    Wrapper for the FFT_PEC_Boundary_SquareGrid class v1.0.2
+    Wrapper for the FFT_PEC_Boundary_SquareGrid class v1.0.3
     Provides the same functionality and interface
     '''
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):

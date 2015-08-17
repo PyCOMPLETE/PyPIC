@@ -1,7 +1,7 @@
 import sys, os
 BIN=os.path.expanduser('../')
 sys.path.append(BIN)
-from backwards_compatibility_1_02 import *
+from backwards_compatibility_1_03 import *
 import numpy as np
 from geom_impact_ellip import ellip_cham_geom_object
 
