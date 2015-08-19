@@ -26,20 +26,23 @@ __device__ double atomicAdd(double* address, double val)
 
 extern "C" {
 
-__global__ void particles_to_mesh_2d(double *grid1d, int stride, double *wij, double *wi1j,
+__global__ void particles_to_mesh_2d(int nparticles, double *grid1d, int stride, double *wij, double *wi1j,
                                      double *wij1, double *wi1j1, int *i, int *j)
+                                    
 {
     int pidx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y* blockDim.x + threadIdx.x;
     int ix = i[pidx];
     int jx = j[pidx];
-
-    atomicAdd(&grid1d[jx + ix*stride], wij[pidx]);
-    atomicAdd(&grid1d[jx+1 + ix*stride], wij1[pidx]);
-    atomicAdd(&grid1d[jx + (ix+1)*stride], wi1j[pidx]);
-    atomicAdd(&grid1d[jx+1 + (ix+1)*stride], wi1j1[pidx]);
+    if (pidx < nparticles) {
+        atomicAdd(&grid1d[jx + ix*stride], wij[pidx]);
+        atomicAdd(&grid1d[jx+1 + ix*stride], wij1[pidx]);
+        atomicAdd(&grid1d[jx + (ix+1)*stride], wi1j[pidx]);
+        atomicAdd(&grid1d[jx+1 + (ix+1)*stride], wi1j1[pidx]);
+    }
 }
 
 __global__ void particles_to_mesh_3d(
+        int nparticles,
         double *grid1d, int stridex, int stridey,
         // particle weights:
         double *wijk, double *wi1jk, double *wij1k, double *wi1j1k,
@@ -47,15 +50,11 @@ __global__ void particles_to_mesh_3d(
         // particle 3d cell indices
         int *i, int *j, int* k)
 {
-    // int ii = blockIdx.x*blockDim.x + threadIdx.x;
-    // int jj = blockIdx.y*blockDim.y + threadIdx.y;
-    // int kk = blockIdx.z;
-    // int pidx = ii + jj*stridex + kk*stridex*stridey;
     int pidx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y* blockDim.x + threadIdx.x;
     int ix = i[pidx];
     int jx = j[pidx];
     int kx = k[pidx];
-
+    if (pidx < nparticles) {
     atomicAdd(&grid1d[jx   + ix*stridex     + kx*stridex*stridey],     wijk[pidx]);
     atomicAdd(&grid1d[jx+1 + ix*stridex     + kx*stridex*stridey],     wij1k[pidx]);
     atomicAdd(&grid1d[jx   + (ix+1)*stridex + kx*stridex*stridey],     wi1jk[pidx]);
@@ -64,6 +63,7 @@ __global__ void particles_to_mesh_3d(
     atomicAdd(&grid1d[jx+1 + ix*stridex     + (kx+1)*stridex*stridey], wij1k1[pidx]);
     atomicAdd(&grid1d[jx   + (ix+1)*stridex + (kx+1)*stridex*stridey], wi1jk1[pidx]);
     atomicAdd(&grid1d[jx+1 + (ix+1)*stridex + (kx+1)*stridex*stridey], wi1j1k1[pidx]);
+    }
 }
 
 __global__ void cic_guard_cell_weights_3d(

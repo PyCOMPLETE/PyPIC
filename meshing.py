@@ -119,6 +119,7 @@ class Mesh(object):
         '''
         # use only ints because of pycuda kernel calls which have problems
         # with numpy.int32 .
+        #print 'max_nodes', max_nodes
         nx = getattr(self, 'nx', 1)
         ny = getattr(self, 'ny', 1)
         nz = getattr(self, 'nz', 1)
@@ -126,8 +127,8 @@ class Mesh(object):
         if max_nodes % nx:
             raise ValueError('get_domain_composition: max_nodes has to be '
                              'an integer multiple of nx!')
-            # one may implement an automatic rotation to optimise and
-            # find another dimension that divides max_nodes...
+           # one may implement an automatic rotation to optimise and
+           # find another dimension that divides max_nodes...
         #threads per block (tpb)
         tpb_x = int(min(nx, max_nodes))
         tpb_y = int(min(ny, max(max_nodes // nx, 1)))
@@ -135,11 +136,28 @@ class Mesh(object):
 
         #blocks per grid (bpg)
         bpg_x = int(max(int(np.ceil(float(nx) / max_nodes)), 1))
-        bpg_y = int(ny/tpb_y)
+        bpg_y = int(ny/tpb_y) #+ 1 # allocate 1 more block if not a power of 2
         bpg_z = int(nz)
+
+        #tpb_x = int(32)
+        #if 32*16 > nx*ny*nz:
+        #    tpb_y = int(16)
+        #else:
+        #    tpb_y = int(32)
+        #tpb_z = int(1)
+        #if max_nodes >= 2048:
+        #    tpb_x *= 2
+
+        ##bgp
+
+
 
         grid = (bpg_x, bpg_y, bpg_z)
         block = (tpb_x, tpb_y, tpb_z)
+        #print 'number of grid nodes=',nx*ny*nz
+        #print 'tpb', (tpb_x, tpb_y, tpb_z)
+        #print 'bpg', (bpg_x, bpg_y, bpg_z)
+        #assert (tpb_x*tpb_y <= max_nodes)
         return block, grid
 
 

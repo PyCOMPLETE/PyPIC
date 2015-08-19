@@ -2,7 +2,7 @@ import numpy as np
 from scipy.constants import e
 import os
 
-from operator import attrgetter
+from operator import attrgetter, mul
 
 where = os.path.dirname(os.path.abspath(__file__)) + '/'
 
@@ -28,6 +28,15 @@ except ImportError:
           '(rhocompute, int_field_for, int_field_for_border) not found. ' +
           'Limited functionality')
 
+
+def idivup(a, b):
+    ''' Compute int(a)//int(b) and round up to next integer if a%b != 0 '''
+    a = np.int32(a)
+    b = np.int32(b)
+    z = (a // b + 1) if (a % b != 0) else (a // b)
+    return int(z)
+
+
 class PyPIC_GPU(object):
     '''Encodes the algorithm of PyPIC for a static mesh
     on the GPU:
@@ -52,8 +61,21 @@ class PyPIC_GPU(object):
         self.mesh = mesh
         self._context = context
         self.poissonsolver = poissonsolver
-
-
+        self.kernel_call_config = {
+                'p2m': {'block': (16, 16, 1),
+                        #'grid': (-1, 1, 1) # adapt to number of particles!
+                        'grid': (0, 1, 1) # adapt to number of particles!
+                        },
+                'm2p': {'block': (16, 16, 1),
+                        #'grid': (-1, 1, 1) # adapt to number of particles!
+                        'grid': (0, 1, 1) # adapt to number of particles!
+                        },
+                'sorted_p2m': {'block': (256, 1, 1),
+                        #'grid': (self.mesh.n_nodes//256, 1, 1)
+                        'grid': (idivup(self.mesh.n_nodes, 256), 1, 1)
+                        }
+                }
+        print self.kernel_call_config
         # load kernels
         with open(where + 'p2m/p2m_kernels.cu') as stream:
             source = stream.read()
@@ -85,18 +107,18 @@ class PyPIC_GPU(object):
                                      str(mesh.dimension) + 'd'))
 
         # prepare calls to kernels!!!
+        self._particles_to_mesh_kernel.prepare(
+                'i' + 'P' + 'i'*(mesh.dimension-1) + 'P'*2**mesh.dimension +
+                'P'*mesh.dimension)
         self._field_to_particles_kernel.prepare(
-                'PP' + 'i'*(mesh.dimension-1) + 'P'*2**mesh.dimension +
+                'i' + 'PP' + 'i'*(mesh.dimension-1) + 'P'*2**mesh.dimension +
                 'P'*mesh.dimension)
         self._mesh_to_particles_kernel.prepare(
-                'P'*mesh.dimension*2 + 'i'*(mesh.dimension-1) +
+                'i' + 'P'*mesh.dimension*2 + 'i'*(mesh.dimension-1) +
                 'P'*2**mesh.dimension + 'P'*mesh.dimension)
-        #self._sorted_particles_to_guard_mesh_kernel.prepare('PPPddddddiiiPP' +
-        #                                                    'P'*8)
         self._sorted_particles_to_guard_mesh_kernel.prepare(
                 'P'*mesh.dimension + 'd'*2*mesh.dimension +
                 'i'*(mesh.dimension-1) + 'i' + 'PP' + 'P'*2**mesh.dimension)
-        #self._join_guard_cells_kernel.prepare('P'*8 + 'iiiiP')
         self._join_guard_cells_kernel.prepare('P'*2**mesh.dimension
                 + 'i' + 'i'*mesh.dimension + 'P')
 
@@ -124,13 +146,22 @@ class PyPIC_GPU(object):
         )
         charge = kwargs.get("charge", e)
         n_macroparticles = len(mp_coords[0])
+        self.kernel_call_config['p2m']['grid'] = (
+                idivup(n_macroparticles, reduce(mul,
+                           self.kernel_call_config['p2m']['block'],1))
+                , 1, 1
+            )
+        block = self.kernel_call_config['p2m']['block']
+        grid = self.kernel_call_config['p2m']['grid']
         mesh_count = gpuarray.zeros(shape=self.mesh.shape, #self.mesh.n_nodes,
                                     dtype=np.float64)
+        args = [np.int32(n_macroparticles)] + [mesh_count]
+        args += self.mesh.shape_r[:-1] + mesh_weights + mesh_indices
         self._particles_to_mesh_kernel(
-                mesh_count, *(self.mesh.shape_r[:-1]
-                          + mesh_weights + mesh_indices),
-            block=(16, 16, 1), grid=(n_macroparticles // 16**2,1,1) # 32x32: too few registers
-        )
+            *args,
+            block=block,
+            grid=grid
+         )
         self._context.synchronize()
         mesh_charges = mesh_count*charge
         return mesh_charges
@@ -162,8 +193,8 @@ class PyPIC_GPU(object):
             gpuarray.empty(self.mesh.n_nodes, dtype=np.float64).gpudata
             for _ in xrange(2**self.mesh.dimension)
         ]
-        block = (256, 1, 1)
-        grid = (self.mesh.n_nodes // block[0], 1, 1)
+        block = self.kernel_call_config['sorted_p2m']['block']
+        grid = self.kernel_call_config['sorted_p2m']['grid']
         self._sorted_particles_to_guard_mesh_kernel.prepared_call(*(
             [grid, block,] +
             # particles
@@ -178,8 +209,6 @@ class PyPIC_GPU(object):
         ))
         mesh_charges = gpuarray.zeros(self.mesh.shape, dtype=np.float64)
         self._context.synchronize()
-        block = (256, 1, 1)
-        grid = (self.mesh.n_nodes // block[0], 1, 1)
         self._join_guard_cells_kernel.prepared_call(*(
             [grid, block,] +
             guard_charge_pointers +
@@ -254,10 +283,19 @@ class PyPIC_GPU(object):
         n_macroparticles = len(mp_coords[0])
         particles_quantity = gpuarray.empty(n_macroparticles, dtype=np.float64)
 
+        self.kernel_call_config['m2p']['grid'] = (
+                idivup(n_macroparticles, reduce(mul,
+                    self.kernel_call_config['m2p']['block'],1))
+                , 1, 1
+            )
+        block = self.kernel_call_config['m2p']['block']
+        grid = self.kernel_call_config['m2p']['grid']
+
         self._mesh_to_particles_kernel(
+            np.int32(n_macroparticles),
             particles_quantity, mesh_quantity,
             *(self.mesh.shape[:-1] + mesh_weights + mesh_indices),
-            block=(16, 16, 1), grid=(n_macroparticles // (16*16),1,1)
+            block=block, grid=grid
         )
         return particles_quantity
 
@@ -287,20 +325,25 @@ class PyPIC_GPU(object):
             )
         )
         n_macroparticles = len(mp_coords[0])
-
+        self.kernel_call_config['m2p']['grid'] = (
+                idivup(n_macroparticles, reduce(mul,
+                    self.kernel_call_config['m2p']['block'],1))
+                 , 1, 1
+        )
         # field per particle
         particle_fields = [gpuarray.empty(shape=n_macroparticles,
                                           dtype=np.float64)
                            for _ in mesh_fields]
-
-        args = particle_fields + list(mesh_fields)
+        block = self.kernel_call_config['m2p']['block']
+        grid = self.kernel_call_config['m2p']['grid']
+        args = [np.int32(n_macroparticles)] + particle_fields + list(mesh_fields)
         args += list(self.mesh.shape_r[:-1]) #strides
         args += list(mesh_weights)
         args += list(mesh_indices)
         # interpolate to particles on gpu.
         # interpolation only, multiply with charge afterwards
         self._field_to_particles_kernel(
-            *args, block=(16, 16, 1), grid=(n_macroparticles // (16*16),1,1)
+            *args, block=block, grid=grid
         )
         return particle_fields
 
