@@ -75,7 +75,6 @@ class PyPIC_GPU(object):
                         'grid': (idivup(self.mesh.n_nodes, 256), 1, 1)
                         }
                 }
-        print self.kernel_call_config
         # load kernels
         with open(where + 'p2m/p2m_kernels.cu') as stream:
             source = stream.read()

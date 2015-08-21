@@ -20,11 +20,6 @@ def make_GPU_gradient(mesh, context):
     mx = int(getattr(mesh, 'nx', 1))
     my = int(getattr(mesh, 'ny', 1))
     mz = int(getattr(mesh, 'nz', 1))
-    # assert that mx, my are powers of 2
-    assert mx != 0 and ((mx & (mx - 1)) == 0)
-    assert my != 0 and ((my & (my - 1)) == 0)
-    # assert mz != 0 and ((mz & (mz - 1)) == 0) not needed in z direction
-    # since we always split into blocks of 1 in z direction
 
     dxInv = np.array(1./getattr(mesh, 'dx', 1), dtype=np.float64)
     dyInv = np.array(1./getattr(mesh, 'dy', 1), dtype=np.float64)
