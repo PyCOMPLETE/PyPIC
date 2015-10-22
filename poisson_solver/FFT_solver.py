@@ -101,7 +101,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
         self._context = context
         mesh_shape = self.mesh.shape # nz, ny, (nx)
         mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
-        mesh_distances = self.mesh.distances
+        mesh_distances = list(reversed(self.mesh.distances)) #dz, dy, dx
         self.fgreentr = gpuarray.empty(mesh_shape2,
                         dtype=np.complex128)
         self.tmpspace = gpuarray.zeros_like(self.fgreentr)
@@ -130,7 +130,6 @@ class GPUFFTPoissonSolver(PoissonSolver):
             itemsize=np.dtype(np.complex128).itemsize,
             src_height=2*self.mesh.ny,
             dst_height=self.mesh.ny)
-
         mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1)
                                             * mesh_distances[i]
                     for i in xrange(self.mesh.dimension)
@@ -200,7 +199,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
         green[nz:, ny:, nx:] = green[nz:0:-1,   ny:0:-1,  nx:0:-1]
         return green
 
-    def _fgreen2d(self, x, y):
+    def _fgreen2d(self, y, x):
         '''
         Return the periodic integrated greens funcion on the 'original'
         domain
@@ -223,7 +222,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
                 ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
         return fgreen
 
-    def _fgreen3d(self, x, y, z):
+    def _fgreen3d(self, z, y, x):
         ''' Return the periodic integrated greens funcion on the 'original'
         domain
         Qiang, Lidia, Ryne,Limborg-Deprey, PRSTAB 10, 129901 (2007)
@@ -254,6 +253,121 @@ class GPUFFTPoissonSolver(PoissonSolver):
                 -tmpfgreen[:-1, :-1, :-1]
                 ) * 1./self.mesh.volume_elem # divide by vol_elem to average!
         return fgreen
+
+
+class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
+    '''
+    FFT openboundary solver on the GPU using the integrated Green's function
+    The class works for 2 and 3 dimensional systems.
+    The corresponding greens functions/ algorithms are set (monkey patching)
+    during the initialization of the class and depend on the dimension of the
+    mesh.
+    '''
+    def __init__(self, mesh, context=None):
+        '''
+        Args:
+            mesh The mesh on which the solver will operate. The dimensionality
+                 is deducted from mesh.dimension
+        '''
+        # create the mesh grid and compute the greens function on it
+        if (mesh.dimension != 3):
+            print ('Error: Use a 3d mesh for the 2.5d algorithm!. Abort.')
+            return None
+
+        self.mesh = mesh
+        self._context = context
+        mesh_shape = self.mesh.shape # nz, ny, (nx)
+        nz, ny, nx = mesh_shape
+        mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
+        mesh_distances = list(reversed(self.mesh.distances)) #dz, dy, dx
+        self.fgreentr = gpuarray.empty((2*ny, 2*nx),
+                        dtype=np.complex128)
+        self.tmpspace = gpuarray.zeros((nz, 2*ny, 2*nx), dtype=np.complex128)
+        sizeof_complex = np.dtype(np.complex128).itemsize
+
+        # dimensionality function dispatch
+        self._fgreen = getattr(self, '_fgreen25d')
+        self._mirror = getattr(self, '_mirror2d')
+        #copy_fn = {'3d' : get_Memcpy3D_d2d, '2d': get_Memcpy2D_d2d}
+        memcpy_nd = get_Memcpy3D_d2d
+        #memcpy_nd = copy_fn[str(dim) + 'd']
+        dim_args = self.mesh.shape
+        self._cpyrho2tmp = memcpy_nd(
+            src=None, dst=self.tmpspace, # None because src(rho) not yet known
+            src_pitch=self.mesh.nx*sizeof_complex,
+            dst_pitch=2*self.mesh.nx*sizeof_complex,
+            dim_args=dim_args,
+            itemsize=np.dtype(np.complex128).itemsize,
+            src_height=self.mesh.ny,
+            dst_height=2*self.mesh.ny)
+        self._cpytmp2rho = memcpy_nd(
+            src=self.tmpspace, dst=None, # None because dst(rho) not yet know
+            src_pitch=2*self.mesh.nx*sizeof_complex,
+            dst_pitch=self.mesh.nx*sizeof_complex,
+            dim_args=dim_args,
+            itemsize=np.dtype(np.complex128).itemsize,
+            src_height=2*self.mesh.ny,
+            dst_height=self.mesh.ny)
+
+        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh.shape[i]+1)
+                                            * mesh_distances[i]
+                    for i in [1,2]
+                   ]
+        # mesh_arr is [mz, my, mx]
+        mesh_grids = np.meshgrid(*mesh_arr, indexing='ij') #choose my, mx
+        fgreen2 = self._fgreen(*mesh_grids)
+        fgreen2 = self._mirror(fgreen2)
+        fgreen = np.empty(shape=(mesh.nz, 2*mesh.ny, 2*mesh.nx),
+           dtype=np.complex128)
+        for nn in xrange(mesh.nz):
+           fgreen[nn,:,:] = fgreen2
+        # tile in 3d dimension, yields to memerror, uses huuge amount of memory!
+        #fgreen = np.tile(fgreen, (mesh.nz, 2*mesh.ny, 2*mesh.nx))
+
+        self.plan_forward = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
+            in_dtype=np.complex128, out_dtype=np.complex128, batch=self.mesh.nz)
+        self.plan_backward = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
+            in_dtype=np.complex128, out_dtype=np.complex128, batch=self.mesh.nz)
+        plan_2d = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
+            in_dtype=np.complex128, out_dtype=np.complex128)
+        cu_fft.fft(gpuarray.to_gpu(fgreen2), self.fgreentr, plan=plan_2d)
+
+    def poisson_solve(self, rho):
+        ''' Solve the poisson equation with the given charge distribution
+        2.5D specialisation
+        Args:
+            rho: Charge distribution (same dimensions as mesh)
+        Returns:
+            Phi (same dimensions as rho)
+        '''
+        rho = rho.astype(np.complex128)
+        self._cpyrho2tmp.set_src_device(rho.gpudata)
+        self._cpytmp2rho.set_dst_device(rho.gpudata)
+        # set to 0 since it might be filled with the old potential
+        self.tmpspace.fill(0)
+        self._cpyrho2tmp()
+        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
+        for i in xrange(self.mesh.nz):
+            self.tmpspace[i,:,:] = self.tmpspace[i,:,:] * self.fgreentr
+        cu_fft.ifft(self.tmpspace, self.tmpspace,
+                    plan=self.plan_backward)
+        # store the result in the rho gpuarray to save space
+        self._cpytmp2rho()
+        # scale (cuFFT is unscaled)
+        phi = rho.real/(4 * self.mesh.n_nodes/self.mesh.nz)
+        phi *= self.mesh.volume_elem/self.mesh.dz/(2*np.pi*epsilon_0)
+        #phi = rho.real/(2**self.mesh.dimension * self.mesh.n_nodes)
+        #phi *= self.mesh.volume_elem/(2**(self.mesh.dimension-1)*np.pi*epsilon_0)
+
+        return phi
+
+    def _fgreen25d(self, y, x):
+        ''' Call the 2d greens function and scale by dz because it gets
+        normalized by the mesh volume element
+        '''
+        return self._fgreen2d(y, x) * self.mesh.dz
+
+
 
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
@@ -378,7 +492,7 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
 
         yn=yn.T
         yn=yn.flatten()
-        #% xn and yn are stored such that the external index is on x 
+        #% xn and yn are stored such that the external index is on x
 
         flag_outside_n=np.logical_or(np.abs(xn)>x_aper,np.abs(yn)>y_aper)
         flag_inside_n=~(flag_outside_n)
