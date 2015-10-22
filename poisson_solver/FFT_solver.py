@@ -263,11 +263,14 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
     during the initialization of the class and depend on the dimension of the
     mesh.
     '''
-    def __init__(self, mesh, context=None):
+    def __init__(self, mesh, context=None, save_memory=True):
         '''
         Args:
             mesh The mesh on which the solver will operate. The dimensionality
                  is deducted from mesh.dimension
+            save_memory: Decide whether to store all slices of the transformed
+                 greens function (more memory but faster) or save 1 slice only
+                 (saves memory but slower, default)
         '''
         # create the mesh grid and compute the greens function on it
         if (mesh.dimension != 3):
@@ -280,8 +283,14 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         nz, ny, nx = mesh_shape
         mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
         mesh_distances = list(reversed(self.mesh.distances)) #dz, dy, dx
-        self.fgreentr = gpuarray.empty((2*ny, 2*nx),
-                        dtype=np.complex128)
+        if save_memory:
+            self.fgreentr = gpuarray.empty((2*ny, 2*nx),
+                            dtype=np.complex128)
+            self._solve_kernel = self._solve_kernel_slow
+        else:
+            self.fgreentr = gpuarray.empty((nz, 2*ny, 2*nx),
+                            dtype=np.complex128)
+            self._solve_kernel = self._solve_kernel_fast
         self.tmpspace = gpuarray.zeros((nz, 2*ny, 2*nx), dtype=np.complex128)
         sizeof_complex = np.dtype(np.complex128).itemsize
 
@@ -328,9 +337,30 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
             in_dtype=np.complex128, out_dtype=np.complex128, batch=self.mesh.nz)
         self.plan_backward = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
             in_dtype=np.complex128, out_dtype=np.complex128, batch=self.mesh.nz)
-        plan_2d = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
-            in_dtype=np.complex128, out_dtype=np.complex128)
-        cu_fft.fft(gpuarray.to_gpu(fgreen2), self.fgreentr, plan=plan_2d)
+        if save_memory:
+            plan_2d = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
+                in_dtype=np.complex128, out_dtype=np.complex128)
+            cu_fft.fft(gpuarray.to_gpu(fgreen2), self.fgreentr, plan=plan_2d)
+        else:
+            cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr,
+                plan=self.plan_forward)
+
+    def _solve_kernel_slow(self):
+        ''' Slow version, use when save_memory is True: Stores only 1 slice
+        of the fgreentr function and loops over all slices
+        '''
+        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
+        for i in xrange(self.mesh.nz):
+            self.tmpspace[i,:,:] = self.tmpspace[i,:,:] * self.fgreentr
+        cu_fft.ifft(self.tmpspace, self.tmpspace,
+                    plan=self.plan_backward)
+
+    def _solve_kernel_fast(self):
+        '''Fast kernel, use when save_memory is False
+        '''
+        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
+        cu_fft.ifft(self.tmpspace * self.fgreentr, self.tmpspace,
+                    plan=self.plan_backward)
 
     def poisson_solve(self, rho):
         ''' Solve the poisson equation with the given charge distribution
@@ -346,19 +376,12 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         # set to 0 since it might be filled with the old potential
         self.tmpspace.fill(0)
         self._cpyrho2tmp()
-        cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
-        for i in xrange(self.mesh.nz):
-            self.tmpspace[i,:,:] = self.tmpspace[i,:,:] * self.fgreentr
-        cu_fft.ifft(self.tmpspace, self.tmpspace,
-                    plan=self.plan_backward)
+        self._solve_kernel()
         # store the result in the rho gpuarray to save space
         self._cpytmp2rho()
         # scale (cuFFT is unscaled)
         phi = rho.real/(4 * self.mesh.n_nodes/self.mesh.nz)
         phi *= self.mesh.volume_elem/self.mesh.dz/(2*np.pi*epsilon_0)
-        #phi = rho.real/(2**self.mesh.dimension * self.mesh.n_nodes)
-        #phi *= self.mesh.volume_elem/(2**(self.mesh.dimension-1)*np.pi*epsilon_0)
-
         return phi
 
     def _fgreen25d(self, y, x):
