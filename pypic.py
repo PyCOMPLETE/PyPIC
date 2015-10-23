@@ -61,6 +61,8 @@ class PyPIC_GPU(object):
         self.mesh = mesh
         self._context = context
         self.poissonsolver = poissonsolver
+        if hasattr(poissonsolver, 'is_25D'):
+            self.is_25D = True
         self.kernel_call_config = {
                 'p2m': {'block': (16, 16, 1),
                         #'grid': (-1, 1, 1) # adapt to number of particles!
@@ -389,6 +391,8 @@ class PyPIC_GPU(object):
                 mesh_weights=mesh_weights
             )
         rho = mesh_charges / self.mesh.volume_elem
+        if self.is_25D:
+            rho *= self.mesh.dz
         phi = self.poisson_solve(rho)
         mesh_e_fields = self.get_electric_fields(phi)
         self._context.synchronize()

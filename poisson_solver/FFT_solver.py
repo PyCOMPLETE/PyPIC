@@ -276,6 +276,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         if (mesh.dimension != 3):
             print ('Error: Use a 3d mesh for the 2.5d algorithm!. Abort.')
             return None
+        self.is_25D = True
 
         self.mesh = mesh
         self._context = context
