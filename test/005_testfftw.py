@@ -1,6 +1,11 @@
+import sys, os
+BIN=os.path.expanduser('../')
+sys.path.append(BIN)
+from backwards_compatibility_1_03 import *
 import pylab as pl
 import numpy as np
 from scipy import rand
+import time
 import geom_impact_poly as poly
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FFT_OpenBoundary_SquareGrid as PIC_FFT
@@ -58,38 +63,41 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
 									   'x_sem_ellip_insc':0.99*x_aper,
 									   'y_sem_ellip_insc':0.99*y_aper})
 									   
-picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
-picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
-picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
 
-picFDSW.scatter(x_part, y_part, nel_part)
-picFFTPEC.scatter(x_part, y_part, nel_part)
+
+picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
+
+
 picFFT.scatter(x_part, y_part, nel_part)
+
+data = picFFT.fgreen
 
 N_rep = 1000
 
-import time
-t_start_sw = time.mktime(time.localtime())
+
+t_start_npfft = time.mktime(time.localtime())
 for _ in xrange(N_rep):
-	picFDSW.solve()
-t_stop_sw = time.mktime(time.localtime())
-t_sw = t_stop_sw-t_start_sw
-print 't_sw', t_sw
+	transf = np.fft.fft2(data)
+	itransf = np.real(np.fft.ifft2(transf*data))
+	
+t_stop_npfft = time.mktime(time.localtime())
+t_npfft = t_stop_npfft-t_start_npfft
+print 't_npfft', t_npfft
 
 
-t_start_fftpec = time.mktime(time.localtime())
+
+import pyfftw
+
+fftobj = pyfftw.builders.fft2(data.copy())
+temptransf = fftobj(data)
+ifftobj = pyfftw.builders.ifft2(temptransf)
+
+t_start_npfftw = time.mktime(time.localtime())
 for _ in xrange(N_rep):
-	picFFTPEC.solve()
-t_stop_fftpec = time.mktime(time.localtime())
-t_fftpec = t_stop_fftpec-t_start_fftpec
-print 't_fftpec', t_fftpec
-
-
-t_start_fftopen = time.mktime(time.localtime())
-for _ in xrange(N_rep):
-	picFFT.solve()
-t_stop_fftopen = time.mktime(time.localtime())
-t_fftopen = t_stop_fftopen-t_start_fftopen
-print 't_fftopen', t_fftopen
+	transfw = fftobj(data)
+	itransfw = ifftobj(transfw)
+t_stop_npfftw = time.mktime(time.localtime())
+t_npfftw = t_stop_npfftw-t_start_npfftw
+print 't_npfftw', t_npfftw
 
 

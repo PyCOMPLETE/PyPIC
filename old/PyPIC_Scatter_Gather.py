@@ -78,14 +78,16 @@ class PyPIC_Scatter_Gather(object):
 			Dh = xg[1]-xg[0]
 		else:
 			assert(xg==None and xg==None)
-			xg=np.arange(0, x_aper+5.*Dh,Dh,float)  
+			#xg=np.arange(0, x_aper+0.5*Dh,Dh,np.float64)  
+			xg=np.arange(0, x_aper+5.*Dh,Dh,float) #TODO UNCOMMENT, ONLY FOR TIMING 
 			xgr=xg[1:]
 			xgr=xgr[::-1]#reverse array
 			xg=np.concatenate((-xgr,xg),0)
 			Nxg=len(xg);
 			bias_x=min(xg);
 
-			yg=np.arange(0,y_aper+4.*Dh,Dh,float)  
+			#yg=np.arange(0,y_aper+0.5*Dh,Dh,np.float64)  
+			yg=np.arange(0,y_aper+4.*Dh,Dh,float) #TODO UNCOMMENT, ONLY FOR TIMING
 			ygr=yg[1:]
 			ygr=ygr[::-1]#reverse array
 			yg=np.concatenate((-ygr,yg),0)

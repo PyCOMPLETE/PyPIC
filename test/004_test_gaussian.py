@@ -1,3 +1,7 @@
+import sys, os
+BIN=os.path.expanduser('../')
+sys.path.append(BIN)
+from backwards_compatibility_1_03 import *
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import FFT_OpenBoundary_SquareGrid as PIC_FFT
