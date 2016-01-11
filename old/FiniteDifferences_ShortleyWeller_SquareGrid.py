@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.02                     
+#		           PyPIC Version 1.03                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -210,23 +210,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 
 		Asel = Msel.T*A*Msel
 		Asel=Asel.tocsc()
-		
 
-		if sparse_solver == 'scipy_slu':
-			print "Using scipy superlu solver..."
-			luobj = ssl.splu(Asel.tocsc())
-		elif sparse_solver == 'PyKLU':
-			print "Using klu solver..."
-			try:
-				import PyKLU.klu as klu
-				luobj = klu.Klu(Asel.tocsc())
-			except StandardError, e: 
-				print "Got exception: ", e
-				print "Falling back on scipy superlu solver:"
-				luobj = ssl.splu(Asel.tocsc())
-		else:
-			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
-			
 		self.xn = xn
 		self.yn = yn
 		
@@ -236,7 +220,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
 		self.flag_force_zero = flag_force_zero
 		self.Asel = Asel
-		self.luobj = luobj
+
 		self.Dx = Dx.tocsc()
 		self.Dy = Dy.tocsc()
 
@@ -245,12 +229,16 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		self.efx = np.zeros((self.Nxg,self.Nyg));
 		self.efy = np.zeros((self.Nxg,self.Nyg));
 
+		self.sparse_solver = sparse_solver
 		
 		self.U_sc_eV_stp=0.;
 
 		
 		self.Msel = Msel.tocsc()
 		self.Msel_T = (Msel.T).tocsc()
+		
+		#initialize self.luobj
+		self.build_sparse_solver()
 
 		
 		print 'Done PIC init.'
@@ -304,3 +292,23 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 			Ey_sc_n=0.
 			
 		return Ex_sc_n, Ey_sc_n
+
+    def build_sparse_solver(self):
+		
+		if self.sparse_solver == 'scipy_slu':
+			print "Using scipy superlu solver..."
+			luobj = ssl.splu(self.Asel.tocsc())
+		elif self.sparse_solver == 'PyKLU':
+			print "Using klu solver..."
+			try:
+				import PyKLU.klu as klu
+				luobj = klu.Klu(self.Asel.tocsc())
+			except StandardError, e: 
+				print "Got exception: ", e
+				print "Falling back on scipy superlu solver:"
+				luobj = ssl.splu(self.Asel.tocsc())
+		else:
+			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
+				
+		self.luobj = luobj
+				
