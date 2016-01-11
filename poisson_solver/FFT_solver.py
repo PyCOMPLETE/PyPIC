@@ -18,12 +18,11 @@ from FD_solver import compute_new_mesh_properties
 try:
     from pycuda import gpuarray
     import pycuda.driver as drv
-
+    import skcuda.fft as cu_fft
 except ImportError:
     print('GPU libraries (pycuda, scikits.cuda.fft) not found. GPU functionality ' +
           'not available.')
 
-import skcuda.fft as cu_fft
 
 def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
                      src_height, dst_height):
