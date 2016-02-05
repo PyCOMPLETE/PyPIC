@@ -357,8 +357,8 @@ class RectMesh2D(Mesh):
         '''Return weights of mesh nodes surrounding a particle
         when distributing particles onto the mesh nodes.
         Calculates weights of surrounding nodes in the following order:
-            (i,   j, )
-            (i+1, j, )
+            (i,   j  )
+            (i+1, j  )
             (i,   j+1)
             (i+1, j+1)
         If indices are given, they are used instead of calling
@@ -373,10 +373,10 @@ class RectMesh2D(Mesh):
             dx, dy = distances
         else:
             dx, dy = self.get_distances(x, y, indices)
-        weight_ij=   (1-dx/self.dx)*(1-dy/self.dy)
-        weight_i1j=  (1-dx/self.dx)*(dy/self.dy)
-        weight_ij1=  (dx/self.dx)  *(1-dy/self.dy)
-        weight_i1j1= (dx/self.dx)  *(dy/self.dy)
+        weight_ij =   (1-dx/self.dx)*(1-dy/self.dy)
+        weight_i1j =  (1-dx/self.dx)*(dy/self.dy)
+        weight_ij1 =  (dx/self.dx)  *(1-dy/self.dy)
+        weight_i1j1 = (dx/self.dx)  *(dy/self.dy)
         return (weight_ij, weight_i1j, weight_ij1, weight_i1j1)
 
 
