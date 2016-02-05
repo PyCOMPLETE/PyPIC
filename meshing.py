@@ -5,7 +5,9 @@ from abc import ABCMeta, abstractmethod
 
 
 def idivup(a, b):
-    ''' Compute int(a)//int(b) and round up to next integer if a%b != 0 '''
+    '''Compute int(a)//int(b) and round up to next integer
+    if a%b != 0
+    '''
     a = np.int32(a)
     b = np.int32(b)
     z = (a // b + 1) if (a % b != 0) else (a // b)
@@ -156,21 +158,18 @@ class RectMesh3D(Mesh):
     '''Rectangular three-dimensional mesh with dimension-wise uniformly
     spaced nodes.
     '''
-    def __init__(self, x0, y0, z0, dx, dy, dz, nx, ny, nz, mathlib=np):
+    dimension = 3
+
+    def __init__(self, origin, distances, n_cells_per_direction, mathlib=np):
         self.mathlib = mathlib
-        self.origin = (x0, y0, z0)
-        self.x0 = x0
-        self.y0 = y0
-        self.z0 = z0
-        self.distances = (dx, dy, dz)
-        self.dx = dx
-        self.dy = dy
-        self.dz = dz
-        self.volume_elem = dx*dy*dz
-        self.nx = np.int32(nx)
-        self.ny = np.int32(ny)
-        self.nz = np.int32(nz)
-        self.shape = (self.nz, self.ny, self.nx)
+        self.origin = origin
+        self.distances = distances
+        self.shape = tuple(reversed(map(np.int32, n_cells_per_direction)))
+
+        self.x0, self.y0, self.z0 = origin
+        self.dx, self.dy, self.dz = distances
+        self.volume_elem = self.dx * self.dy * self.dz
+        self.nz, self.ny, self.nx = self.shape
         self.n_nodes = self.nx * self.ny * self.nz
 #         self.n_boundary_nodes = (2*self.nx*self.ny +
 #                                  2*(self.nx-1 + self.ny-1) * (self.nz-2))
@@ -283,18 +282,16 @@ class RectMesh2D(Mesh):
     '''
     dimension = 2
 
-    def __init__(self, x0, y0, dx, dy, nx, ny, mathlib=np):
+    def __init__(self, origin, distances, n_cells_per_direction, mathlib=np):
         self.mathlib = mathlib
-        self.origin = (x0, y0)
-        self.x0 = x0
-        self.y0 = y0
-        self.distances = (dx, dy)
-        self.dx = dx
-        self.dy = dy
-        self.volume_elem = dx*dy
-        self.nx = np.int32(nx)
-        self.ny = np.int32(ny)
-        self.shape = (self.ny, self.nx)
+        self.origin = origin
+        self.distances = distances
+        self.shape = tuple(reversed(map(np.int32, n_cells_per_direction)))
+
+        self.x0, self.y0 = origin
+        self.dx, self.dy = distances
+        self.volume_elem = self.dx * self.dy
+        self.ny, self.nx = self.shape
         self.n_nodes = self.nx * self.ny
         self.n_boundary_nodes = self.n_nodes - max(
             0, (self.nx-2)*(self.ny-2))
@@ -388,15 +385,16 @@ class UniformMesh1D(Mesh):
     '''One-dimensional mesh with uniformly spaced nodes.'''
     dimension = 1
 
-    def __init__(self, x0, dx, nx, mathlib=np):
+    def __init__(self, origin, distances, n_cells_per_direction, mathlib=np):
         self.mathlib = mathlib
-        self.origin = (x0,)
-        self.x0 = x0
-        self.distances = (dx,)
-        self.dx = dx
-        self.volume_elem = dx
-        self.nx = np.int32(nx)
-        self.shape = (self.nx,)
+        self.origin = origin
+        self.distances = distances
+        self.shape = tuple(reversed(map(np.int32, n_cells_per_direction)))
+
+        self.x0 = origin[0]
+        self.dx = distances[0]
+        self.volume_elem = self.dx
+        self.nx = self.shape[0]
         self.n_nodes = self.nx
         self.n_boundary_nodes = 2
 
