@@ -37,6 +37,229 @@ def idivup(a, b):
     return int(z)
 
 
+class PyPIC(object):
+    '''Encodes the algorithm of PyPIC for a static mesh
+    on the CPU:
+
+    - scatter particles to a fixed mesh which yields
+      the charge distribution on the mesh
+    - solve the discrete Poisson equation on the mesh
+      with the charge distribution to obtain the potential
+      on the mesh
+    - determine electric fields on the mesh from the potential
+    - gather the electric fields back to the particles
+
+    Electrostatics are assumed, magnetic fields are neglected.
+    Use the Lorentz transformation to determine the
+    electric fields in the beam reference frame and then again
+    to transform back to the laboratory reference frame,
+    hence accounting for the magnetic fields.
+    '''
+
+    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
+        self.mesh = mesh
+        self.poissonsolver = poissonsolver
+        self._gradient = gradient(mesh)
+        if mesh.dimension == 2:
+            self._p2m_kernel = particles_to_mesh_CPU_2d
+            self._m2p_kernel = mesh_to_particles_CPU_2d
+        elif mesh.dimension == 3:
+            self._p2m_kernel = particles_to_mesh_CPU_3d
+            self._m2p_kernel = mesh_to_particles_CPU_3d
+        else:
+            raise RuntimeError("Only meshes with dim=2,3 are supported yet")
+
+
+    def particles_to_mesh(self, *mp_coords, **kwargs):
+        '''Scatter the macro-particles onto the mesh nodes.
+        The argument list mp_coords defines the coordinate arrays of
+        the macro-particles, e.g. in 3D
+            mp_coords = (x, y, z)
+        The keyword argument charge=e is the charge per macro-particle.
+        Further keyword arguments are
+        mesh_indices=None, mesh_distances=None, mesh_weights=None .
+
+        Return the charge distribution on the mesh.
+        '''
+        mesh_indices = kwargs.get("mesh_indices",
+                                  self.mesh.get_indices(*mp_coords))
+        mesh_weights = kwargs.get(
+            "mesh_weights", self.mesh.get_weights(
+                *mp_coords, indices=mesh_indices,
+                distances=kwargs.get("mesh_distances", None)
+            )
+        )
+        charge = kwargs.get("charge", e)
+        n_macroparticles = len(mp_coords[0])
+        mesh_density = self._p2m_kernel(self.mesh, n_macroparticles,
+                                        mesh_indices, mesh_weights)
+        rho = mesh_density*charge
+        return rho
+
+    def poisson_solve(self, rho):
+        '''Solve the discrete Poisson equation with the charge
+        distribution rho on the mesh, -divgrad phi = rho / epsilon_0 .
+
+        Return the potential phi.
+        '''
+        # does self._context.synchronize() within solve
+        return self.poissonsolver.poisson_solve(rho)
+
+    def get_electric_fields(self, phi):
+        '''Return electric fields on the mesh given
+        the potential phi on the mesh via
+        E = - grad phi .
+        '''
+        return self._gradient(phi)
+
+    def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):
+        '''Interpolate the mesh_quantity (whose shape is the mesh shape)
+        onto the particles. The argument list mp_coords defines the
+        coordinate arrays of the macro-particles, e.g. in 3D
+            mp_coords = (x, y, z)
+        Possible keyword arguments are
+        mesh_indices=None, mesh_distances=None, mesh_weights=None .
+
+        Return the interpolated quantity in an array for each particle.
+
+        Returns asynchronously from the device.
+        (You may potentially want to call context.synchronize()!)
+        '''
+        mesh_indices = kwargs.get("mesh_indices",
+                                  self.mesh.get_indices(*mp_coords))
+        mesh_weights = kwargs.get(
+            "mesh_weights", self.mesh.get_weights(
+                *mp_coords, indices=mesh_indices,
+                distances=kwargs.get("mesh_distances", None)
+            )
+        )
+        n_macroparticles = len(mp_coords[0])
+        particles_quantity = np.empty(n_macroparticles, dtype=np.float64)
+        particles_quantity = self._m2p_kernel(self.mesh, mesh_quantity,
+                                             mesh_indices, mesh_weights)
+        return particles_quantity
+
+    def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
+        '''Gather the three-dimensional (electric) field
+        from the mesh to the particles.
+        The list mesh_fields_and_mp_coords consists of 2-tuples for each
+        dimension where
+        - each first entry is the field array on the mesh,
+        - each second entry is the particle coordinate array,
+        e.g. in 3D
+            mesh_fields_and_mp_coords = ((E_x, x), (E_y, y), (E_z, z))
+        where E_x, E_y, E_z would be given by self.get_electric_fields
+        and x, y, z are the particle coordinate arrays.
+        Possible keyword arguments are
+        mesh_indices=None, mesh_distances=None, mesh_weights=None .
+
+        Return the interpolated fields per particle for each dimension.
+        '''
+        mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
+        mesh_indices = kwargs.get("mesh_indices",
+                                  self.mesh.get_indices(*mp_coords))
+        mesh_weights = kwargs.get(
+            "mesh_weights", self.mesh.get_weights(
+                *mp_coords, indices=mesh_indices,
+                distances=kwargs.get("mesh_distances", None)
+            )
+        )
+        n_macroparticles = len(mp_coords[0])
+
+        # field per particle
+        particle_fields = [np.empty(shape=n_macroparticles,
+                                    dtype=np.float64)
+                           for _ in mesh_fields]
+        for idx, field in enumerate(mesh_fields):
+            #call mesh_to_particles once per dimension
+            particle_fields[idx] = self.mesh_to_particles(field, *mp_coords,
+                                        mesh_indices=mesh_indices,
+                                        mesh_weights=mesh_weights)
+
+        return particle_fields
+
+    def pic_solve(self, *mp_coords, **kwargs):
+        '''Encapsulates the whole algorithm to determine the
+        fields of the particles on themselves.
+        The keyword argument charge=e is the charge per macro-particle.
+        Further keyword arguments are
+        mesh_indices=None, mesh_distances=None, mesh_weights=None .
+
+        Return as many interpolated fields per particle as
+        dimensions in mp_coords are given.
+        '''
+        mesh_indices = kwargs.get("mesh_indices",
+                                  self.mesh.get_indices(*mp_coords))
+        mesh_weights = kwargs.get(
+            "mesh_weights", self.mesh.get_weights(
+                *mp_coords, indices=mesh_indices,
+                distances=kwargs.get("mesh_distances", None)
+            )
+        )
+        charge = kwargs.get("charge", e)
+
+        mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
+                                     mesh_indices=mesh_indices,
+                                     mesh_weights=mesh_weights)
+        rho = 1./self.mesh.volume_elem * mesh_charges
+        phi = self.poisson_solve(rho)
+        mesh_e_fields = self.get_electric_fields(phi)
+        for i, field in enumerate(mesh_e_fields):
+            mesh_e_fields[i] = field.flatten()
+        mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
+        fields = self.field_to_particles(*mesh_fields_and_mp_coords,
+                                         mesh_indices=mesh_indices,
+                                         mesh_weights=mesh_weights)
+        return fields
+
+    # PyPIC backwards compatibility
+    scatter = particles_to_mesh
+    gather = field_to_particles
+
+
+class PyPIC_Fortran_M2P_P2M(PyPIC):
+    ''' Uses the fast M2P/P2M Fortran routines
+    2D only!
+    Provide backwards compatibility and access to the fast Fortran M2P/P2M
+    If the poissonsolver has an 'flag_border_mat' attribute, the
+    int_field_for_border function is used instead of the int_field function.
+    '''
+
+    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
+        super(PyPIC_Fortran_M2P_P2M, self).__init__(mesh, poissonsolver,
+                gradient)
+        self.mesh = mesh
+        self.poissonsolver = poissonsolver
+        self._gradient = gradient(mesh)
+
+
+    def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
+        [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
+        ex = ex.reshape((self.mesh.ny, self.mesh.nx)).T
+        ey = ey.reshape((self.mesh.ny, self.mesh.nx)).T
+        if hasattr(self.poissonsolver, 'flag_inside_n_mat'):
+            flag_inside_n_mat = self.poissonsolver.flag_inside_n_mat
+            Ex, Ey = iffb.int_field_border(x, y, self.mesh.x0, self.mesh.y0,
+                                   self.mesh.dx, self.mesh.dx, ex, ey,
+                                   flag_inside_n_mat)
+        else:
+            if hasattr(self.poissonsolver, 'flag_border_mat'):
+                #Only for Staircase_SquareGrid solver
+                ex[self.poissonsolver.flag_border_mat] *= 2
+                ey[self.poissonsolver.flag_border_mat] *= 2
+            Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0,
+                                   self.mesh.dx, self.mesh.dx, ex, ey)
+        return [Ex, Ey]
+
+    def particles_to_mesh(self, *mp_coords, **kwargs):
+        x, y = mp_coords #only 2 dimensions are supported
+        charge = kwargs.get("charge", e)
+        nel_mp = charge * np.ones(x.shape)
+        rho = rhocom.compute_sc_rho(x, y, nel_mp, self.mesh.x0, self.mesh.y0,
+                                    self.mesh.dx, self.mesh.nx, self.mesh.ny)
+        return rho.reshape(self.mesh.nx, self.mesh.ny).T
+
+
 class PyPIC_GPU(object):
     '''Encodes the algorithm of PyPIC for a static mesh
     on the GPU:
@@ -55,6 +278,7 @@ class PyPIC_GPU(object):
     to transform back to the laboratory reference frame,
     hence accounting for the magnetic fields.
     '''
+
     def __init__(self, mesh, poissonsolver, context, gradient=make_GPU_gradient):
         '''Mesh sizes need to be powers of 2 in x (and y if it exists).
         '''
@@ -406,223 +630,3 @@ class PyPIC_GPU(object):
     # PyPIC backwards compatibility
     scatter = particles_to_mesh
     gather = field_to_particles
-
-
-
-class PyPIC(object):
-    '''Encodes the algorithm of PyPIC for a static mesh
-    on the CPU:
-
-    - scatter particles to a fixed mesh which yields
-      the charge distribution on the mesh
-    - solve the discrete Poisson equation on the mesh
-      with the charge distribution to obtain the potential
-      on the mesh
-    - determine electric fields on the mesh from the potential
-    - gather the electric fields back to the particles
-
-    Electrostatics are assumed, magnetic fields are neglected.
-    Use the Lorentz transformation to determine the
-    electric fields in the beam reference frame and then again
-    to transform back to the laboratory reference frame,
-    hence accounting for the magnetic fields.
-    '''
-
-    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
-        self.mesh = mesh
-        self.poissonsolver = poissonsolver
-        self._gradient = gradient(mesh)
-        if mesh.dimension == 2:
-            self._p2m_kernel = particles_to_mesh_CPU_2d
-            self._m2p_kernel = mesh_to_particles_CPU_2d
-        elif mesh.dimension == 3:
-            self._p2m_kernel = particles_to_mesh_CPU_3d
-            self._m2p_kernel = mesh_to_particles_CPU_3d
-        else:
-            raise RuntimeError("Only meshes with dim=2,3 are supported yet")
-
-
-    def particles_to_mesh(self, *mp_coords, **kwargs):
-        '''Scatter the macro-particles onto the mesh nodes.
-        The argument list mp_coords defines the coordinate arrays of
-        the macro-particles, e.g. in 3D
-            mp_coords = (x, y, z)
-        The keyword argument charge=e is the charge per macro-particle.
-        Further keyword arguments are
-        mesh_indices=None, mesh_distances=None, mesh_weights=None .
-
-        Return the charge distribution on the mesh.
-        '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
-        charge = kwargs.get("charge", e)
-        n_macroparticles = len(mp_coords[0])
-        mesh_density = self._p2m_kernel(self.mesh, n_macroparticles,
-                                        mesh_indices, mesh_weights)
-        rho = mesh_density*charge
-        return rho
-
-    def poisson_solve(self, rho):
-        '''Solve the discrete Poisson equation with the charge
-        distribution rho on the mesh, -divgrad phi = rho / epsilon_0 .
-
-        Return the potential phi.
-        '''
-        # does self._context.synchronize() within solve
-        return self.poissonsolver.poisson_solve(rho)
-
-    def get_electric_fields(self, phi):
-        '''Return electric fields on the mesh given
-        the potential phi on the mesh via
-        E = - grad phi .
-        '''
-        return self._gradient(phi)
-
-    def mesh_to_particles(self, mesh_quantity, *mp_coords, **kwargs):
-        '''Interpolate the mesh_quantity (whose shape is the mesh shape)
-        onto the particles. The argument list mp_coords defines the
-        coordinate arrays of the macro-particles, e.g. in 3D
-            mp_coords = (x, y, z)
-        Possible keyword arguments are
-        mesh_indices=None, mesh_distances=None, mesh_weights=None .
-
-        Return the interpolated quantity in an array for each particle.
-
-        Returns asynchronously from the device.
-        (You may potentially want to call context.synchronize()!)
-        '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
-        n_macroparticles = len(mp_coords[0])
-        particles_quantity = np.empty(n_macroparticles, dtype=np.float64)
-        particles_quantity = self._m2p_kernel(self.mesh, mesh_quantity,
-                                             mesh_indices, mesh_weights)
-        return particles_quantity
-
-    def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
-        '''Gather the three-dimensional (electric) field
-        from the mesh to the particles.
-        The list mesh_fields_and_mp_coords consists of 2-tuples for each
-        dimension where
-        - each first entry is the field array on the mesh,
-        - each second entry is the particle coordinate array,
-        e.g. in 3D
-            mesh_fields_and_mp_coords = ((E_x, x), (E_y, y), (E_z, z))
-        where E_x, E_y, E_z would be given by self.get_electric_fields
-        and x, y, z are the particle coordinate arrays.
-        Possible keyword arguments are
-        mesh_indices=None, mesh_distances=None, mesh_weights=None .
-
-        Return the interpolated fields per particle for each dimension.
-        '''
-        mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
-        n_macroparticles = len(mp_coords[0])
-
-        # field per particle
-        particle_fields = [np.empty(shape=n_macroparticles,
-                                    dtype=np.float64)
-                           for _ in mesh_fields]
-        for idx, field in enumerate(mesh_fields):
-            #call mesh_to_particles once per dimension
-            particle_fields[idx] = self.mesh_to_particles(field, *mp_coords,
-                                        mesh_indices=mesh_indices,
-                                        mesh_weights=mesh_weights)
-
-        return particle_fields
-
-    def pic_solve(self, *mp_coords, **kwargs):
-        '''Encapsulates the whole algorithm to determine the
-        fields of the particles on themselves.
-        The keyword argument charge=e is the charge per macro-particle.
-        Further keyword arguments are
-        mesh_indices=None, mesh_distances=None, mesh_weights=None .
-
-        Return as many interpolated fields per particle as
-        dimensions in mp_coords are given.
-        '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
-        charge = kwargs.get("charge", e)
-
-        mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
-                                     mesh_indices=mesh_indices,
-                                     mesh_weights=mesh_weights)
-        rho = 1./self.mesh.volume_elem * mesh_charges
-        phi = self.poisson_solve(rho)
-        mesh_e_fields = self.get_electric_fields(phi)
-        for i, field in enumerate(mesh_e_fields):
-            mesh_e_fields[i] = field.flatten()
-        mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
-        fields = self.field_to_particles(*mesh_fields_and_mp_coords,
-                                         mesh_indices=mesh_indices,
-                                         mesh_weights=mesh_weights)
-        return fields
-
-
-class PyPIC_Fortran_M2P_P2M(PyPIC):
-    ''' Uses the fast M2P/P2M Fortran routines
-    2D only!
-    Provide backwards compatibility and access to the fast Fortran M2P/P2M
-    If the poissonsolver has an 'flag_border_mat' attribute, the
-    int_field_for_border function is used instead of the int_field function.
-    '''
-
-    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
-        super(PyPIC_Fortran_M2P_P2M, self).__init__(mesh, poissonsolver,
-                gradient)
-        self.mesh = mesh
-        self.poissonsolver = poissonsolver
-        self._gradient = gradient(mesh)
-
-
-    def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
-        [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
-        ex = ex.reshape((self.mesh.ny, self.mesh.nx)).T
-        ey = ey.reshape((self.mesh.ny, self.mesh.nx)).T
-        if hasattr(self.poissonsolver, 'flag_inside_n_mat'):
-            flag_inside_n_mat = self.poissonsolver.flag_inside_n_mat
-            Ex, Ey = iffb.int_field_border(x, y, self.mesh.x0, self.mesh.y0,
-                                   self.mesh.dx, self.mesh.dx, ex, ey,
-                                   flag_inside_n_mat)
-        else:
-            if hasattr(self.poissonsolver, 'flag_border_mat'):
-                #Only for Staircase_SquareGrid solver
-                ex[self.poissonsolver.flag_border_mat] *= 2
-                ey[self.poissonsolver.flag_border_mat] *= 2
-            Ex, Ey = iff.int_field(x, y, self.mesh.x0, self.mesh.y0,
-                                   self.mesh.dx, self.mesh.dx, ex, ey)
-        return [Ex, Ey]
-
-    def particles_to_mesh(self, *mp_coords, **kwargs):
-        x, y = mp_coords #only 2 dimensions are supported
-        charge = kwargs.get("charge", e)
-        nel_mp = charge * np.ones(x.shape)
-        rho = rhocom.compute_sc_rho(x, y, nel_mp, self.mesh.x0, self.mesh.y0,
-                                    self.mesh.dx, self.mesh.nx, self.mesh.ny)
-        return rho.reshape(self.mesh.nx, self.mesh.ny).T
