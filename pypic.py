@@ -285,8 +285,6 @@ class PyPIC_GPU(object):
         self.mesh = mesh
         self._context = context
         self.poissonsolver = poissonsolver
-        if hasattr(poissonsolver, 'is_25D'):
-            self.is_25D = True
         self.kernel_call_config = {
                 'p2m': {'block': (16, 16, 1),
                         #'grid': (-1, 1, 1) # adapt to number of particles!
@@ -600,10 +598,10 @@ class PyPIC_GPU(object):
             )
         )
 
-        lower_bounds = kwargs.get('lower_bounds', False)
-        upper_bounds = kwargs.get('upper_bounds', False)
+        lower_bounds = kwargs.get('lower_bounds', None)
+        upper_bounds = kwargs.get('upper_bounds', None)
 
-        if lower_bounds and upper_bounds:
+        if lower_bounds is not None and upper_bounds is not None:
             mesh_charges = self.sorted_particles_to_mesh(
                 *mp_coords, charge=charge,
                 lower_bounds=lower_bounds, upper_bounds=upper_bounds
@@ -615,7 +613,7 @@ class PyPIC_GPU(object):
                 mesh_weights=mesh_weights
             )
         rho = mesh_charges / self.mesh.volume_elem
-        if self.is_25D:
+        if getattr(self.poissonsolver, 'is_25D', False):
             rho *= self.mesh.dz
         phi = self.poisson_solve(rho)
         mesh_e_fields = self.get_electric_fields(phi)
