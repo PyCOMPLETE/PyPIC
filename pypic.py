@@ -56,8 +56,10 @@ class PyPIC(object):
     hence accounting for the magnetic fields.
     '''
 
-    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
+    def __init__(self, mesh, poissonsolver, gradient=numpy_gradient,
+                 optimize_meshing_memory=True):
         self.mesh = mesh
+        self.optimize_meshing_memory = optimize_meshing_memory
         self.poissonsolver = poissonsolver
         self._gradient = gradient(mesh)
         if mesh.dimension == 2:
@@ -70,16 +72,9 @@ class PyPIC(object):
             raise RuntimeError("Only meshes with dim=2,3 are supported yet")
 
 
-    def particles_to_mesh(self, *mp_coords, **kwargs):
-        '''Scatter the macro-particles onto the mesh nodes.
-        The argument list mp_coords defines the coordinate arrays of
-        the macro-particles, e.g. in 3D
-            mp_coords = (x, y, z)
-        The keyword argument charge=e is the charge per macro-particle.
-        Further keyword arguments are
-        mesh_indices=None, mesh_distances=None, mesh_weights=None .
-
-        Return the charge distribution on the mesh.
+    def get_meshing(self, kwargs, *mp_coords):
+        '''Check whether kwargs contain mesh_indices and mesh_weights.
+        If both are not existent, they are computed and returned.
         '''
         mesh_indices = kwargs.get("mesh_indices",
                                   self.mesh.get_indices(*mp_coords))
@@ -89,12 +84,27 @@ class PyPIC(object):
                 distances=kwargs.get("mesh_distances", None)
             )
         )
+        return mesh_indices, mesh_weights
+
+    def particles_to_mesh(self, *mp_coords, **kwargs):
+        '''Scatter the macro-particles onto the mesh nodes.
+        The argument list mp_coords defines the coordinate arrays of
+        the macro-particles, e.g. in 3D
+            mp_coords = (x, y, z)
+        The keyword argument charge=e is the charge per macro-particle.
+        Further keyword arguments are
+        mesh_indices=None, mesh_distances=None, mesh_weights=None .
+
+        Return the charge distribution on the mesh (which is mesh_charges =
+        rho*volume).
+        '''
+        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.get("charge", e)
         n_macroparticles = len(mp_coords[0])
         mesh_density = self._p2m_kernel(self.mesh, n_macroparticles,
                                         mesh_indices, mesh_weights)
-        rho = mesh_density*charge
-        return rho
+        mesh_charges = mesh_density*charge
+        return mesh_charges
 
     def poisson_solve(self, rho):
         '''Solve the discrete Poisson equation with the charge
@@ -102,7 +112,6 @@ class PyPIC(object):
 
         Return the potential phi.
         '''
-        # does self._context.synchronize() within solve
         return self.poissonsolver.poisson_solve(rho)
 
     def get_electric_fields(self, phi):
@@ -121,18 +130,8 @@ class PyPIC(object):
         mesh_indices=None, mesh_distances=None, mesh_weights=None .
 
         Return the interpolated quantity in an array for each particle.
-
-        Returns asynchronously from the device.
-        (You may potentially want to call context.synchronize()!)
         '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
+        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
         particles_quantity = np.empty(n_macroparticles, dtype=np.float64)
         particles_quantity = self._m2p_kernel(self.mesh, mesh_quantity,
@@ -156,14 +155,7 @@ class PyPIC(object):
         Return the interpolated fields per particle for each dimension.
         '''
         mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
+        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
 
         # field per particle
@@ -188,28 +180,20 @@ class PyPIC(object):
         Return as many interpolated fields per particle as
         dimensions in mp_coords are given.
         '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
-        charge = kwargs.get("charge", e)
+        if not self.optimize_meshing_memory:
+            kwargs["mesh_indices"], kwargs["mesh_weights"] = \
+                self.get_meshing(kwargs, *mp_coords)
+        charge = kwargs.pop("charge", e)
 
-        mesh_charges = self.particles_to_mesh(*mp_coords, charge=charge,
-                                     mesh_indices=mesh_indices,
-                                     mesh_weights=mesh_weights)
-        rho = 1./self.mesh.volume_elem * mesh_charges
+        mesh_charges = self.particles_to_mesh(
+            *mp_coords, charge=charge, **kwargs)
+        rho = mesh_charges / self.mesh.volume_elem
         phi = self.poisson_solve(rho)
         mesh_e_fields = self.get_electric_fields(phi)
         for i, field in enumerate(mesh_e_fields):
             mesh_e_fields[i] = field.flatten()
         mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
-        fields = self.field_to_particles(*mesh_fields_and_mp_coords,
-                                         mesh_indices=mesh_indices,
-                                         mesh_weights=mesh_weights)
+        fields = self.field_to_particles(*mesh_fields_and_mp_coords, **kwargs)
         return fields
 
     # PyPIC backwards compatibility
@@ -227,7 +211,7 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
 
     def __init__(self, mesh, poissonsolver, gradient=numpy_gradient):
         super(PyPIC_Fortran_M2P_P2M, self).__init__(mesh, poissonsolver,
-                gradient)
+                gradient, optimize_meshing_memory=True)
         self.mesh = mesh
         self.poissonsolver = poissonsolver
         self._gradient = gradient(mesh)
@@ -260,7 +244,7 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
         return rho.reshape(self.mesh.nx, self.mesh.ny).T
 
 
-class PyPIC_GPU(object):
+class PyPIC_GPU(PyPIC):
     '''Encodes the algorithm of PyPIC for a static mesh
     on the GPU:
 
@@ -279,10 +263,12 @@ class PyPIC_GPU(object):
     hence accounting for the magnetic fields.
     '''
 
-    def __init__(self, mesh, poissonsolver, context, gradient=make_GPU_gradient):
+    def __init__(self, mesh, poissonsolver, context, gradient=make_GPU_gradient,
+                 optimize_meshing_memory=True):
         '''Mesh sizes need to be powers of 2 in x (and y if it exists).
         '''
         self.mesh = mesh
+        self.optimize_meshing_memory = optimize_meshing_memory
         self._context = context
         self.poissonsolver = poissonsolver
         self.kernel_call_config = {
@@ -359,14 +345,7 @@ class PyPIC_GPU(object):
         Return the charge distribution on the mesh (which is mesh_charges =
         rho*volume).
         '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
+        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.get("charge", e)
         n_macroparticles = len(mp_coords[0])
         self.kernel_call_config['p2m']['grid'] = (
@@ -495,14 +474,7 @@ class PyPIC_GPU(object):
         Returns asynchronously from the device.
         (You may potentially want to call context.synchronize()!)
         '''
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
+        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
         particles_quantity = gpuarray.empty(n_macroparticles, dtype=np.float64)
 
@@ -539,14 +511,7 @@ class PyPIC_GPU(object):
         Return the interpolated fields per particle for each dimension.
         '''
         mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
+        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
         self.kernel_call_config['m2p']['grid'] = (
                 idivup(n_macroparticles, reduce(mul,
@@ -588,18 +553,13 @@ class PyPIC_GPU(object):
         Return as many interpolated fields per particle as
         dimensions in mp_coords are given.
         '''
-        charge = kwargs.get("charge", e)
-        mesh_indices = kwargs.get("mesh_indices",
-                                  self.mesh.get_indices(*mp_coords))
-        mesh_weights = kwargs.get(
-            "mesh_weights", self.mesh.get_weights(
-                *mp_coords, indices=mesh_indices,
-                distances=kwargs.get("mesh_distances", None)
-            )
-        )
+        charge = kwargs.pop("charge", e)
+        if not self.optimize_meshing_memory:
+            kwargs["mesh_indices"], kwargs["mesh_weights"] = \
+                self.get_meshing(kwargs, *mp_coords)
 
-        lower_bounds = kwargs.get('lower_bounds', None)
-        upper_bounds = kwargs.get('upper_bounds', None)
+        lower_bounds = kwargs.pop('lower_bounds', None)
+        upper_bounds = kwargs.pop('upper_bounds', None)
 
         if lower_bounds is not None and upper_bounds is not None:
             mesh_charges = self.sorted_particles_to_mesh(
@@ -608,9 +568,7 @@ class PyPIC_GPU(object):
             )
         else: # particle arrays are not sorted by mesh node ids
             mesh_charges = self.particles_to_mesh(
-                *mp_coords, charge=charge,
-                mesh_indices=mesh_indices,
-                mesh_weights=mesh_weights
+                *mp_coords, charge=charge, **kwargs
             )
         rho = mesh_charges / self.mesh.volume_elem
         if getattr(self.poissonsolver, 'is_25D', False):
@@ -619,9 +577,7 @@ class PyPIC_GPU(object):
         mesh_e_fields = self.get_electric_fields(phi)
         self._context.synchronize()
         mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
-        fields = self.field_to_particles(*mesh_fields_and_mp_coords,
-                                         mesh_indices=mesh_indices,
-                                         mesh_weights=mesh_weights)
+        fields = self.field_to_particles(*mesh_fields_and_mp_coords, **kwargs)
         self._context.synchronize()
         return fields
 
