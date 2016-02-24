@@ -5,3 +5,5 @@
 *.png
 norepository_*
 *~
+build
+CyFPPS.cpp
