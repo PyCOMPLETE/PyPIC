@@ -22,7 +22,7 @@ chamber = ell.ellip_cham_geom_object(x_aper = R_cham, y_aper = R_cham)
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh)
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
-picFPPS = PIC_FPPS(40,40,a=Dh,solverType='Uniform')
+picFPPS = PIC_FPPS(1,1000,a=R_cham,solverType='Uniform')
 
 # generate particles
 x_part = R_charge*(2.*rand(N_part_gen)-1.)
