@@ -5,6 +5,7 @@ import geom_impact_poly as poly
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FFT_OpenBoundary_SquareGrid as PIC_FFT
 import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
+from CyFPPS import PyFPPS as PIC_FPPS
 
 na = np.array
 Dh =1e-1
@@ -61,15 +62,19 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
 picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
+R_cham = np.sqrt((chamber.x_aper/2)**2 + (chamber.y_aper/2)**2 )
+picFPPS = PIC_FPPS(nTheta=100,nR=200,a=R_cham,solverType='OpenBoundary')
 
 picFDSW.scatter(x_part, y_part, nel_part)
 picFFTPEC.scatter(x_part, y_part, nel_part)
 picFFT.scatter(x_part, y_part, nel_part)
+picFPPS.scatter(x_part,y_part,nel_part)
 
 
 picFDSW.solve()
 picFFTPEC.solve()
 picFFT.solve()
+picFPPS.solve()
 
 pl.close('all')
 pl.figure(1)
@@ -122,6 +127,21 @@ pl.axis('equal')
 pl.suptitle('Magnitude electric field - free space')
 pl.colorbar()
 pl.savefig('Xmas_efield_open_boudary.png', dpi=200)
+
+x = np.arange(-chamber.x_aper,chamber.x_aper,2*chamber.x_aper/300)
+y = np.arange(-chamber.y_aper,chamber.y_aper,2*chamber.y_aper/300)
+X,Y = np.meshgrid(x,y)
+E = np.zeros_like(X)
+for i in range(np.shape(X)[0]):
+    Ex_FPPS,Ey_FPPS = picFPPS.gather(X[i,:],Y[i,:])
+    print(np.shape(Ex_FPPS))
+    E[i,:] = Ex_FPPS**2+Ey_FPPS**2
+pl.figure(303)
+pl.pcolor(X,Y,E)
+pl.axis('equal')
+pl.suptitle('Magnitude electric field - free space')
+pl.colorbar()
+pl.savefig('Xmas_efield_FPPS_openBoundary.png', dpi=200)
 
 
 pl.show()
