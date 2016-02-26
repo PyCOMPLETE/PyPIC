@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.03                     
+#		           PyPIC Version 1.04                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -65,7 +65,7 @@ class PyPIC_Scatter_Gather(object):
 	__metadata__ = ABCMeta
 	
 	def __init__(self, x_aper=None, y_aper=None, Dh=None, xg=None, yg=None, *args, **kwargs):
-		print 'PyPIC Version 1.03'
+		print 'PyPIC Version 1.04'
 		
 		if xg!=None and xg!=None:
 			assert(x_aper==None and y_aper==None and Dh==None)
