@@ -88,9 +88,14 @@ Cf2py intent(out) Ey_n
             Ey_n(p) = Ey_n(p) + efy((i+1),(j+1))*wei_i1j1;
         
             if (anyexternal .eqv. .true.) then
+		if ((wei_ij+wei_i1j+wei_ij1+wei_i1j1)>0.) then
                 fact_correct = 1./(wei_ij+wei_i1j+wei_ij1+wei_i1j1)
                 Ex_n(p) = Ex_n(p)*fact_correct
                 Ey_n(p) = Ey_n(p)*fact_correct
+		else
+		Ex_n(p) = 0.
+                Ey_n(p) = 0.
+		end if
             end if
         
         end if
