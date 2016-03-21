@@ -1,4 +1,4 @@
-all: f2py cythonize
+all: f2py 
 
 f2py:
 	f2py -m rhocompute -c compute_rho.f
