@@ -180,7 +180,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
                         
 
     #@profile    
-    def solve(self, rho = None, flag_verbose = False, pic_coarse = None):
+    def solve(self, rho = None, flag_verbose = False, pic_external = None):
 
 		if rho == None:
 			rho = self.rho
@@ -188,10 +188,10 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 		b=-rho.flatten()/eps0;
 		b[~(self.flag_inside_n)]=0.; #boundary condition
 
-		if pic_coarse is not None:
+		if pic_external is not None:
 			x_border = self.xn[self.flag_border_n]
 			y_border = self.yn[self.flag_border_n]
-			phi_border = pic_coarse.gather_phi(x_border, y_border)
+			phi_border = pic_external.gather_phi(x_border, y_border)
 			b[self.flag_border_n] = phi_border
 
 
