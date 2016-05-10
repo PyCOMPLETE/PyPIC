@@ -53,6 +53,8 @@
 
 from numpy import sum, sqrt, arctan2, sin, cos, isnan
 
+import numpy as np
+
 class ellip_cham_geom_object:
     def __init__(self, x_aper, y_aper, flag_verbose_file=True):
         self.x_aper = x_aper
@@ -201,4 +203,7 @@ class ellip_cham_geom_object:
         i_found=None
         
         return  x_int,y_int,z_int,Nx,Ny, i_found
-
+    
+    def points_on_boundary(self, N_points):
+        tt = np.linspace(0., 2*np.pi, N_points)
+        return self.x_aper*cos(tt), self.y_aper*sin(tt)
