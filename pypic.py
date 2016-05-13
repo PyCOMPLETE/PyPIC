@@ -418,7 +418,7 @@ class PyPIC_GPU(PyPIC):
             [mesh_charges.gpudata]
         ))
         self._context.synchronize()
-        mesh_charges *= e
+        mesh_charges *= charge
         return mesh_charges
 
         # # example on how to use the sorted one with PyHEADTAIL:
