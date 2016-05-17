@@ -60,161 +60,124 @@ from scipy.constants import e, epsilon_0
 
 na = lambda x:np.array([x])
 
-qe = e
-eps0 = epsilon_0
+qe=e
+eps0=epsilon_0
 
-class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
+class FFT_OpenBoundary(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu'):
+    def __init__(self, x_aper, y_aper, Dh=None, dx=None, dy=None, fftlib = 'pyfftw'):
         
 		print 'Start PIC init.:'
-		print 'Finite Differences, Square Grid'
+		print 'FFT, Open Boundary'
 
 
-		self.Dh = Dh
-		super(FiniteDifferences_Staircase_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
-		Nyg, Nxg = self.Nyg, self.Nxg
-		
-		
-		[xn, yn]=np.meshgrid(self.xg,self.yg)
+		if dx!=None and dy!=None:
+			assert(Dh==None)
 
-		xn=xn.T
-		xn=xn.flatten()
+		elif Dh!=None:
+			assert(dx==None and dy==None)
+			dx = Dh
+			dy = Dh
 
-		yn=yn.T
-		yn=yn.flatten()
-		#% xn and yn are stored such that the external index is on x 
-
-		flag_outside_n=chamb.is_outside(xn,yn)
-		flag_inside_n=~(flag_outside_n)
-
-
-		flag_outside_n_mat=np.reshape(flag_outside_n,(Nyg,Nxg),'F');
-		flag_outside_n_mat=flag_outside_n_mat.T
-		[gx,gy]=np.gradient(np.double(flag_outside_n_mat));
-		gradmod=abs(gx)+abs(gy);
-		flag_border_mat=np.logical_and((gradmod>0), flag_outside_n_mat);
-		flag_border_n = flag_border_mat.flatten()
-
-		A=scsp.lil_matrix((Nxg*Nyg,Nxg*Nyg)); #allocate a sparse matrix
-
-		list_internal_force_zero = []
-
-		# Build A matrix
-		for u in range(0,Nxg*Nyg):
-			if np.mod(u, Nxg*Nyg/20)==0:
-				print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
-			if flag_inside_n[u]:
-				A[u,u] = -(4./(Dh*Dh))
-				A[u,u-1]=1./(Dh*Dh);     #phi(i-1,j)nx
-				A[u,u+1]=1./(Dh*Dh);     #phi(i+1,j)
-				A[u,u-Nyg]=1./(Dh*Dh);    #phi(i,j-1)
-				A[u,u+Nyg]=1./(Dh*Dh);    #phi(i,j+1)
-			else:
-				# external nodes
-				A[u,u]=1.
-				
-		A=A.tocsr() #convert to csr format
-		
-		#Remove trivial equtions 
-		diagonal = A.diagonal()
-		N_full = len(diagonal)
-		indices_non_id = np.where(diagonal!=1.)[0]
-		N_sel = len(indices_non_id)
-
-		Msel = scsp.lil_matrix((N_full, N_sel))
-		for ii, ind in enumerate(indices_non_id):
-			Msel[ind, ii] =1.
-			
-		Msel = Msel.tocsc()
-
-		Asel = Msel.T*A*Msel
-		Asel=Asel.tocsc()
-		
-
-		if sparse_solver == 'scipy_slu':
-			print "Using scipy superlu solver..."
-			luobj = ssl.splu(Asel.tocsc())
-		elif sparse_solver == 'PyKLU':
-			print "Using klu solver..."
-			try:
-				import PyKLU.klu as klu
-				luobj = klu.Klu(Asel.tocsc())
-			except StandardError, e: 
-				print "Got exception: ", e
-				print "Falling back on scipy superlu solver:"
-				luobj = ssl.splu(Asel.tocsc())
 		else:
-			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
+			raise ValueError('Dh or dx and dy must be specified!!!')
+		
+		super(FFT_OpenBoundary, self).__init__(x_aper, y_aper, dx, dy)
+
+
+		nx = len(self.xg)
+		ny = len(self.yg)
+
+
+		mx = -dx / 2 + np.arange(nx + 1) * dx
+		my = -dy / 2 + np.arange(ny + 1) * dy
+		x, y = np.meshgrid(mx, my)
+		r2 = x ** 2 + y ** 2
+		# Antiderivative
+		tmpfgreen = -1 / 2 * (-3 * x * y + x * y * np.log(r2)
+				   + x * x * np.arctan(y / x) + y * y * np.arctan(x / y)) # * 2 / dx / dy
+				   
+		fgreen = np.zeros((2 * ny, 2 * nx))
+		# Integration and circular Green's function
+		fgreen[:ny, :nx] = tmpfgreen[1:, 1:] + tmpfgreen[:-1, :-1] - tmpfgreen[1:, :-1] - tmpfgreen[:-1, 1:]
+		fgreen[ny:, :nx] = fgreen[ny:0:-1, :nx]
+		fgreen[:ny, nx:] = fgreen[:ny, nx:0:-1]
+		fgreen[ny:, nx:] = fgreen[ny:0:-1, nx:0:-1]
+		
+		if fftlib == 'pyfftw':
+			try:
+				import pyfftw
+				print 'Using PyFFTW'
+				#prepare fftw's
+				tmprho = fgreen.copy()
+				fft_first = pyfftw.builders.fft(tmprho[:ny, :].copy(), axis = 1)
+				transf1 = (fgreen*(1.+1j))*0.
+				transf1[:ny, :] = fft_first(tmprho[:ny, :].copy())
+				fft_second = pyfftw.builders.fft(transf1.copy(), axis = 0)
+				fftphi_new = fft_second(transf1.copy())* fgreen
+				ifft_first = pyfftw.builders.ifft(fftphi_new.copy(), axis = 0)
+				itransf1 = ifft_first(fftphi_new.copy())
+				ifft_second = pyfftw.builders.ifft(itransf1[:ny, :].copy(), axis = 1)
+
+				def fft2(x):
+					tmp = (x*(1.+1j))*0.
+					tmp[:ny, :] = fft_first(x[:ny, :])
+					return fft_second(tmp)
+					
+				def ifft2(x):
+					tmp = ifft_first(x)
+					res = 0*x
+					res[:ny, :] = np.real(ifft_second(tmp[:ny, :]))
+					return res
+				
+				self.fft2 = fft2
+				self.ifft2 = ifft2
+				
+			except ImportError as err:
+				print 'Failed to import pyfftw'
+				print 'Got exception: ', err
+				print 'Using numpy fft'
+				self.fft2 = np.fft.fft2
+				self.ifft2 = np.fft.ifft2
+		elif fftlib == 'numpy':
+			print 'Using numpy FFT'
+			self.fft2 = np.fft.fft2
+			self.ifft2 = np.fft.ifft2
+		else:
+			raise ValueError('fftlib not recognized!!!!')
 			
-		self.xn = xn
-		self.yn = yn
-		
-		self.flag_inside_n = flag_inside_n
-		self.flag_outside_n = flag_outside_n
-		self.flag_outside_n_mat = flag_outside_n_mat
-		self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
-		self.flag_border_mat = flag_border_mat
-		self.Asel = Asel
-		self.luobj = luobj
-
-
-		self.rho = np.zeros((self.Nxg,self.Nyg));
-		self.phi = np.zeros((self.Nxg,self.Nyg));
-		self.efx = np.zeros((self.Nxg,self.Nyg));
-		self.efy = np.zeros((self.Nxg,self.Nyg));
-
-		
-		self.U_sc_eV_stp=0.;
-
-		
-		self.Msel = Msel.tocsc()
-		self.Msel_T = (Msel.T).tocsc()
-
-		
-		print 'Done PIC init.'
+		self.fgreen = fgreen
+		self.fgreentr = np.fft.fft2(fgreen).copy()
+		self.rho = np.zeros((self.Nxg,self.Nyg))
+		self.phi = np.zeros((self.Nxg,self.Nyg))
+		self.efx = np.zeros((self.Nxg,self.Nyg))
+		self.efy = np.zeros((self.Nxg,self.Nyg))
+		self.Dh = Dh
+		self.nx = nx
+		self.ny = ny
                         
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
-
 		if rho == None:
 			rho = self.rho
 
-		b=-rho.flatten()/eps0;
-		b[~(self.flag_inside_n)]=0.; #boundary condition
+		tmprho = 0.*self.fgreen
+		tmprho[:self.ny, :self.nx] = rho.T
 
-		if flag_verbose:
-			print 'Start Linear System Solution.'
-		b_sel = self.Msel_T*b
-		phi_sel = self.luobj.solve(b_sel)
-		phi = self.Msel*phi_sel
-
-		U_sc_eV_stp = -0.5*eps0*np.sum(b*phi)*self.Dh*self.Dh/qe
-
-		if flag_verbose:
-			print 'Start field computation.'
-
-
-		phi=np.reshape(phi,(self.Nxg,self.Nyg))
-
-		efx = self.efx
-		efy = self.efy
-
-		efx[1:self.Nxg-1,:] = phi[0:self.Nxg-2,:] - phi[2:self.Nxg,:];  #central difference on internal nodes
-		efy[:,1:self.Nyg-1] = phi[:,0:self.Nyg-2] - phi[:,2:self.Nyg];  #central difference on internal nodes
-
-		efx[self.flag_border_mat]=efx[self.flag_border_mat]*2;
-		efy[self.flag_border_mat]=efy[self.flag_border_mat]*2;
+		fftphi = self.fft2(tmprho) * self.fgreentr
 		
-		self.efx = efx / (2*self.Dh);    #divide grid size
-		self.efy = efy / (2*self.Dh);
+		tmpphi = self.ifft2(fftphi)
+		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
 
-		 
-		self.rho = rho
-		self.b = b
-		self.phi = phi
-		self.U_sc_eV_stp = U_sc_eV_stp
+		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
+		self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes
+
+		
+		self.efy = self.efy/(2*self.dy)
+		self.efx = self.efx/(2*self.dx)
         
+        
+
 
 

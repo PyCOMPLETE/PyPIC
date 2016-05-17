@@ -3,21 +3,22 @@
 *  f2py -m rhocompute -c compute_rho.f	
 
 	subroutine compute_sc_rho(N_mp,x_mp, y_mp,nel_mp, bias_x, 
-     +	bias_y, Dh, Nxg, Nyg,rho)
+     +	bias_y, dx, dy, Nxg, Nyg,rho)
 Cf2py intent(in)  N_mp   
 Cf2py intent(in)  x_mp                                      
 Cf2py intent(in)  y_mp   
 Cf2py intent(in)  nel_mp
 Cf2py intent(in)  bias_x
 Cf2py intent(in)  bias_y 
-Cf2py intent(in)  Dh
+Cf2py intent(in)  dx
+Cf2py intent(in)  dy
 Cf2py intent(in)  Nxg
 Cf2py intent(in)  Nyg
 Cf2py intent(out) rho
         implicit none
 	integer  N_mp
 	real*8   x_mp(N_mp), y_mp(N_mp), nel_mp(N_mp)
-	real*8   bias_x, bias_y, Dh
+	real*8   bias_x, bias_y, dx, dy
 	integer  Nxg, Nyg
 	real*8   rho(Nxg, Nyg)
 	integer  p
@@ -35,12 +36,12 @@ Cf2py intent(out) rho
 	do p=1,N_mp
 		!loop over particles
         	
-        	fi = 1+(x_mp(p)-bias_x)/Dh;   !real i index of particle's cell 
+        	fi = 1+(x_mp(p)-bias_x)/dx;   !real i index of particle's cell 
         	i = int(fi);                !integral part
         	hx = fi-dble(i);                    !the remainder
         
         	
-        	fj = 1+(y_mp(p)-bias_y)/Dh;   !real j index of particle's cell (C-like indexing)
+        	fj = 1+(y_mp(p)-bias_y)/dy;   !real j index of particle's cell (C-like indexing)
         	j = int(fj);                !integral part
         	hy = fj-dble(j);                    !the remainder
         

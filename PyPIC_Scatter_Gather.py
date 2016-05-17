@@ -64,38 +64,45 @@ class PyPIC_Scatter_Gather(object):
 	
 	__metadata__ = ABCMeta
 	
-	def __init__(self, x_aper=None, y_aper=None, Dh=None, xg=None, yg=None, *args, **kwargs):
+	def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, *args, **kwargs):
 		print 'PyPIC Version 1.04'
 		
-		if xg!=None and xg!=None:
-			assert(x_aper==None and y_aper==None and Dh==None)
+		if xg!=None and yg!=None:
+			assert(x_aper==None and y_aper==None and dx==None and dy==None)
 			Nxg=len(xg);
 			bias_x=min(xg);
 
 			Nyg=len(yg);
 			bias_y=min(yg);
 			
-			Dh = xg[1]-xg[0]
-		else:
-			assert(xg==None and xg==None)
-			xg=np.arange(0, x_aper+5.*Dh,Dh,float)  
+			dx = xg[1]-xg[0]
+			dy = yg[1]-yg[0]
+
+		elif dx!=None and dy!=None:
+			assert(xg==None and yg==None)
+			xg=np.arange(0, x_aper+5.*dx,dx,float)  
 			xgr=xg[1:]
 			xgr=xgr[::-1]#reverse array
 			xg=np.concatenate((-xgr,xg),0)
 			Nxg=len(xg);
 			bias_x=min(xg);
 
-			yg=np.arange(0,y_aper+4.*Dh,Dh,float)  
+			yg=np.arange(0,y_aper+4.*dy,dy,float)  
 			ygr=yg[1:]
 			ygr=ygr[::-1]#reverse array
 			yg=np.concatenate((-ygr,yg),0)
 			Nyg=len(yg);
-			bias_y=min(yg);
+			bias_y=min(yg);			
 
-		self.Dh=Dh
+		else:
+			raise ValueError('dx and dy, or xg and yg must be specified!!!')
+
+
+		self.dx = dx
 		self.xg = xg
 		self.Nxg = Nxg
 		self.bias_x = bias_x
+		self.dy = dy
 		self.yg = yg
 		self.Nyg = Nyg
 		self.bias_y = bias_y
@@ -108,10 +115,9 @@ class PyPIC_Scatter_Gather(object):
 			raise ValueError('x_mp, y_mp, nel_mp should have the same length!!!')
 		
 		if len(x_mp)>0:
-			rho=rhocom.compute_sc_rho(x_mp,y_mp,nel_mp,
-									  self.bias_x,self.bias_y,self.Dh, self.Nxg, self.Nyg)
+			rho=rhocom.compute_sc_rho(x_mp,y_mp,nel_mp,self.bias_x,self.bias_y,self.dx,self.dy,self.Nxg,self.Nyg)
 
-			self.rho=charge*rho/(self.Dh*self.Dh);
+			self.rho=charge*rho/(self.dx*self.dy);
 		else:
 			self.rho=self.rho*0.
 
@@ -123,8 +129,8 @@ class PyPIC_Scatter_Gather(object):
 
 		if len(x_mp)>0:    
 			## compute beam electric field
-			Ex_sc_n, Ey_sc_n = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.Dh,
-										 self.Dh, self.efx, self.efy)
+			Ex_sc_n, Ey_sc_n = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.dx,
+										 self.dy, self.efx, self.efy)
 					   
 		else:
 			Ex_sc_n=0.
