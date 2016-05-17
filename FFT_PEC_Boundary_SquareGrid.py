@@ -73,7 +73,8 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		print 'FFT, PEC Boundary, Square Grid'
 
 
-		super(FFT_PEC_Boundary_SquareGrid, self).__init__(x_aper, y_aper, Dh)
+		self.Dh = Dh		
+		super(FFT_PEC_Boundary_SquareGrid, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
 
 		
 		

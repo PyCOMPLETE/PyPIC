@@ -71,7 +71,8 @@ class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
 		print 'FFT, Open Boundary, Square Grid'
 
 
-		super(FFT_OpenBoundary_SquareGrid, self).__init__(x_aper, y_aper, Dh)
+		self.Dh = Dh
+		super(FFT_OpenBoundary_SquareGrid, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
 
 		
 		dx = self.Dh
