@@ -53,13 +53,7 @@
 from FFT_OpenBoundary import FFT_OpenBoundary
 
 
-class FFT_OpenBoundary_SquareGrid(FFT_OpenBoundary):
-    #@profile
-    def __init__(self, x_aper, y_aper, Dh, fftlib = 'pyfftw'):
-        
-		print 'Start PIC init.:'
-		print 'FFT, Open Boundary, Square Grid'
-		
-		super(FFT_OpenBoundary_SquareGrid, self).__init__(x_aper, y_aper, Dh=Dh, fftlib=fftlib)
+def FFT_OpenBoundary_SquareGrid(x_aper, y_aper, Dh, fftlib = 'pyfftw'):
+	return FFT_OpenBoundary(x_aper, y_aper, Dh, fftlib = fftlib)
 
 
