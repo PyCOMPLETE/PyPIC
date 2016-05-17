@@ -95,7 +95,7 @@ class PyPIC_Scatter_Gather(object):
 			bias_y=min(yg);			
 
 		else:
-			raise ValueError('Dx and Dy, or xg and yg must be specified!!!')
+			raise ValueError('dx and dy, or xg and yg must be specified!!!')
 
 
 		self.dx = dx
