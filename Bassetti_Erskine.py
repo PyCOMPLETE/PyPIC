@@ -67,8 +67,8 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
 		print 'Start PIC init.:'
 		print 'Bassetti-Erskine, Square Grid'
 
-
-		super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, Dh)
+                self.Dh = Dh
+		super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
 		
 		xx = self.xg
 		yy = self.yg
