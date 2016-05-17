@@ -1,6 +1,6 @@
 import numpy as np
-import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import PyPIC.geom_impact_poly as poly
+import FiniteDifferences_Staircase_SquareGrid as PIC_FD
+import geom_impact_poly as poly
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 
 from scipy.constants import e as qe
