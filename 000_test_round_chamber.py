@@ -2,7 +2,14 @@ import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import FFT_OpenBoundary as PIC_FFT
 import FFT_OpenBoundary_SquareGrid as PIC_FFTSq
-#from CyFPPS import PyFPPS as PIC_FPPS
+
+
+try:
+    from CyFPPS import PyFPPS as PIC_FPPS
+except ImportError:
+    print "Not possible to import PyFPPS, replaced with FFT_Open"
+    PIC_FPPS = None
+    
 import geom_impact_ellip as ell
 from scipy import rand
 import numpy as np
@@ -24,7 +31,8 @@ picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh)
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFT = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, dx = Dh/4., dy = Dh, fftlib='pyfftw')
 picFFTSq = PIC_FFTSq.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
-#picFPPS = PIC_FPPS(200,200,a=R_cham,solverType='Uniform')
+picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
+if PIC_FPPS: picFPPS = PIC_FPPS(200,200,a=R_cham,solverType='Uniform')
 
 # generate particles
 x_part = R_charge*(2.*rand(N_part_gen)-1.)
@@ -40,14 +48,14 @@ picFD.scatter(x_part, y_part, nel_part)
 picFDSW.scatter(x_part, y_part, nel_part)
 picFFT.scatter(x_part, y_part, nel_part)
 picFFTSq.scatter(x_part, y_part, nel_part)
-#picFPPS.scatter(x_part,y_part,nel_part)
+if PIC_FPPS: picFPPS.scatter(x_part,y_part,nel_part)
 
 #pic scatter
 picFD.solve()
 picFDSW.solve()
 picFFT.solve()
 picFFTSq.solve()
-#picFPPS.solve()
+if PIC_FPPS:picFPPS.solve()
 
 x_probes = np.linspace(0,R_cham,1000)
 y_probes = 0.*x_probes
@@ -57,7 +65,7 @@ Ex_FD, Ey_FD = picFD.gather(x_probes, y_probes)
 Ex_FDSW, Ey_FDSW = picFDSW.gather(x_probes, y_probes)
 Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
 Ex_FFTSq, Ey_FFTSq = picFFTSq.gather(x_probes, y_probes)
-#Ex_FPPS,Ey_FPPS = picFPPS.gather(x_probes,y_probes)
+if PIC_FPPS: Ex_FPPS,Ey_FPPS = picFPPS.gather(x_probes,y_probes)
 
 E_r_th = map(lambda x: -np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x), x_probes)
 
@@ -69,7 +77,7 @@ pl.plot(x_probes, Ex_FD, label = 'FD')
 pl.plot(x_probes, Ex_FDSW, label = 'FD ShortleyWeller')
 pl.plot(x_probes, Ex_FFT, label = 'FFT open')
 pl.plot(x_probes, Ex_FFTSq, label = 'FFT open square')
-#pl.plot(x_probes, Ex_FPPS, label = 'FPPS')
+if PIC_FPPS: pl.plot(x_probes, Ex_FPPS, label = 'FPPS')
 pl.plot(x_probes, E_r_th, label = 'Analytic')
 #pl.plot(picFFT.xg, picFFT.efx[picFFT.ny/2, :])
 pl.legend()
