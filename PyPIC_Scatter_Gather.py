@@ -64,11 +64,15 @@ class PyPIC_Scatter_Gather(object):
 	
 	__metadata__ = ABCMeta
 	
-	def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, *args, **kwargs):
+	def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
+				x_min=None, x_max=None, y_min=None, y_max=None, *args, **kwargs):
+
 		print 'PyPIC Version 1.04'
 		
 		if xg!=None and yg!=None:
 			assert(x_aper==None and y_aper==None and dx==None and dy==None)
+			assert(x_min==None and x_max==None and y_min==None and y_max==None)
+
 			Nxg=len(xg);
 			bias_x=min(xg);
 
@@ -80,24 +84,25 @@ class PyPIC_Scatter_Gather(object):
 
 		elif dx!=None and dy!=None:
 			assert(xg==None and yg==None)
-			xg=np.arange(0, x_aper+5.*dx,dx,float)  
-			xgr=xg[1:]
-			xgr=xgr[::-1]#reverse array
-			xg=np.concatenate((-xgr,xg),0)
-			Nxg=len(xg);
-			bias_x=min(xg);
+			# box given
+			if x_min!=None and x_max!=None and y_min!=None and y_max!=None:
+				assert(x_aper==None and y_aper==None)
 
-			yg=np.arange(0,y_aper+4.*dy,dy,float)  
-			ygr=yg[1:]
-			ygr=ygr[::-1]#reverse array
-			yg=np.concatenate((-ygr,yg),0)
-			Nyg=len(yg);
-			bias_y=min(yg);	
-					
-		elif 
-			assert(xg==None and yg==None)???
-			x_aper = (x_max-x_min)/2.
-			x_center = (x_max+x_min)/2.	
+				x_aper = (x_max-x_min)/2.
+				x_center = (x_max+x_min)/2.
+
+				y_aper = (y_max-y_min)/2.
+				y_center = (y_max+y_min)/2.
+			# aperture given
+			elif x_aper!=None and y_aper!=None:
+				assert(x_min==None and x_max==None and y_min==None and y_max==None)
+
+				x_center = 0.
+				y_center = 0.
+
+			else:
+				raise ValueError('x_aper and y_aper, or x_min, x_max and y_min, y_max must be specified!!!')
+
 			xg=np.arange(0, x_aper+5.*dx,dx,float)  
 			xgr=xg[1:]
 			xgr=xgr[::-1]#reverse array
@@ -106,7 +111,13 @@ class PyPIC_Scatter_Gather(object):
 			Nxg=len(xg);
 			bias_x=min(xg);
 
-
+			yg=np.arange(0,y_aper+4.*dy,dy,float)  
+			ygr=yg[1:]
+			ygr=ygr[::-1]#reverse array
+			yg=np.concatenate((-ygr,yg),0)
+			yg = yg + y_center
+			Nyg=len(yg);
+			bias_y=min(yg);	
 
 		else:
 			raise ValueError('dx and dy, or xg and yg must be specified!!!')
