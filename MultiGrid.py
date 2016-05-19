@@ -1,6 +1,6 @@
 import numpy as np
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import geom_impact_poly as poly
+import simple_polygon as spoly
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 
 from scipy.constants import e as qe
@@ -9,10 +9,8 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
     def __init__(self, pic_external, x_min_internal, x_max_internal, y_min_internal, y_max_internal, Dh_internal, N_nodes_discard):
         
         #build boundary for refinement grid
-        box_internal = poly.polyg_cham_geom_object({'Vx':np.array([x_max_internal, x_min_internal, x_min_internal, x_max_internal]),
-                                'Vy':np.array([y_max_internal, y_max_internal, y_min_internal, y_min_internal]),
-                                'x_sem_ellip_insc':0.99*np.min(np.abs(np.array([x_min_internal, x_max_internal]))),
-                                'y_sem_ellip_insc':0.99*np.min(np.abs(np.array([y_min_internal, y_max_internal])))})
+        box_internal = spoly.SimplePolygon({'Vx':np.array([x_max_internal, x_min_internal, x_min_internal, x_max_internal]),
+                                'Vy':np.array([y_max_internal, y_max_internal, y_min_internal, y_min_internal])})
         self.pic_internal = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = box_internal, Dh = Dh_internal, remove_external_nodes_from_mat=False)
 
         

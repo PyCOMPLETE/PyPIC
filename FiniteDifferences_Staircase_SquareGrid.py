@@ -65,14 +65,19 @@ eps0 = epsilon_0
 
 class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu', remove_external_nodes_from_mat=True):
+    def __init__(self, chamb, Dh, sparse_solver = 'scipy_slu', remove_external_nodes_from_mat=True):
         
 		print 'Start PIC init.:'
 		print 'Finite Differences, Square Grid'
 
 
 		self.Dh = Dh
-		super(FiniteDifferences_Staircase_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
+		if hasattr(chamb, 'x_min') and hasattr(chamb, 'x_max') and hasattr(chamb, 'y_min') and hasattr(chamb, 'y_max'):
+			super(FiniteDifferences_Staircase_SquareGrid, self).__init__(dx = self.Dh, dy = self.Dh, 
+				x_min = chamb.x_min, x_max = chamb.x_max, y_min = chamb.y_min, y_max = chamb.y_max)
+		else:
+			super(FiniteDifferences_Staircase_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
+
 		Nyg, Nxg = self.Nyg, self.Nxg
 		
 		
