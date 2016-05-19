@@ -33,6 +33,11 @@ x_aper = 25e-3
 y_aper = 25e-3
 Dh_main = .1e-3
 
+#traditional settings
+#~ tol_der = 0.01
+#~ tol_stem = 0.01
+
+#new default settings
 tol_der = 0.1
 tol_stem = 0.01
 
@@ -40,7 +45,8 @@ tol_stem = 0.01
 chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
 
 # build main pic
-pic_SW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_main)
+pic_SW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, 
+		Dh = Dh_main, tol_stem = tol_stem, tol_der = tol_der)
 
 
 #~ # generate beam
@@ -59,7 +65,7 @@ pic_SW.solve()
 
 
 theta=np.linspace(0, 2*np.pi, 1000)
-r_probes=x_aper
+r_probes=x_aper*0.999999
 x_probes = r_probes*np.cos(theta)
 y_probes = r_probes*np.sin(theta)
 
