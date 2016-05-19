@@ -33,6 +33,9 @@ x_aper = 25e-3
 y_aper = 25e-3
 Dh_main = .1e-3
 
+tol_der = 0.1
+tol_stem = 0.01
+
 #build chamber
 chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
 
