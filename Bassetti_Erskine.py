@@ -134,7 +134,7 @@ def BassErsk(xin,yin,sigmax,sigmay):
     else:
     
         S=np.sqrt(2*(sigmay*sigmay-sigmax*sigmax));
-        factBE=1/(2*eps0*np.sqrt(pi)*S);
+        factBE=1/(2*eps0*np.sqrt(np.pi)*S);
         etaBE=sigmax/sigmay*y+1j*sigmay/sigmax*x;
         yetaBE=y+1j*x;
         
