@@ -98,7 +98,11 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
-		print ('Bassetti_Erskine: nothing to solve!!!!')
+		raise ValueError('Bassetti_Erskine: nothing to solve!!!!')
+        
+    def scatter(self,  x_mp, y_mp, nel_mp, charge = -qe):
+		raise ValueError('Bassetti_Erskine: what do you want to scatter???!!!!')
+        
         
 
 
