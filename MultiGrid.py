@@ -59,7 +59,7 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
             np.logical_and(y_mp > self.y_min_internal + self.D_discard, 
                            y_mp < self.y_max_internal - self.D_discard))
                            
-        mask_external = np.logical_not(mask_finer)
+        mask_external = np.logical_not(mask_internal)
         
         phi_sc_n_external = self.pic_external.gather_phi(x_mp[mask_external], y_mp[mask_external])
         phi_sc_n_internal = self.pic_internal.gather_phi(x_mp[mask_internal], y_mp[mask_internal])
