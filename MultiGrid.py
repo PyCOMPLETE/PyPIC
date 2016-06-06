@@ -15,6 +15,7 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
 
         
         self.pic_external = pic_external
+        self.chamb = self.pic_external.chamb
         
         self.x_min_internal = x_min_internal
         self.x_max_internal = x_max_internal
@@ -24,6 +25,12 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
         self.N_nodes_discard = N_nodes_discard
         self.D_discard = N_nodes_discard*Dh_internal
         
+        #check if the internal grid lies inside the chamber
+        x_border = self.pic_internal.xn[self.pic_internal.flag_border_n]
+        y_border = self.pic_internal.yn[self.pic_internal.flag_border_n]
+        if pic_external.chamb.is_outside(x_border, y_border).any() == True:
+            raise ValueError('One of the internal grids is outside the chamber!')
+            
     
     def scatter(self, x_mp, y_mp, nel_mp, charge = -qe):
         self.pic_external.scatter(x_mp, y_mp, nel_mp, charge)
@@ -90,7 +97,7 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
             y_max_internal = grids[ii]['y_max_internal']
             Dh_internal = grids[ii]['Dh_internal']
             N_nodes_discard = grids[ii]['N_nodes_discard']
-            pic_list.append(AddInternalGrid(pics[-1], x_min_internal, x_max_internal, y_min_internal, 
+            pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
                             y_max_internal, Dh_internal, N_nodes_discard))
                             
         pic_list = pic_list[1:]                    
@@ -116,6 +123,8 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         N_min_Dh = target['N_min_Dh']    
         Dh_main = target['Dh_main']
         
+        x_center_target = (x_min_target + x_max_target)/2.
+        y_center_target = (y_min_target + y_max_target)/2.
         
         Sx_target = x_max_target - x_min_target
         Sy_target = y_max_target - y_min_target
@@ -125,39 +134,52 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         else:
             S_target = Sy_target 
             
-            
+        if f_telescope <= 0. or f_telescope >=1.:
+			raise ValueError('The aspect ratio between grids must be 0<f<1!!!')    
         n_grids = int(np.ceil(np.log(S_target/(N_min_Dh*Dh_main))/np.log(f_telescope)))+1
+        if n_grids <= 0.:
+            raise ValueError('Found number of grids = %d <= 0!!!'%n_grids)
+        
         print '%d GRIDS NEEDED!'%n_grids
-        f_exact = (S_target/(N_min_Dh*Dh_main))**(1./(n_grids-1))
+        
+        if n_grids == 1:
+            f_exact = None #it's not used
+        else:
+            f_exact = (S_target/(N_min_Dh*Dh_main))**(1./(n_grids-1))
 
-        S_list = [S_target]
+        Sx_list = [Sx_target]
+        Sy_list = [Sy_target]
         Dh_list = [Dh_target]
 
 
 
         for i_grid in xrange(1,n_grids):
-            S_list.append(S_list[-1]/f_exact)
+            Sx_list.append(Sx_list[-1]/f_exact)
+            Sy_list.append(Sy_list[-1]/f_exact)
             Dh_list.append(Dh_list[-1]/f_exact)
 
             
-        S_list = S_list[::-1]
+        Sx_list = Sx_list[::-1]
+        Sy_list = Sy_list[::-1]
         Dh_list = Dh_list[::-1] 
         pic_list = [pic_main]
 
 
 
         for i_grid in xrange(n_grids):
-            x_min_int_curr = -S_list[i_grid]/2
-            x_max_int_curr = S_list[i_grid]/2
-            y_min_int_curr = -S_list[i_grid]/2
-            y_max_int_curr = S_list[i_grid]/2
+            x_min_int_curr = -Sx_list[i_grid]/2 + x_center_target
+            x_max_int_curr = Sx_list[i_grid]/2 + x_center_target
+            y_min_int_curr = -Sy_list[i_grid]/2 + y_center_target
+            y_max_int_curr = Sy_list[i_grid]/2 + y_center_target
             Dh_int_curr = Dh_list[i_grid]
-            print 'GRID %d/%d Dh=%e N_nodes=%f'%(i_grid,n_grids,Dh_int_curr,S_list[i_grid]/Dh_int_curr)
+            print 'GRID %d/%d'%(i_grid,n_grids)
             pic_list.append(AddInternalGrid(pic_list[-1], x_min_int_curr, x_max_int_curr, y_min_int_curr, 
                                 y_max_int_curr, Dh_int_curr, N_nodes_discard))
            
                                 
         pic_list = pic_list[1:]
+        self.n_grids = n_grids
+        self.f_exact = f_exact
         self.pic_list = pic_list
         self.target = target
         self.f_telescope = f_telescope                        
