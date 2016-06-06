@@ -245,7 +245,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		self.tol_der = tol_der
 		self.tol_stem = tol_stem
 
-		
+		self.chamb = chamb
 		print 'Done PIC init.'
                         
 
