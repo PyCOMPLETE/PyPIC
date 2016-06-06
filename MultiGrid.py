@@ -1,8 +1,8 @@
 import numpy as np
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
+import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import simple_polygon as spoly
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
-
 from scipy.constants import e as qe
 
 class AddInternalGrid(PyPIC_Scatter_Gather):
@@ -76,3 +76,93 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
             raise ValueError('rho matrix cannot be provided in multigrid mode!')
         self.pic_external.solve(flag_verbose = flag_verbose)
         self.pic_internal.solve(flag_verbose = flag_verbose, pic_external=self.pic_external)
+        
+        
+class AddMultiGrids(PyPIC_Scatter_Gather):
+    def __init__(self, pic_main, grids):
+
+        n_grids = len(grids)
+        pic_list = [pic_main]
+        for ii in xrange(n_grids):
+            x_min_internal = grids[ii]['x_min_internal']
+            x_max_internal = grids[ii]['x_max_internal']
+            y_min_internal = grids[ii]['y_min_internal']
+            y_max_internal = grids[ii]['y_max_internal']
+            Dh_internal = grids[ii]['Dh_internal']
+            N_nodes_discard = grids[ii]['N_nodes_discard']
+            pic_list.append(AddInternalGrid(pics[-1], x_min_internal, x_max_internal, y_min_internal, 
+                            y_max_internal, Dh_internal, N_nodes_discard))
+                            
+        pic_list = pic_list[1:]                    
+        self.grids = grids          
+        self.pic_list = pic_list
+        
+        self.scatter = self.pic_list[-1].scatter
+        self.solve = self.pic_list[-1].solve
+        self.gather = self.pic_list[-1].gather
+        self.gather_phi = self.pic_list[-1].gather_phi
+        
+        
+        
+class AddTelescopicGrids(PyPIC_Scatter_Gather):
+    def __init__(self, pic_main, f_telescope, target):
+    
+        x_min_target = target['x_min_target']
+        x_max_target = target['x_max_target']
+        y_min_target = target['y_min_target']
+        y_max_target = target['y_max_target']
+        Dh_target = target['Dh_target']
+        N_nodes_discard = target['N_nodes_discard']    
+        N_min_Dh = target['N_min_Dh']    
+        Dh_main = target['Dh_main']
+        
+        
+        Sx_target = x_max_target - x_min_target
+        Sy_target = y_max_target - y_min_target
+        
+        if Sx_target < Sy_target:
+            S_target = Sx_target 
+        else:
+            S_target = Sy_target 
+            
+            
+        n_grids = int(np.ceil(np.log(S_target/(N_min_Dh*Dh_main))/np.log(f_telescope)))+1
+        print '%d GRIDS NEEDED!'%n_grids
+        f_exact = (S_target/(N_min_Dh*Dh_main))**(1./(n_grids-1))
+
+        S_list = [S_target]
+        Dh_list = [Dh_target]
+
+
+
+        for i_grid in xrange(1,n_grids):
+            S_list.append(S_list[-1]/f_exact)
+            Dh_list.append(Dh_list[-1]/f_exact)
+
+            
+        S_list = S_list[::-1]
+        Dh_list = Dh_list[::-1] 
+        pic_list = [pic_main]
+
+
+
+        for i_grid in xrange(n_grids):
+            x_min_int_curr = -S_list[i_grid]/2
+            x_max_int_curr = S_list[i_grid]/2
+            y_min_int_curr = -S_list[i_grid]/2
+            y_max_int_curr = S_list[i_grid]/2
+            Dh_int_curr = Dh_list[i_grid]
+            print 'GRID %d/%d Dh=%e N_nodes=%f'%(i_grid,n_grids,Dh_int_curr,S_list[i_grid]/Dh_int_curr)
+            pic_list.append(AddInternalGrid(pic_list[-1], x_min_int_curr, x_max_int_curr, y_min_int_curr, 
+                                y_max_int_curr, Dh_int_curr, N_nodes_discard))
+           
+                                
+        pic_list = pic_list[1:]
+        self.pic_list = pic_list
+        self.target = target
+        self.f_telescope = f_telescope                        
+                         
+        self.scatter = self.pic_list[-1].scatter
+        self.solve = self.pic_list[-1].solve
+        self.gather = self.pic_list[-1].gather
+        self.gather_phi = self.pic_list[-1].gather_phi
