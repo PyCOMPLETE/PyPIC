@@ -181,7 +181,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 		self.Msel_T = (Msel.T).tocsc()
 		
 		self.flag_border_n = flag_border_n
-		
+		self.chamb = chamb
 		print 'Done PIC init.'
                         
 
