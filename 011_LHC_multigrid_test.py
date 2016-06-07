@@ -21,9 +21,9 @@ x_aper = 22e-3
 y_aper = 18e-3
 
 # grid mesh size 
-Dh_single = 0.5e-3
+Dh_single = 0.5e-4
 Dh_single_ts = 0.5e-3
-Dh_BE = 0.5e-3
+Dh_BE = 0.5e-4
 
 # machine parameters 
 optics_mode = 'smooth'
