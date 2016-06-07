@@ -29,7 +29,7 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
         x_border = self.pic_internal.xn[self.pic_internal.flag_border_n]
         y_border = self.pic_internal.yn[self.pic_internal.flag_border_n]
         if pic_external.chamb.is_outside(x_border, y_border).any() == True:
-            raise ValueError('One of the internal grids is outside the chamber!')
+            raise ValueError('The internal grid is outside the chamber!')
             
     
     def scatter(self, x_mp, y_mp, nel_mp, charge = -qe):
@@ -135,12 +135,12 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
             S_target = Sy_target 
             
         if f_telescope <= 0. or f_telescope >=1.:
-			raise ValueError('The aspect ratio between grids must be 0<f<1!!!')    
+			raise ValueError('The magnification factor between grids must be 0<f<1!!!')    
         n_grids = int(np.ceil(np.log(S_target/(N_min_Dh*Dh_main))/np.log(f_telescope)))+1
         if n_grids <= 0.:
             raise ValueError('Found number of grids = %d <= 0!!!'%n_grids)
         
-        print '%d GRIDS NEEDED!'%n_grids
+        print '%d grids needed'%n_grids
         
         if n_grids == 1:
             f_exact = None #it's not used
