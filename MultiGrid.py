@@ -6,12 +6,14 @@ from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e as qe
 
 class AddInternalGrid(PyPIC_Scatter_Gather):
-    def __init__(self, pic_external, x_min_internal, x_max_internal, y_min_internal, y_max_internal, Dh_internal, N_nodes_discard):
+    def __init__(self, pic_external, x_min_internal, x_max_internal, y_min_internal, y_max_internal, Dh_internal, N_nodes_discard,
+                sparse_solver = 'PyKLU'):
         
         #build boundary for refinement grid
         box_internal = spoly.SimplePolygon({'Vx':np.array([x_max_internal, x_min_internal, x_min_internal, x_max_internal]),
                                 'Vy':np.array([y_max_internal, y_max_internal, y_min_internal, y_min_internal])})
-        self.pic_internal = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = box_internal, Dh = Dh_internal, remove_external_nodes_from_mat=False)
+        self.pic_internal = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = box_internal, Dh = Dh_internal, 
+                                remove_external_nodes_from_mat=False, sparse_solver=sparse_solver)
 
         
         self.pic_external = pic_external
@@ -86,7 +88,7 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
         
         
 class AddMultiGrids(PyPIC_Scatter_Gather):
-    def __init__(self, pic_main, grids):
+    def __init__(self, pic_main, grids, sparse_solver='PyKLU'):
 
         n_grids = len(grids)
         pic_list = [pic_main]
@@ -98,7 +100,7 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
             Dh_internal = grids[ii]['Dh_internal']
             N_nodes_discard = grids[ii]['N_nodes_discard']
             pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
-                            y_max_internal, Dh_internal, N_nodes_discard))
+                            y_max_internal, Dh_internal, N_nodes_discard, sparse_solver=sparse_solver))
                             
         pic_list = pic_list[1:]                    
         self.grids = grids          
@@ -112,7 +114,8 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
         
         
 class AddTelescopicGrids(PyPIC_Scatter_Gather):
-    def __init__(self, pic_main, f_telescope, target_grid, N_nodes_discard, N_min_Dh_main):
+    def __init__(self, pic_main, f_telescope, target_grid, N_nodes_discard, N_min_Dh_main,
+                    sparse_solver='PyKLU'):
     
         x_min_target = target_grid['x_min_target']
         x_max_target = target_grid['x_max_target']
@@ -176,7 +179,7 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
             Dh_int_curr = Dh_list[i_grid]
             print 'GRID %d/%d'%(i_grid,n_grids)
             pic_list.append(AddInternalGrid(pic_list[-1], x_min_int_curr, x_max_int_curr, y_min_int_curr, 
-                                y_max_int_curr, Dh_int_curr, N_nodes_discard))
+                                y_max_int_curr, Dh_int_curr, N_nodes_discard, sparse_solver=sparse_solver))
            
                                 
         pic_list = pic_list[1:]
