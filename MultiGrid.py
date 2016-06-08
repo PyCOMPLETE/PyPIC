@@ -136,9 +136,11 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
             
         if f_telescope <= 0. or f_telescope >=1.:
             raise ValueError('The magnification factor between grids must be 0<f<1!!!')    
-        n_grids = int(np.ceil(np.log(S_target/(N_min_Dh_main*Dh_main))/np.log(f_telescope)))+1
-        if n_grids <= 0.:
-            raise ValueError('Found number of grids = %d <= 0!!!'%n_grids)
+    
+        if S_target >= (N_min_Dh_main*Dh_main):
+            n_grids = 1
+        else:
+            n_grids = int(np.ceil(np.log(S_target/(N_min_Dh_main*Dh_main))/np.log(f_telescope)))+1
         
         print '%d grids needed'%n_grids
         
