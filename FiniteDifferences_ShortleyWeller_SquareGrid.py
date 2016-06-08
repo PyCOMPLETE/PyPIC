@@ -313,7 +313,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 				print "Falling back on scipy superlu solver:"
 				luobj = ssl.splu(self.Asel.tocsc())
 		else:
-			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
+			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_slu" or "PyKLU"\n')
 				
 		self.luobj = luobj
 				
