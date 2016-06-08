@@ -20,10 +20,15 @@ eps0 = epsilon_0
 x_aper = 22e-3
 y_aper = 18e-3
 
-# grid mesh size 
+# Single grid parameters
 Dh_single = 0.5e-4
-Dh_single_ts = 0.5e-3
+
+
+# Bassetti-Erskine parameters
 Dh_BE = 0.5e-4
+
+#  Multi grid parameters
+Dh_single_ts = 0.5e-3
 
 # machine parameters 
 optics_mode = 'smooth'
@@ -61,8 +66,9 @@ pic_singlegrid_ts = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb =
 Sx_target = 10*bunch.sigma_x()
 Sy_target = 10*bunch.sigma_y()
 Dh_target = bunch.sigma_x()/3.
-pic_multigrid = AddTelescopicGrids(pic_main = pic_singlegrid_ts, f_telescope = 1./5, target = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target,'N_nodes_discard':3,
-                                                                        'N_min_Dh':10, 'Dh_main':Dh_single_ts})
+pic_multigrid = AddTelescopicGrids(pic_main = pic_singlegrid_ts, f_telescope = 1./5, 
+    target_grid = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target}, 
+    N_nodes_discard = 3., N_min_Dh_main = 10)
 
 
                                                                        
@@ -226,26 +232,28 @@ pl.figure(4, figsize=(12, 6)).patch.set_facecolor('w')
 sp1 = pl.subplot(121)
 pl.pcolormesh(x_grid_probes, y_grid_probes, 
 	np.log10(np.sqrt((((Ex_singlegrid_matrix-Ex_BE_matrix)**2+(Ey_singlegrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
-	vmax=0.)
+	vmax=0., vmin=-7.0)
 pl.title('RMS error Singlegrid - BE')
 pl.xlabel('x [m]')
 pl.ylabel('y [m]')
 cb=pl.colorbar(); pl.axis('equal')
 cb.formatter.set_powerlimits((0, 0))
 cb.update_ticks()
+cb.set_label('RMS error')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 
 sp2 = pl.subplot(122, sharex = sp1, sharey = sp1)
 pl.pcolormesh(x_grid_probes, y_grid_probes, 
 	np.log10(np.sqrt((((Ex_multigrid_matrix-Ex_BE_matrix)**2+(Ey_multigrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
-	vmax=0.)
+	vmax=0., vmin=-7.0)
 pl.title('RMS error Multigrid - BE')
 pl.xlabel('x [m]')
 pl.ylabel('y [m]')
 cb=pl.colorbar(); pl.axis('equal')
 cb.formatter.set_powerlimits((0, 0))
 cb.update_ticks()
+cb.set_label('RMS error')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.subplots_adjust(bottom = .13,top = .70)

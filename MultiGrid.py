@@ -112,16 +112,16 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
         
         
 class AddTelescopicGrids(PyPIC_Scatter_Gather):
-    def __init__(self, pic_main, f_telescope, target):
+    def __init__(self, pic_main, f_telescope, target_grid, N_nodes_discard, N_min_Dh_main):
     
-        x_min_target = target['x_min_target']
-        x_max_target = target['x_max_target']
-        y_min_target = target['y_min_target']
-        y_max_target = target['y_max_target']
-        Dh_target = target['Dh_target']
-        N_nodes_discard = target['N_nodes_discard']    
-        N_min_Dh = target['N_min_Dh']    
-        Dh_main = target['Dh_main']
+        x_min_target = target_grid['x_min_target']
+        x_max_target = target_grid['x_max_target']
+        y_min_target = target_grid['y_min_target']
+        y_max_target = target_grid['y_max_target']
+        Dh_target = target_grid['Dh_target']
+        
+        Dh_main = pic_main.Dh
+  
         
         x_center_target = (x_min_target + x_max_target)/2.
         y_center_target = (y_min_target + y_max_target)/2.
@@ -135,8 +135,8 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
             S_target = Sy_target 
             
         if f_telescope <= 0. or f_telescope >=1.:
-			raise ValueError('The magnification factor between grids must be 0<f<1!!!')    
-        n_grids = int(np.ceil(np.log(S_target/(N_min_Dh*Dh_main))/np.log(f_telescope)))+1
+            raise ValueError('The magnification factor between grids must be 0<f<1!!!')    
+        n_grids = int(np.ceil(np.log(S_target/(N_min_Dh_main*Dh_main))/np.log(f_telescope)))+1
         if n_grids <= 0.:
             raise ValueError('Found number of grids = %d <= 0!!!'%n_grids)
         
@@ -145,7 +145,7 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         if n_grids == 1:
             f_exact = None #it's not used
         else:
-            f_exact = (S_target/(N_min_Dh*Dh_main))**(1./(n_grids-1))
+            f_exact = (S_target/(N_min_Dh_main*Dh_main))**(1./(n_grids-1))
 
         Sx_list = [Sx_target]
         Sy_list = [Sy_target]
@@ -181,7 +181,7 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         self.n_grids = n_grids
         self.f_exact = f_exact
         self.pic_list = pic_list
-        self.target = target
+        self.target_grid = target_grid
         self.f_telescope = f_telescope                        
                          
         self.scatter = self.pic_list[-1].scatter
