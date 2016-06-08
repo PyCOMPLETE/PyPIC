@@ -53,7 +53,7 @@
 import numpy as np
 import rhocompute as rhocom
 import int_field_for as iff
-from abc import abstractmethod, ABCMeta
+#~ from abc import abstractmethod, ABCMeta
 
 na = lambda x:np.array([x])
 
@@ -178,7 +178,7 @@ class PyPIC_Scatter_Gather(object):
 			
 		return phi_sc_n
 
-	@abstractmethod
+	#@abstractmethod
 	def solve(self, *args, **kwargs):
 		'''Computes the electric field maps from the stored 
 		charge distribution (self.rho) and stores them in
