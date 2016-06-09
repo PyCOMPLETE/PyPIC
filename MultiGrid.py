@@ -79,6 +79,25 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
         phi_sc_n[mask_internal] = phi_sc_n_internal
 
         return phi_sc_n
+        
+    def gather_rho(self, x_mp, y_mp):
+        mask_internal = np.logical_and(\
+            np.logical_and(x_mp > self.x_min_internal + self.D_discard, 
+                           x_mp < self.x_max_internal - self.D_discard),
+            np.logical_and(y_mp > self.y_min_internal + self.D_discard, 
+                           y_mp < self.y_max_internal - self.D_discard))
+                           
+        mask_external = np.logical_not(mask_internal)
+        
+        rho_sc_n_external = self.pic_external.gather_rho(x_mp[mask_external], y_mp[mask_external])
+        rho_sc_n_internal = self.pic_internal.gather_rho(x_mp[mask_internal], y_mp[mask_internal])
+        
+        rho_sc_n = 0.*x_mp
+        
+        rho_sc_n[mask_external] = rho_sc_n_external
+        rho_sc_n[mask_internal] = rho_sc_n_internal
+
+        return rho_sc_n
 
     def solve(self, rho = None, flag_verbose = False):
         if rho is not None:
@@ -110,7 +129,7 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
         self.solve = self.pic_list[-1].solve
         self.gather = self.pic_list[-1].gather
         self.gather_phi = self.pic_list[-1].gather_phi
-        
+        self.gather_rho = self.pic_list[-1].gather_rho
         
         
 class AddTelescopicGrids(PyPIC_Scatter_Gather):
@@ -193,3 +212,4 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         self.solve = self.pic_list[-1].solve
         self.gather = self.pic_list[-1].gather
         self.gather_phi = self.pic_list[-1].gather_phi
+        self.gather_rho = self.pic_list[-1].gather_rho
