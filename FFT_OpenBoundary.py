@@ -127,7 +127,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 				def ifft2(x):
 					tmp = ifft_first(x)
 					res = 0*x
-					res[:ny, :] = np.real(ifft_second(tmp[:ny, :]))
+					res[:ny, :] = ifft_second(tmp[:ny, :])
 					return res
 				
 				self.fft2 = fft2
@@ -176,27 +176,27 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 		
 		self.efy = self.efy/(2*self.dy)
 		self.efx = self.efx/(2*self.dx)
+
         
     def get_state_object(self):
         state = PyPIC_Scatter_Gather(self.x_aper, self.y_aper, self.dx, self.dy)
         
-        state.rho = self.rho
-        state.phi = self.phi
-        state.efx = self.efx
-        state.efy = self.efy
+        state.rho = self.rho.copy()
+        state.phi = self.phi.copy()
+        state.efx = self.efx.copy()
+        state.efy = self.efy.copy()
         
         return state
+
         
     def load_state_object(self, state):
-        !!!!invert:
-        state.rho = self.rho
-        state.phi = self.phi
-        state.efx = self.efx
-        state.efy = self.efy
+        self.rho = state.rho.copy()
+        self.phi = state.phi.copy()
+        self.efx = state.efx.copy()
+        self.efy = state.efy.copy()
+
         
-    def solve_state(self, state):
-        
-        rho = None, flag_verbose = False):
+    def solve_state(self, state, rho = None, flag_verbose = False):
 		if rho == None:
 			rho = state.rho
 
@@ -208,23 +208,44 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 		tmpphi = self.ifft2(fftphi)
 		state.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
 
+
 		state.efx[1:self.Nxg-1,:] = state.phi[0:self.Nxg-2,:] - state.phi[2:self.Nxg,:];  #central difference on internal nodes
 		state.efy[:,1:self.Nyg-1] = state.phi[:,0:self.Nyg-2] - state.phi[:,2:self.Nyg];  #central difference on internal nodes
-
-		
+	
 		state.efy = state.efy/(2*self.dy)
 		state.efx = state.efx/(2*self.dx)
+
         
     def solve_states(self, states):
+    	
         if len(states)>2:
             raise ValueError('Not implemented yet! Sorry.')
         elif len(states)==1:
             self.solve_state(states[0])
         else:
-            
-        !!!!
-        
-        
+			rho = 1*state[0].rho + j*state[1].rho
 
+			tmprho = (self.fgreen*(1.+1j))*0.
+			tmprho[:self.ny, :self.nx] = rho.T
 
+			fftphi = self.fft2(tmprho) * self.fgreentr
+		
+			tmpphi = self.ifft2(fftphi)
+			phi = 1./(4. * np.pi * eps0)*(tmpphi[:self.ny, :self.nx]).T
 
+			state[0].phi = np.real(phi)
+			state[1].phi = np.imag(phi)
+
+			efx = 0.*phi
+			efy = 0.*phi
+
+			efx[1:self.Nxg-1,:] = phi[0:self.Nxg-2,:] - phi[2:self.Nxg,:];  #central difference on internal nodes
+			efy[:,1:self.Nyg-1] = phi[:,0:self.Nyg-2] - phi[:,2:self.Nyg];  #central difference on internal nodes
+			
+			efx = efx/(2*self.dx)
+			efy = efy/(2*self.dy)
+
+			state[0].efx = np.real(efx)
+			state[0].efy = np.real(efy)
+			state[1].efx = np.imag(efx)
+			state[1].efy = np.imag(efy)
