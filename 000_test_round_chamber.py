@@ -1,7 +1,6 @@
 import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import FFT_OpenBoundary as PIC_FFT
-import FFT_OpenBoundary_SquareGrid as PIC_FFTSq
 try:
     from CyFPPS import PyFPPS as PIC_FPPS
 except ImportError:
@@ -38,8 +37,8 @@ chamber = ell.ellip_cham_geom_object(x_aper = R_cham, y_aper = R_cham)
 
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh)
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
-picFFT = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, dx = Dh/4., dy = Dh, fftlib='pyfftw')
-picFFTSq = PIC_FFTSq.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
+picFFT = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, dx = Dh/2., dy = Dh, fftlib='pyfftw')
+picFFTSq = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
 if PIC_FPPS: picFPPS = PIC_FPPS(200,200,a=R_cham,solverType='Uniform')
 # build dual grid
 pic_main = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_main)
@@ -89,7 +88,7 @@ pl.close('all')
 
 pl.plot(x_probes, Ex_FD, label = 'FD')
 pl.plot(x_probes, Ex_FDSW, label = 'FD ShortleyWeller')
-pl.plot(x_probes, Ex_FFT, label = 'FFT open')
+pl.plot(x_probes, Ex_FFT, label = 'FFT open rect.')
 pl.plot(x_probes, Ex_FFTSq, label = 'FFT open square')
 if PIC_FPPS: pl.plot(x_probes, Ex_FPPS, label = 'FPPS')
 pl.plot(x_probes, Ex_dualgrid, label = 'Dual grid')
