@@ -129,7 +129,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
             itemsize=np.dtype(np.complex128).itemsize,
             src_height=2*self.mesh.ny,
             dst_height=self.mesh.ny)
-        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1)
+        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1.)
                                             * mesh_distances[i]
                     for i in xrange(self.mesh.dimension)
                    ]
@@ -318,7 +318,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
             src_height=2*self.mesh.ny,
             dst_height=self.mesh.ny)
 
-        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh.shape[i]+1)
+        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh.shape[i]+1.)
                                             * mesh_distances[i]
                     for i in [1,2]
                    ]
