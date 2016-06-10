@@ -129,19 +129,29 @@ class GPUFFTPoissonSolver(PoissonSolver):
             itemsize=np.dtype(np.complex128).itemsize,
             src_height=2*self.mesh.ny,
             dst_height=self.mesh.ny)
-        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1.)
-                                            * mesh_distances[i]
-                    for i in xrange(self.mesh.dimension)
+        self.plan_forward = cu_fft.Plan(
+            self.tmpspace.shape, in_dtype=np.complex128,
+            out_dtype=np.complex128)
+        self.plan_backward = cu_fft.Plan(
+            self.tmpspace.shape, in_dtype=np.complex128,
+            out_dtype=np.complex128)
+        self.setup_mesh(self.mesh)
+
+    def setup_mesh(self, mesh):
+        '''Calculate and store integrated Green's function from mesh distances.
+        Only accept meshes with same shape as self.mesh .
+        '''
+        assert (mesh.shape == self.mesh.shape)
+        mesh_arr = [-mesh.distances[i]/2 + np.arange(mesh.shape[i]+1.)
+                                            * mesh.distances[i]
+                    for i in xrange(mesh.dimension)
                    ]
         # mesh_arr is [mz, my, mx]
         mesh_grids = np.meshgrid(*mesh_arr, indexing='ij')
         fgreen = self._fgreen(*mesh_grids)
         fgreen = self._mirror(fgreen)
-        self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
-                                        out_dtype=np.complex128)
-        self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
-                                         out_dtype=np.complex128)
-        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
+        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr,
+                   plan=self.plan_forward)
 
     def poisson_solve(self, rho):
         ''' Solve the poisson equation with the given charge distribution
