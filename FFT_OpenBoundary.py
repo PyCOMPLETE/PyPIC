@@ -159,23 +159,8 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
-		if rho == None:
-			rho = self.rho
-
-		tmprho = 0.*self.fgreen
-		tmprho[:self.ny, :self.nx] = rho.T
-
-		fftphi = self.fft2(tmprho) * self.fgreentr
-		
-		tmpphi = self.ifft2(fftphi)
-		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
-
-		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
-		self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes
-
-		
-		self.efy = self.efy/(2*self.dy)
-		self.efx = self.efx/(2*self.dx)
+    	
+		self.solve_state(self, rho = rho, flag_verbose = flag_verbose)
 
         
     def get_state_object(self):
