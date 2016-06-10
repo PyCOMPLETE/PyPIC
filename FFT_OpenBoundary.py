@@ -179,7 +179,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 
         
     def get_state_object(self):
-        state = PyPIC_Scatter_Gather(self.x_aper, self.y_aper, self.dx, self.dy)
+        state = PyPIC_Scatter_Gather(xg = self.xg, yg = self.yg)
         
         state.rho = self.rho.copy()
         state.phi = self.phi.copy()
@@ -223,7 +223,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         elif len(states)==1:
             self.solve_state(states[0])
         else:
-			rho = 1*state[0].rho + j*state[1].rho
+			rho = 1*states[0].rho + 1j*states[1].rho
 
 			tmprho = (self.fgreen*(1.+1j))*0.
 			tmprho[:self.ny, :self.nx] = rho.T
@@ -233,8 +233,8 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 			tmpphi = self.ifft2(fftphi)
 			phi = 1./(4. * np.pi * eps0)*(tmpphi[:self.ny, :self.nx]).T
 
-			state[0].phi = np.real(phi)
-			state[1].phi = np.imag(phi)
+			states[0].phi = np.real(phi)
+			states[1].phi = np.imag(phi)
 
 			efx = 0.*phi
 			efy = 0.*phi
@@ -245,7 +245,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 			efx = efx/(2*self.dx)
 			efy = efy/(2*self.dy)
 
-			state[0].efx = np.real(efx)
-			state[0].efy = np.real(efy)
-			state[1].efx = np.imag(efx)
-			state[1].efy = np.imag(efy)
+			states[0].efx = np.real(efx)
+			states[0].efy = np.real(efy)
+			states[1].efx = np.imag(efx)
+			states[1].efy = np.imag(efy)

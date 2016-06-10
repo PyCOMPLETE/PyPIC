@@ -62,7 +62,7 @@ eps0=8.8541878176e-12;
 
 class PyPIC_Scatter_Gather(object):
 	
-	__metadata__ = ABCMeta
+	#__metadata__ = ABCMeta
 	
 	def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
 				x_min=None, x_max=None, y_min=None, y_max=None, *args, **kwargs):
