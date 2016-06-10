@@ -26,24 +26,28 @@ __device__ double atomicAdd(double* address, double val)
 
 extern "C" {
 
-__global__ void particles_to_mesh_2d(int nparticles, double *grid1d, int stride, double *wij, double *wi1j,
-                                     double *wij1, double *wi1j1, int *i, int *j)
-                                    
+__global__ void particles_to_mesh_2d_64atomics(
+        int nparticles, double *grid1d, const int nx, const int ny,
+        double *wij, double *wi1j, double *wij1, double *wi1j1, int *i, int *j)
+
 {
     int pidx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y* blockDim.x + threadIdx.x;
     int ix = i[pidx];
     int jx = j[pidx];
     if (pidx < nparticles) {
-        atomicAdd(&grid1d[jx + ix*stride], wij[pidx]);
-        atomicAdd(&grid1d[jx+1 + ix*stride], wij1[pidx]);
-        atomicAdd(&grid1d[jx + (ix+1)*stride], wi1j[pidx]);
-        atomicAdd(&grid1d[jx+1 + (ix+1)*stride], wi1j1[pidx]);
+        if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1)
+        {
+            atomicAdd(&grid1d[jx + ix*nx], wij[pidx]);
+            atomicAdd(&grid1d[jx+1 + ix*nx], wij1[pidx]);
+            atomicAdd(&grid1d[jx + (ix+1)*nx], wi1j[pidx]);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx], wi1j1[pidx]);
+        }
     }
 }
 
-__global__ void particles_to_mesh_3d(
+__global__ void particles_to_mesh_3d_64atomics(
         int nparticles,
-        double *grid1d, int stridex, int stridey,
+        double *grid1d, const int nx, const int ny, const int nz,
         // particle weights:
         double *wijk, double *wi1jk, double *wij1k, double *wi1j1k,
         double *wijk1, double *wi1jk1, double* wij1k1, double* wi1j1k1,
@@ -55,14 +59,64 @@ __global__ void particles_to_mesh_3d(
     int jx = j[pidx];
     int kx = k[pidx];
     if (pidx < nparticles) {
-    atomicAdd(&grid1d[jx   + ix*stridex     + kx*stridex*stridey],     wijk[pidx]);
-    atomicAdd(&grid1d[jx+1 + ix*stridex     + kx*stridex*stridey],     wij1k[pidx]);
-    atomicAdd(&grid1d[jx   + (ix+1)*stridex + kx*stridex*stridey],     wi1jk[pidx]);
-    atomicAdd(&grid1d[jx+1 + (ix+1)*stridex + kx*stridex*stridey],     wi1j1k[pidx]);
-    atomicAdd(&grid1d[jx   + ix*stridex     + (kx+1)*stridex*stridey], wijk1[pidx]);
-    atomicAdd(&grid1d[jx+1 + ix*stridex     + (kx+1)*stridex*stridey], wij1k1[pidx]);
-    atomicAdd(&grid1d[jx   + (ix+1)*stridex + (kx+1)*stridex*stridey], wi1jk1[pidx]);
-    atomicAdd(&grid1d[jx+1 + (ix+1)*stridex + (kx+1)*stridex*stridey], wi1j1k1[pidx]);
+        if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
+        {
+            atomicAdd(&grid1d[jx   + ix*nx     + kx*nx*ny],     wijk[pidx]);
+            atomicAdd(&grid1d[jx+1 + ix*nx     + kx*nx*ny],     wij1k[pidx]);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx + kx*nx*ny],     wi1jk[pidx]);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx + kx*nx*ny],     wi1j1k[pidx]);
+            atomicAdd(&grid1d[jx   + ix*nx     + (kx+1)*nx*ny], wijk1[pidx]);
+            atomicAdd(&grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny], wij1k1[pidx]);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny], wi1jk1[pidx]);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny], wi1j1k1[pidx]);
+        }
+    }
+}
+
+__global__ void particles_to_mesh_2d(
+        int nparticles, float *grid1d, const int nx, const int ny,
+        float *wij, float *wi1j, float *wij1, float *wi1j1, int *i, int *j)
+
+{
+    int pidx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y* blockDim.x + threadIdx.x;
+    int ix = i[pidx];
+    int jx = j[pidx];
+    if (pidx < nparticles) {
+        if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1)
+        {
+            atomicAdd(&grid1d[jx   + ix*nx],     wij[pidx]);
+            atomicAdd(&grid1d[jx+1 + ix*nx],     wij1[pidx]);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx], wi1j[pidx]);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx], wi1j1[pidx]);
+        }
+    }
+}
+
+__global__ void particles_to_mesh_3d(
+        int nparticles,
+        float *grid1d, const int nx, const int ny, const int nz,
+        // particle weights:
+        float *wijk, float *wi1jk, float *wij1k, float *wi1j1k,
+        float *wijk1, float *wi1jk1, float* wij1k1, float* wi1j1k1,
+        // particle 3d cell indices
+        int *i, int *j, int* k)
+{
+    int pidx = blockIdx.x * blockDim.x * blockDim.y + threadIdx.y* blockDim.x + threadIdx.x;
+    int ix = i[pidx];
+    int jx = j[pidx];
+    int kx = k[pidx];
+    if (pidx < nparticles) {
+        if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
+        {
+            atomicAdd(&grid1d[jx   + ix*nx     + kx*nx*ny],     wijk[pidx]);
+            atomicAdd(&grid1d[jx+1 + ix*nx     + kx*nx*ny],     wij1k[pidx]);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx + kx*nx*ny],     wi1jk[pidx]);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx + kx*nx*ny],     wi1j1k[pidx]);
+            atomicAdd(&grid1d[jx   + ix*nx     + (kx+1)*nx*ny], wijk1[pidx]);
+            atomicAdd(&grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny], wij1k1[pidx]);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny], wi1jk1[pidx]);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny], wi1j1k1[pidx]);
+        }
     }
 }
 
@@ -144,7 +198,7 @@ __global__ void cic_guard_cell_weights_3d(
     }
 }
 
-__global__ void join_guard_cells_3d(
+__global__ void join_guard_cells_3d_old( // excl boundary
         double* cumweight_ijk, double* cumweight_i1jk,
         double* cumweight_ij1k, double* cumweight_i1j1k,
         double* cumweight_ijk1, double* cumweight_i1jk1,
@@ -184,6 +238,48 @@ __global__ void join_guard_cells_3d(
                             + cumweight_ijk1[ijk1]   + cumweight_i1jk1[i1jk1]
                             + cumweight_ij1k1[ij1k1] + cumweight_i1j1k1[i1j1k1];
 
+    }
+}
+
+__global__ void join_guard_cells_3d( // _incl_boundary
+        double* cumweight_ijk, double* cumweight_i1jk,
+        double* cumweight_ij1k, double* cumweight_i1j1k,
+        double* cumweight_ijk1, double* cumweight_i1jk1,
+        double* cumweight_ij1k1, double* cumweight_i1j1k1,
+        int n_nodes, int nx, int ny, int nz,
+        double* mesh_charges)
+/**
+
+*/
+{
+    double l_mesh_charges;
+    int j, i, k;
+    // grid-stride loop
+    for (int nid = blockIdx.x * blockDim.x + threadIdx.x;
+         nid < n_nodes;
+         nid += blockDim.x * gridDim.x)
+    {
+        j = nid % nx; //& (nx-1); //
+        i = ((nid - j) / nx) % ny; //& (ny-1); //
+        k = (nid - j - nx * i) / (nx * ny);
+
+        l_mesh_charges = cumweight_ijk[nid];
+        if (j > 0)
+            l_mesh_charges += cumweight_ij1k[nid - 1];
+        if (i > 0)
+            l_mesh_charges += cumweight_i1jk[nid - nx];
+        if (j > 0 && i > 0)
+            l_mesh_charges += cumweight_i1j1k[nid - nx - 1];
+        if (k > 0)
+            l_mesh_charges += cumweight_ijk1[nid - nx*ny];
+        if (j > 0 && k > 0)
+            l_mesh_charges += cumweight_ij1k1[nid - nx*ny - 1];
+        if (i > 0 && k > 0)
+            l_mesh_charges += cumweight_i1jk1[nid - nx*ny - nx];
+        if (j > 0 && i > 0 && k > 0)
+            l_mesh_charges += cumweight_i1j1k1[nid - nx*ny - nx - 1];
+
+        mesh_charges[nid] = l_mesh_charges;
     }
 }
 

@@ -302,6 +302,9 @@ class PyPIC_GPU(PyPIC):
         self._particles_to_mesh_kernel = (
             p2m_kernels.get_function('particles_to_mesh_' +
                                      str(mesh.dimension) + 'd'))
+        self._particles_to_mesh_64atomics_kernel = ( # double precision atomics, slower
+            p2m_kernels.get_function('particles_to_mesh_' +
+                                     str(mesh.dimension) + 'd_64atomics'))
         self._sorted_particles_to_guard_mesh_kernel = (
             p2m_kernels.get_function('cic_guard_cell_weights_' +
                                      str(mesh.dimension) + 'd'))
@@ -317,13 +320,16 @@ class PyPIC_GPU(PyPIC):
 
         # prepare calls to kernels!!!
         self._particles_to_mesh_kernel.prepare(
-                'i' + 'P' + 'i'*(mesh.dimension-1) + 'P'*2**mesh.dimension +
+                'i' + 'P' + 'i'*(mesh.dimension) + 'P'*2**mesh.dimension +
+                'P'*mesh.dimension)
+        self._particles_to_mesh_64atomics_kernel.prepare(
+                'i' + 'P' + 'i'*(mesh.dimension) + 'P'*2**mesh.dimension +
                 'P'*mesh.dimension)
         self._field_to_particles_kernel.prepare(
-                'i' + 'PP' + 'i'*(mesh.dimension-1) + 'P'*2**mesh.dimension +
+                'i' + 'PP' + 'i'*(mesh.dimension) + 'P'*2**mesh.dimension +
                 'P'*mesh.dimension)
         self._mesh_to_particles_kernel.prepare(
-                'i' + 'P'*mesh.dimension*2 + 'i'*(mesh.dimension-1) +
+                'i' + 'P'*mesh.dimension*2 + 'i'*(mesh.dimension) +
                 'P'*2**mesh.dimension + 'P'*mesh.dimension)
         self._sorted_particles_to_guard_mesh_kernel.prepare(
                 'P'*mesh.dimension + 'd'*2*mesh.dimension +
@@ -340,13 +346,17 @@ class PyPIC_GPU(PyPIC):
             mp_coords = (x, y, z)
         The keyword argument charge=e is the charge per macro-particle.
         Further possible keyword arguments are
-        mesh_indices=None, mesh_distances=None, mesh_weights=None .
+        mesh_indices=None, mesh_distances=None, mesh_weights=None and
+        dtype=np.float32 which can be set to np.float64 to use
+        non-hardware-accelerated double precision atomics.
 
         Return the charge distribution on the mesh (which is mesh_charges =
         rho*volume).
         '''
         mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.get("charge", e)
+        dtype = kwargs.get("dtype", np.float32)
+
         n_macroparticles = len(mp_coords[0])
         self.kernel_call_config['p2m']['grid'] = (
                 idivup(n_macroparticles, reduce(mul,
@@ -355,15 +365,23 @@ class PyPIC_GPU(PyPIC):
             )
         block = self.kernel_call_config['p2m']['block']
         grid = self.kernel_call_config['p2m']['grid']
-        mesh_count = gpuarray.zeros(shape=self.mesh.shape, #self.mesh.n_nodes,
-                                    dtype=np.float64)
+
+        mesh_count = gpuarray.zeros(shape=self.mesh.shape, dtype=dtype)
         args = [np.int32(n_macroparticles)] + [mesh_count]
-        args += self.mesh.shape_r[:-1] + mesh_weights + mesh_indices
-        self._particles_to_mesh_kernel(
-            *args,
-            block=block,
-            grid=grid
-         )
+        args += self.mesh.shape_r
+        if dtype == np.float32:
+            args += [mw.astype(dtype) for mw in mesh_weights]
+            args += list(mesh_indices)
+            self._particles_to_mesh_kernel(*args, block=block, grid=grid)
+            mesh_count = mesh_count.astype(np.float64)
+        elif dtype == np.float64:
+            args += mesh_weights + mesh_indices
+            self._particles_to_mesh_64atomics_kernel(*args,
+                                                     block=block, grid=grid)
+        else:
+            raise ValueError("PyPIC: particles_to_mesh() got unknown dtype "
+                             "argument, expected either np.float32 or "
+                             "np.float64!")
         self._context.synchronize()
         mesh_charges = mesh_count*charge
         return mesh_charges
@@ -489,7 +507,7 @@ class PyPIC_GPU(PyPIC):
         self._mesh_to_particles_kernel(
             np.int32(n_macroparticles),
             particles_quantity, mesh_quantity,
-            *(self.mesh.shape[:-1] + mesh_weights + mesh_indices),
+            *(self.mesh.shape_r + mesh_weights + mesh_indices),
             block=block, grid=grid
         )
         return particles_quantity
@@ -525,7 +543,7 @@ class PyPIC_GPU(PyPIC):
         block = self.kernel_call_config['m2p']['block']
         grid = self.kernel_call_config['m2p']['grid']
         args = [np.int32(n_macroparticles)] + particle_fields + list(mesh_fields)
-        args += list(self.mesh.shape_r[:-1]) #strides
+        args += list(self.mesh.shape_r) #strides
         args += list(mesh_weights)
         args += list(mesh_indices)
         # interpolate to particles on gpu.
