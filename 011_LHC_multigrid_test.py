@@ -8,7 +8,7 @@ import PyPIC.geom_impact_ellip as ell
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.Bassetti_Erskine as PIC_BE
 from PyPIC.MultiGrid import AddTelescopicGrids
-from scipy.constants import e, epsilon_0
+from scipy.constants import e, epsilon_0,c
 import numpy as np
 import pylab as pl
 import mystyle as ms
@@ -16,25 +16,7 @@ import mystyle as ms
 qe = e
 eps0 = epsilon_0
 
-# chamber parameters
-x_aper = 22e-3
-y_aper = 18e-3
-
-# Single grid parameters
-Dh_single = 0.5e-4
-
-
-# Bassetti-Erskine parameters
-Dh_BE = 0.5e-4
-
-#  Multi grid parameters
-Dh_single_ts = 0.5e-3
-
-# machine parameters 
-optics_mode = 'smooth'
-n_segments=1
-# beam parameters
-n_macroparticles=1000000
+p0_GeV = 2000.
 
 # LHC
 machine_configuration='6.5_TeV_collision_tunes'
@@ -42,33 +24,53 @@ intensity=1.2e11
 epsn_x=.5e-6
 epsn_y=3e-6
 sigma_z=7e-2
-machine = LHC(machine_configuration = machine_configuration, optics_mode = optics_mode, n_segments = n_segments)
 
-# build chamber
-chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
-Vx, Vy = chamber.points_on_boundary(N_points=200)
+n_macroparticles=1000000
+
+sparse_solver = 'PyKLU'
+
+machine = LHC(machine_configuration = machine_configuration, optics_mode = 'smooth', n_segments = 1, p0=p0_GeV*1e9*e/c)
+
 
 # generate beam
 bunch = machine.generate_6D_Gaussian_bunch(n_macroparticles = n_macroparticles, intensity = intensity, 
                             epsn_x = epsn_x, epsn_y = epsn_y, sigma_z = sigma_z)
+
+
+# Single grid parameters
+Dh_single = 0.5*bunch.sigma_x()
+
+# Bassetti-Erskine parameters
+Dh_BE = 0.5*bunch.sigma_x()
+
+#  Multi grid parameters
+Dh_single_ext = 1e-3
+Sx_target = 5*bunch.sigma_x()
+Sy_target = 5*bunch.sigma_y()
+Dh_target = 0.5*bunch.sigma_x()
+
+# chamber parameters
+x_aper = 22e-3
+y_aper = 18e-3
+
+# build chamber
+chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
+Vx, Vy = chamber.points_on_boundary(N_points=200)
 
 # build Bassetti Erskine 
 pic_BE = PIC_BE.Interpolated_Bassetti_Erskine(x_aper=x_aper, y_aper=y_aper, Dh=Dh_BE, sigmax=bunch.sigma_x(), sigmay=bunch.sigma_y(), 
 		n_imag_ellip=20, tot_charge=bunch.intensity*bunch.charge)
 		
 # build single grid pic
-pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single)
+pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single, sparse_solver = sparse_solver)
 
 # build single grid pic for telescope
-pic_singlegrid_ts = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single_ts)
+pic_singlegrid_ext = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single_ext, sparse_solver = sparse_solver)
 
 # build telescope
-Sx_target = 10*bunch.sigma_x()
-Sy_target = 10*bunch.sigma_y()
-Dh_target = bunch.sigma_x()/3.
-pic_multigrid = AddTelescopicGrids(pic_main = pic_singlegrid_ts, f_telescope = 1./5, 
+pic_multigrid = AddTelescopicGrids(pic_main = pic_singlegrid_ext, f_telescope = 1./5, 
     target_grid = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target}, 
-    N_nodes_discard = 3., N_min_Dh_main = 10)
+    N_nodes_discard = 3., N_min_Dh_main = 10, sparse_solver=sparse_solver)
 
 
                                                                        
@@ -108,44 +110,44 @@ Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
 pl.close('all')
 ms.mystyle_arial(fontsz=12)
 
-#electric field at probes
-pl.figure(1, figsize=(18,6)).patch.set_facecolor('w')
-pl.subplot(1,3,1)
-pl.plot(pic_singlegrid.xn, pic_singlegrid.yn,'.y', label = 'Singlegrid')
-pl.plot(pic_singlegrid_ts.xn, pic_singlegrid_ts.yn,'.m', label = 'Singlegrid telescope')
-for ii in xrange(pic_multigrid.n_grids):
-    pl.plot(pic_multigrid.pic_list[ii].pic_internal.xn, pic_multigrid.pic_list[ii].pic_internal.yn, '.', label = 'Internal grid %d'%ii)
-pl.plot(bunch.x, bunch.y, '.k')
-pl.plot(Vx, Vy, 'k--', label = 'Chamber')
-pl.plot(x_probes, y_probes, 'c--', label = 'probe')
-pl.xlabel('x [m]')
-pl.ylabel('y [m]')
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
-pl.axis('equal')
-pl.legend(loc='best')
-pl.subplot(1,3,2)
-pl.plot(theta*180/np.pi, Ex_BE, 'k--', label = 'BE')
-pl.plot(theta*180/np.pi, Ex_singlegrid, '.-g', label = 'Singlegrid')
-pl.plot(theta*180/np.pi, Ex_multigrid, '.-r', label = 'Multigrid')
-pl.xlabel('theta[deg]')
-pl.ylabel('Ex [V/m] ')
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
-pl.grid()
-pl.legend(loc='best')
-pl.subplot(1,3,3)
-pl.plot(theta*180/np.pi, Ey_BE, 'k--', label = 'BE')
-pl.plot(theta*180/np.pi, Ey_singlegrid, '.-g', label = 'Singlegrid')
-pl.plot(theta*180/np.pi, Ey_multigrid, '.-r', label = 'Multigrid')
-pl.xlabel('theta[deg]')
-pl.ylabel('Ey [V/m] ')
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
-pl.grid()
-pl.legend(loc='best')
-pl.suptitle('Probe @ r = %.2e [m]'%r_probes)
-pl.tight_layout()
+#~ #electric field at probes
+#~ pl.figure(1, figsize=(18,6)).patch.set_facecolor('w')
+#~ pl.subplot(1,3,1)
+#~ pl.plot(pic_singlegrid.xn, pic_singlegrid.yn,'.y', label = 'Singlegrid')
+#~ pl.plot(pic_singlegrid_ext.xn, pic_singlegrid_ext.yn,'.m', label = 'Singlegrid telescope')
+#~ for ii in xrange(pic_multigrid.n_grids):
+    #~ pl.plot(pic_multigrid.pic_list[ii].pic_internal.xn, pic_multigrid.pic_list[ii].pic_internal.yn, '.', label = 'Internal grid %d'%ii)
+#~ pl.plot(bunch.x, bunch.y, '.k')
+#~ pl.plot(Vx, Vy, 'k--', label = 'Chamber')
+#~ pl.plot(x_probes, y_probes, 'c--', label = 'probe')
+#~ pl.xlabel('x [m]')
+#~ pl.ylabel('y [m]')
+#~ pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+#~ pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
+#~ pl.axis('equal')
+#~ pl.legend(loc='best')
+#~ pl.subplot(1,3,2)
+#~ pl.plot(theta*180/np.pi, Ex_BE, 'k--', label = 'BE')
+#~ pl.plot(theta*180/np.pi, Ex_singlegrid, '.-g', label = 'Singlegrid')
+#~ pl.plot(theta*180/np.pi, Ex_multigrid, '.-r', label = 'Multigrid')
+#~ pl.xlabel('theta[deg]')
+#~ pl.ylabel('Ex [V/m] ')
+#~ pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+#~ pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
+#~ pl.grid()
+#~ pl.legend(loc='best')
+#~ pl.subplot(1,3,3)
+#~ pl.plot(theta*180/np.pi, Ey_BE, 'k--', label = 'BE')
+#~ pl.plot(theta*180/np.pi, Ey_singlegrid, '.-g', label = 'Singlegrid')
+#~ pl.plot(theta*180/np.pi, Ey_multigrid, '.-r', label = 'Multigrid')
+#~ pl.xlabel('theta[deg]')
+#~ pl.ylabel('Ey [V/m] ')
+#~ pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+#~ pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
+#~ pl.grid()
+#~ pl.legend(loc='best')
+#~ pl.suptitle('Probe @ r = %.2e [m]'%r_probes)
+#~ pl.tight_layout()
 
 
 # plot RMS error vs distance 
