@@ -213,3 +213,27 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         self.gather = self.pic_list[-1].gather
         self.gather_phi = self.pic_list[-1].gather_phi
         self.gather_rho = self.pic_list[-1].gather_rho
+        
+        self.Dh = self.pic_list[-1].pic_internal.Dh
+        self.xg = self.pic_list[-1].pic_internal.xg
+        self.Nxg = self.pic_list[-1].pic_internal.Nxg
+        self.bias_x = self.pic_list[-1].pic_internal.bias_x
+        self.yg = self.pic_list[-1].pic_internal.yg
+        self.Nyg = self.pic_list[-1].pic_internal.Nyg
+        self.bias_y = self.pic_list[-1].pic_internal.bias_y
+    
+    @property
+    def rho(self):
+        return self.pic_list[-1].pic_internal.rho
+        
+    @property
+    def phi(self):
+        return self.pic_list[-1].pic_internal.phi
+        
+    @property
+    def efx(self):
+        return self.pic_list[-1].pic_internal.efx
+        
+    @property
+    def efy(self):
+        return self.pic_list[-1].pic_internal.efy
