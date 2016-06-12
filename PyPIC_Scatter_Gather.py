@@ -169,7 +169,7 @@ class PyPIC_Scatter_Gather(object):
 			raise ValueError('x_mp, y_mp should have the same length!!!')
 
 		if len(x_mp)>0:    
-			## compute beam electric field
+			## compute beam potential
 			phi_sc_n, _ = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.Dh,
 										 self.Dh, self.phi, self.phi)
 					   
@@ -177,6 +177,21 @@ class PyPIC_Scatter_Gather(object):
 			phi_sc_n=0.
 			
 		return phi_sc_n
+        
+	def gather_rho(self, x_mp, y_mp):
+		
+		if not (len(x_mp)==len(y_mp)):
+			raise ValueError('x_mp, y_mp should have the same length!!!')
+
+		if len(x_mp)>0:    
+			## compute beam distribution
+			rho_sc_n, _ = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.Dh,
+										 self.Dh, self.rho, self.rho)
+					   
+		else:
+			rho_sc_n=0.
+			
+		return rho_sc_n
 
 	@abstractmethod
 	def solve(self, *args, **kwargs):

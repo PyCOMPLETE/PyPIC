@@ -279,7 +279,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		self.Msel = Msel.tocsc()
 		self.Msel_T = (Msel.T).tocsc()
 
-		
+		self.chamb = chamb
 		print 'Done PIC init.'
                         
 
