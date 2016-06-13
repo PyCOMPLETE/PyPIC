@@ -14,14 +14,14 @@ import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 pic = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 filename_out = 'norepository_FDSW_Dh%.1fmm.mat'%(Dh*1e3)
 
-#~ import FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation as PIC_FDSW
-#~ pic = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
-#~ filename_out = 'norepository_FDSWextrap_Dh%.1fmm.mat'%(Dh*1e3)
+import FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation as PIC_FDSW
+pic = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
+filename_out = 'norepository_FDSWextrap_Dh%.1fmm.mat'%(Dh*1e3)
 
-#~ import Bassetti_Erskine as BE
-#~ pic = BE.Interpolated_Bassetti_Erskine(x_aper=chamber.x_aper, y_aper=chamber.y_aper, Dh=Dh, 
-	#~ sigmax=sigmax, sigmay=sigmay, n_imag_ellip=20)
-#~ filename_out = 'norepository_BE_Dh%.1fmm.mat'%(Dh*1e3)
+import Bassetti_Erskine as BE
+pic = BE.Interpolated_Bassetti_Erskine(x_aper=chamber.x_aper, y_aper=chamber.y_aper, Dh=Dh, 
+	sigmax=sigmax, sigmay=sigmay, n_imag_ellip=20)
+filename_out = 'norepository_BE_Dh%.1fmm.mat'%(Dh*1e3)
 
 
 
@@ -42,9 +42,12 @@ xmax_test_list = np.arange(.025e-3, x_aper+.025e-3, .025e-3)
 
 YY,XX = np.meshgrid(pic.yg, pic.xg)
 rho_mat=1./(2.*np.pi*sigmax*sigmay)*np.exp(-(XX)**2/(2.*sigmax**2)-(YY)**2/(2.*sigmay**2))
-
-pic.solve(rho = rho_mat)
-
+try:
+    pic.solve(rho = rho_mat)
+except ValueError as err:
+    print 'Got ValueError:', err
+    
+    
 Ex_list = []
 Ey_list = []
 for xmax_test in xmax_test_list: 

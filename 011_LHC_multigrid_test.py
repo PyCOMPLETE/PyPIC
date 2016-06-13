@@ -78,21 +78,23 @@ pic_multigrid.scatter(bunch.x, bunch.y, bunch.particlenumber_per_mp+bunch.y*0., 
 #scatter and solve     
 #pic solve timing
 import time
-N_rep_test = 1000
-print 'Solving PIC single %d times'%N_rep_test
-t_start_sw = time.mktime(time.localtime())
-for _ in xrange(N_rep_test):
+N_rep_test_single = 1000
+print 'Solving PIC single %d times'%N_rep_test_single
+t_start = time.mktime(time.localtime())
+for _ in xrange(N_rep_test_single):
     pic_singlegrid.solve()
-t_stop_sw = time.mktime(time.localtime())
-t_sw_single = t_stop_sw-t_start_sw
-print 'solving time singlegrid ', t_sw_single/N_rep_test                                                 
-print 'Solving PIC multi %d times'%N_rep_test
-t_start_sw = time.mktime(time.localtime())
-for _ in xrange(N_rep_test):
+t_stop = time.mktime(time.localtime())
+t_sw_single = (t_stop-t_start)/N_rep_test_single   
+print 'solving time singlegrid ', t_sw_single
+
+N_rep_test_multi = 10000                                              
+print 'Solving PIC multi %d times'%N_rep_test_multi
+t_start = time.mktime(time.localtime())
+for _ in xrange(N_rep_test_multi):
     pic_multigrid.solve()
-t_stop_sw = time.mktime(time.localtime())
-t_sw_multi = t_stop_sw-t_start_sw
-print 'solving time multigrid ', t_sw_multi/N_rep_test                  
+t_stop = time.mktime(time.localtime())
+t_sw_multi = (t_stop-t_start)/N_rep_test_multi
+print 'solving time multigrid ', t_sw_multi
 
 
 # build probes for single circle
@@ -175,7 +177,7 @@ pl.loglog(r_probes_val, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
 pl.xlabel('r [m]')
 pl.ylabel('RMS error')
 pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
-                Dh_target, Dh_BE, t_sw_single/float(N_rep_test)*1000., t_sw_multi/float(N_rep_test)*1000.))
+                Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
 pl.legend(loc='best')
@@ -205,7 +207,7 @@ pl.loglog(n_sigma_probes, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
 pl.xlabel('$\sigma$')
 pl.ylabel('RMS error')
 pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
-                Dh_target, Dh_BE, t_sw_single/float(N_rep_test)*1000., t_sw_multi/float(N_rep_test)*1000.))
+                Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
 pl.legend(loc='best')
@@ -263,6 +265,6 @@ sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.subplots_adjust(bottom = .13,top = .70)
 pl.suptitle('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
-                Dh_target, Dh_BE, t_sw_single/float(N_rep_test)*1000., t_sw_multi/float(N_rep_test)*1000.))
+                Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 
 pl.show()

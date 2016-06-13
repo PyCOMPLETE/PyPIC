@@ -62,46 +62,52 @@ eps0 = epsilon_0
 class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self, x_aper, y_aper, Dh, sigmax, sigmay, 
-		n_imag_ellip=0, tot_charge=1.):
+        n_imag_ellip=0, tot_charge=1., verbose=True, allow_scatter_and_solve=False):
         
-		print 'Start PIC init.:'
-		print 'Bassetti-Erskine, Square Grid'
+        self.verbose = verbose
+        self.allow_scatter_and_solve = allow_scatter_and_solve
+        
+        if self.verbose:
+            print 'Start PIC init.:'
+            print 'Bassetti-Erskine, Square Grid'
 
-                self.Dh = Dh
-		super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
-		
-		xx = self.xg
-		yy = self.yg
-		
-		Ex=np.zeros((len(xx),len(yy)),dtype=complex);
-		Ey=np.zeros((len(xx),len(yy)),dtype=complex);
-		
-		for ii in range(len(xx)):
+        self.Dh = Dh
+        super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, self.Dh, self.Dh, verbose=self.verbose)
+        
+        xx = self.xg
+        yy = self.yg
+        
+        Ex=np.zeros((len(xx),len(yy)),dtype=complex);
+        Ey=np.zeros((len(xx),len(yy)),dtype=complex);
+        
+        for ii in range(len(xx)):
 
-			if np.mod(ii, len(xx)/20)==0:
-				print ('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%""")
+            if np.mod(ii, len(xx)/20)==0 and self.verbose:
+                print ('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%""")
 
-			for jj in range(len(yy)):
-				x=xx[ii];
-				y=yy[jj];
-				Ex_imag,Ey_imag  = ImageTerms(x,y,x_aper,y_aper,0,0, n_imag_ellip)
-				Ex_BE,Ey_BE      = BassErsk(x,y,sigmax,sigmay)
-				Ex[ii,jj] = Ex_BE + Ex_imag
-				Ey[ii,jj] = Ey_BE + Ey_imag
-				
-		YY,XX = np.meshgrid(self.yg, self.xg)		
-		self.rho = tot_charge/(2.*np.pi*sigmax*sigmay)*np.exp(-(XX)**2/(2.*sigmax**2)-(YY)**2/(2.*sigmay**2))
-		self.phi = np.zeros((self.Nxg,self.Nyg))
-		self.efx = tot_charge * Ex.real
-		self.efy = tot_charge * Ey.real
-		                
+            for jj in range(len(yy)):
+                x=xx[ii];
+                y=yy[jj];
+                Ex_imag,Ey_imag  = ImageTerms(x,y,x_aper,y_aper,0,0, n_imag_ellip)
+                Ex_BE,Ey_BE      = BassErsk(x,y,sigmax,sigmay)
+                Ex[ii,jj] = Ex_BE + Ex_imag
+                Ey[ii,jj] = Ey_BE + Ey_imag
+                
+        YY,XX = np.meshgrid(self.yg, self.xg)		
+        self.rho = tot_charge/(2.*np.pi*sigmax*sigmay)*np.exp(-(XX)**2/(2.*sigmax**2)-(YY)**2/(2.*sigmay**2))
+        self.phi = np.zeros((self.Nxg,self.Nyg))
+        self.efx = tot_charge * Ex.real
+        self.efy = tot_charge * Ey.real
+                        
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
-		raise ValueError('Bassetti_Erskine: nothing to solve!!!!')
+        if not self.allow_scatter_and_solve:
+            raise ValueError('Bassetti_Erskine: nothing to solve!!!!')
         
     def scatter(self,  x_mp, y_mp, nel_mp, charge = -qe):
-		raise ValueError('Bassetti_Erskine: what do you want to scatter???!!!!')
+        if not self.allow_scatter_and_solve:
+            raise ValueError('Bassetti_Erskine: what do you want to scatter???!!!!')
         
         
 
