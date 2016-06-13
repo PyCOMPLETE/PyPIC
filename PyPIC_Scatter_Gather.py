@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.04                     
+#		           PyPIC Version 2.0.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -69,7 +69,7 @@ class PyPIC_Scatter_Gather(object):
 
         self.verbose = verbose
         if self.verbose:
-            print 'PyPIC Version 1.04'
+            print 'PyPIC Version 2.0.0'
         
         if xg!=None and yg!=None:
             assert(x_aper==None and y_aper==None and dx==None and dy==None)
