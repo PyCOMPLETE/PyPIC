@@ -112,6 +112,7 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
         n_grids = len(grids)
         pic_list = [pic_main]
         for ii in xrange(n_grids):
+            print 'GRID %d/%d'%(ii,n_grids)
             x_min_internal = grids[ii]['x_min_internal']
             x_max_internal = grids[ii]['x_max_internal']
             y_min_internal = grids[ii]['y_min_internal']
@@ -121,18 +122,43 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
             pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
                             y_max_internal, Dh_internal, N_nodes_discard, sparse_solver=sparse_solver))
                             
-        pic_list = pic_list[1:]                    
-        self.grids = grids          
+        pic_list = pic_list[1:]
+        self.n_grids = n_grids
         self.pic_list = pic_list
-        
+                     
+                         
         self.scatter = self.pic_list[-1].scatter
         self.solve = self.pic_list[-1].solve
         self.gather = self.pic_list[-1].gather
         self.gather_phi = self.pic_list[-1].gather_phi
         self.gather_rho = self.pic_list[-1].gather_rho
         
+        self.Dh = self.pic_list[-1].pic_internal.Dh
+        self.xg = self.pic_list[-1].pic_internal.xg
+        self.Nxg = self.pic_list[-1].pic_internal.Nxg
+        self.bias_x = self.pic_list[-1].pic_internal.bias_x
+        self.yg = self.pic_list[-1].pic_internal.yg
+        self.Nyg = self.pic_list[-1].pic_internal.Nyg
+        self.bias_y = self.pic_list[-1].pic_internal.bias_y
+    
+    @property
+    def rho(self):
+        return self.pic_list[-1].pic_internal.rho
         
-class AddTelescopicGrids(PyPIC_Scatter_Gather):
+    @property
+    def phi(self):
+        return self.pic_list[-1].pic_internal.phi
+        
+    @property
+    def efx(self):
+        return self.pic_list[-1].pic_internal.efx
+        
+    @property
+    def efy(self):
+        return self.pic_list[-1].pic_internal.efy
+        
+        
+class AddTelescopicGrids(AddMultiGrids):
     def __init__(self, pic_main, f_telescope, target_grid, N_nodes_discard, N_min_Dh_main,
                     sparse_solver='PyKLU'):
     
@@ -189,51 +215,28 @@ class AddTelescopicGrids(PyPIC_Scatter_Gather):
         pic_list = [pic_main]
 
 
-
+        grids = []
         for i_grid in xrange(n_grids):
             x_min_int_curr = -Sx_list[i_grid]/2 + x_center_target
             x_max_int_curr = Sx_list[i_grid]/2 + x_center_target
             y_min_int_curr = -Sy_list[i_grid]/2 + y_center_target
             y_max_int_curr = Sy_list[i_grid]/2 + y_center_target
             Dh_int_curr = Dh_list[i_grid]
-            print 'GRID %d/%d'%(i_grid,n_grids)
-            pic_list.append(AddInternalGrid(pic_list[-1], x_min_int_curr, x_max_int_curr, y_min_int_curr, 
-                                y_max_int_curr, Dh_int_curr, N_nodes_discard, sparse_solver=sparse_solver))
-           
-                                
-        pic_list = pic_list[1:]
-        self.n_grids = n_grids
-        self.f_exact = f_exact
-        self.pic_list = pic_list
+
+            grids.append({\
+            'x_min_internal':x_min_int_curr,
+            'x_max_internal':x_max_int_curr,
+            'y_min_internal':y_min_int_curr,
+            'y_max_internal':y_max_int_curr,
+            'Dh_internal':Dh_int_curr,
+            'N_nodes_discard':N_nodes_discard})
+            
+        self.grids = grids
+        
         self.target_grid = target_grid
-        self.f_telescope = f_telescope                        
-                         
-        self.scatter = self.pic_list[-1].scatter
-        self.solve = self.pic_list[-1].solve
-        self.gather = self.pic_list[-1].gather
-        self.gather_phi = self.pic_list[-1].gather_phi
-        self.gather_rho = self.pic_list[-1].gather_rho
+        self.f_telescope = f_telescope   
+        self.f_exact = f_exact
         
-        self.Dh = self.pic_list[-1].pic_internal.Dh
-        self.xg = self.pic_list[-1].pic_internal.xg
-        self.Nxg = self.pic_list[-1].pic_internal.Nxg
-        self.bias_x = self.pic_list[-1].pic_internal.bias_x
-        self.yg = self.pic_list[-1].pic_internal.yg
-        self.Nyg = self.pic_list[-1].pic_internal.Nyg
-        self.bias_y = self.pic_list[-1].pic_internal.bias_y
-    
-    @property
-    def rho(self):
-        return self.pic_list[-1].pic_internal.rho
-        
-    @property
-    def phi(self):
-        return self.pic_list[-1].pic_internal.phi
-        
-    @property
-    def efx(self):
-        return self.pic_list[-1].pic_internal.efx
-        
-    @property
-    def efy(self):
-        return self.pic_list[-1].pic_internal.efy
+        super(AddTelescopicGrids, self).__init__(pic_main=pic_main, grids=grids, sparse_solver=sparse_solver)
+
+
