@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.04                     
+#		           PyPIC Version 2.0.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -71,7 +71,8 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		print 'Finite Differences, Shortley-Weller, Square Grid'
 		print 'Using Shortley-Weller boundary approx.'
 
-		super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, Dh)
+		self.Dh = Dh
+		super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
 		Nyg, Nxg = self.Nyg, self.Nxg
 		
 		
@@ -278,7 +279,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		self.Msel = Msel.tocsc()
 		self.Msel_T = (Msel.T).tocsc()
 
-		
+		self.chamb = chamb
 		print 'Done PIC init.'
                         
 

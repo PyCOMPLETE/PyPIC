@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.04                     
+#		           PyPIC Version 2.0.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -68,13 +68,14 @@ eps0 = epsilon_0
 
 class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu'):
+    def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu', tol_stem = 0.01, tol_der = 0.1):
         
 		print 'Start PIC init.:'
 		print 'Finite Differences, Shortley-Weller, Square Grid'
 		print 'Using Shortley-Weller boundary approx.'
 
-		super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, Dh)
+		self.Dh = Dh
+		super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
 		Nyg, Nxg = self.Nyg, self.Nxg
 		
 		
@@ -138,7 +139,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 				
 				
 				# Build A matrix
-				if hn<Dh/100. or hs<Dh/100. or hw<Dh/100. or he<Dh/100.: # nodes very close to the bounday
+				if hn<Dh*tol_stem or hs<Dh*tol_stem or hw<Dh*tol_stem or he<Dh*tol_stem: # nodes very close to the bounday
 					A[u,u] =1.
 					list_internal_force_zero.append(u)
 					#print u, xn[u], yn[u]
@@ -152,12 +153,12 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 				
 				
 				# Build Dx matrix
-				if hn<Dh/100.:
-					if hs>=Dh/100.:
+				if hn<Dh*tol_der:
+					if hs>=Dh*tol_der:
 						Dx[u,u] = -1./hs
 						Dx[u,u-Nyg]=1./hs
-				elif hs<Dh/100.:
-					if hn>=Dh/100.:
+				elif hs<Dh*tol_der:
+					if hn>=Dh*tol_der:
 						Dx[u,u] = 1./hn
 						Dx[u,u+Nyg]=-1./hn
 				else:
@@ -167,12 +168,12 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 					
 					
 				# Build Dy matrix	
-				if he<Dh/100.:
-					if hw>=Dh/100.:
+				if he<Dh*tol_der:
+					if hw>=Dh*tol_der:
 						Dy[u,u] = -1./hw
 						Dy[u,u-1]=1./hw
-				elif hw<Dh/100.:
-					if he>=Dh/100.:
+				elif hw<Dh*tol_der:
+					if he>=Dh*tol_der:
 						Dy[u,u] = 1./he
 						Dy[u,u+1]=-1./(he)
 				else:
@@ -239,8 +240,12 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		
 		#initialize self.luobj
 		self.build_sparse_solver()
-
 		
+
+		self.tol_der = tol_der
+		self.tol_stem = tol_stem
+
+		self.chamb = chamb
 		print 'Done PIC init.'
                         
 
@@ -308,7 +313,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 				print "Falling back on scipy superlu solver:"
 				luobj = ssl.splu(self.Asel.tocsc())
 		else:
-			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
+			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_slu" or "PyKLU"\n')
 				
 		self.luobj = luobj
 				

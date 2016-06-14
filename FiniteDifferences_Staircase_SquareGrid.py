@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 1.04                     
+#		           PyPIC Version 2.0.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -65,13 +65,19 @@ eps0 = epsilon_0
 
 class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu'):
+    def __init__(self, chamb, Dh, sparse_solver = 'scipy_slu', remove_external_nodes_from_mat=True):
         
 		print 'Start PIC init.:'
 		print 'Finite Differences, Square Grid'
 
 
-		super(FiniteDifferences_Staircase_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, Dh)
+		self.Dh = Dh
+		if hasattr(chamb, 'x_min') and hasattr(chamb, 'x_max') and hasattr(chamb, 'y_min') and hasattr(chamb, 'y_max'):
+			super(FiniteDifferences_Staircase_SquareGrid, self).__init__(dx = self.Dh, dy = self.Dh, 
+				x_min = chamb.x_min, x_max = chamb.x_max, y_min = chamb.y_min, y_max = chamb.y_max)
+		else:
+			super(FiniteDifferences_Staircase_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
+
 		Nyg, Nxg = self.Nyg, self.Nxg
 		
 		
@@ -116,19 +122,23 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 		A=A.tocsr() #convert to csr format
 		
 		#Remove trivial equtions 
-		diagonal = A.diagonal()
-		N_full = len(diagonal)
-		indices_non_id = np.where(diagonal!=1.)[0]
-		N_sel = len(indices_non_id)
-
-		Msel = scsp.lil_matrix((N_full, N_sel))
-		for ii, ind in enumerate(indices_non_id):
-			Msel[ind, ii] =1.
-			
+		if remove_external_nodes_from_mat:
+			diagonal = A.diagonal()
+			N_full = len(diagonal)
+			indices_non_id = np.where(diagonal!=1.)[0]
+			N_sel = len(indices_non_id)
+			Msel = scsp.lil_matrix((N_full, N_sel))
+			for ii, ind in enumerate(indices_non_id):
+				Msel[ind, ii] =1.
+		else:
+			diagonal = A.diagonal()
+			N_full = len(diagonal)
+			Msel = scsp.lil_matrix((N_full, N_full))
+			for ii in xrange(N_full):
+				Msel[ii, ii] =1.
 		Msel = Msel.tocsc()
-
 		Asel = Msel.T*A*Msel
-		Asel=Asel.tocsc()
+		Asel=Asel.tocsc() 
 		
 
 		if sparse_solver == 'scipy_slu':
@@ -144,7 +154,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 				print "Falling back on scipy superlu solver:"
 				luobj = ssl.splu(Asel.tocsc())
 		else:
-			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
+			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_slu" or "PyKLU"\n')
 			
 		self.xn = xn
 		self.yn = yn
@@ -169,19 +179,27 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 		
 		self.Msel = Msel.tocsc()
 		self.Msel_T = (Msel.T).tocsc()
-
 		
+		self.flag_border_n = flag_border_n
+		self.chamb = chamb
 		print 'Done PIC init.'
                         
 
     #@profile    
-    def solve(self, rho = None, flag_verbose = False):
+    def solve(self, rho = None, flag_verbose = False, pic_external = None):
 
 		if rho == None:
 			rho = self.rho
 
 		b=-rho.flatten()/eps0;
 		b[~(self.flag_inside_n)]=0.; #boundary condition
+
+		if pic_external is not None:
+			x_border = self.xn[self.flag_border_n]
+			y_border = self.yn[self.flag_border_n]
+			phi_border = pic_external.gather_phi(x_border, y_border)
+			b[self.flag_border_n] = phi_border
+
 
 		if flag_verbose:
 			print 'Start Linear System Solution.'
