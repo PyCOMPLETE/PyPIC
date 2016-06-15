@@ -103,71 +103,92 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         fgreen[ny:, :nx] = fgreen[ny:0:-1, :nx]
         fgreen[:ny, nx:] = fgreen[:ny, nx:0:-1]
         fgreen[ny:, nx:] = fgreen[ny:0:-1, nx:0:-1]
+
+        self.fgreen = fgreen
+        self.fgreentr = np.fft.fft2(fgreen).copy()
 		
         if fftlib == 'pyfftw':
             try:
                 import pyfftw
                 print 'Using PyFFTW'
                 #prepare fftw's
-                tmprho = (fgreen*(1.+1j))*0.
-                fft_first = pyfftw.builders.fft(tmprho[:ny, :].copy(), axis = 1)
-                transf1 = (fgreen*(1.+1j))*0.
-                transf1[:ny, :] = fft_first(tmprho[:ny, :].copy())
-                fft_second = pyfftw.builders.fft(transf1.copy(), axis = 0)
-                fftphi_new = fft_second(transf1.copy())* fgreen
-                ifft_first = pyfftw.builders.ifft(fftphi_new.copy(), axis = 0)
-                itransf1 = ifft_first(fftphi_new.copy())
-                ifft_second = pyfftw.builders.ifft(itransf1[:ny, :].copy(), axis = 1)
+
+                self.tmprho = (fgreen*(1.+1j))*0.
+                fft_first = pyfftw.builders.fft(self.tmprho[:ny, :], axis = 1, threads = 1)
+
+                self.tmpfft = (fgreen*(1.+1j))*0.
+                self.tmpfft[:ny, :] = fft_first(self.tmprho[:ny, :])
+                fft_second = pyfftw.builders.fft(self.tmpfft, axis = 0, threads = 1)
+                
+                self.phifft = fft_second(self.tmpfft) * self.fgreentr
+                ifft_first = pyfftw.builders.ifft(self.phifft, axis = 0, threads = 1)
+
+                self.tmpifft = ifft_first(self.phifft)
+                ifft_second = pyfftw.builders.ifft(self.tmpifft[:ny, :], axis = 1, threads = 1)
+                self.tmpphi  = (self.fgreen*(1.+1j))*0.
 
                 #@profile
-                def fft2(x):
-                    tmp = (x*(1.+1j))*0.
-                    tmp[:ny, :] = fft_first(x[:ny, :])
-                    return fft_second(tmp)
-                
-                #@profile    
-                def ifft2(x):
-                    tmp = ifft_first(x)
-                    res = 0*x
-                    res[:ny, :] = ifft_second(tmp[:ny, :])
-                    return res
-                    
-                self.fft2 = fft2
-                self.ifft2 = ifft2
+                def fft2_pyfftw():
+                    self.tmpfft[:ny, :] = fft_first(self.tmprho[:ny, :])
+                    self.phifft = fft_second(self.tmpfft) * self.fgreentr
+                    self.tmpifft = ifft_first(self.phifft)
+                    self.tmpphi[:ny, :] = ifft_second(self.tmpifft[:ny, :])
+
+
+                self.fft2 = fft2_pyfftw
+
+                self.tmpfft = (self.fgreen*(1.+1j))*0.
+                self.tmpifft = (self.fgreen*(1.+1j))*0.
 				
             except ImportError as err:
                 print 'Failed to import pyfftw'
                 print 'Got exception: ', err
-                print 'Using numpy fft'
-                self.fft2 = np.fft.fft2
-                self.ifft2 = np.fft.ifft2
-        elif fftlib == 'numpy':
+
+                fftlib = 'numpy'
+
+        if fftlib == 'numpy':
             print 'Using numpy FFT'
-            self.fft2 = np.fft.fft2
-            self.ifft2 = np.fft.ifft2
-        else:
+
+            self.tmprho = (self.fgreen*(1.+1j))*0.
+            self.tmpphi = (self.fgreen*(1.+1j))*0.
+
+            def fft2_numpy():
+                self.phifft = np.fft.fft2(self.tmprho) * self.fgreentr
+                self.tmpphi = np.fft.ifft2(self.phifft)
+
+            self.fft2 = fft2_numpy
+                
+        elif fftlib != 'pyfftw':
             raise ValueError('fftlib not recognized!!!!')
 			
-        self.fgreen = fgreen
-        self.fgreentr = np.fft.fft2(fgreen).copy()
+
         self.rho = np.zeros((self.Nxg,self.Nyg))
         self.phi = np.zeros((self.Nxg,self.Nyg))
         self.efx = np.zeros((self.Nxg,self.Nyg))
         self.efy = np.zeros((self.Nxg,self.Nyg))
+        
+        self.hlpphi = (self.phi*(1.+1j))*0.
+        self.hlpefx = (self.efx*(1.+1j))*0.
+        self.hlpefy = (self.efy*(1.+1j))*0.
+
+        self.tmprho = (self.fgreen*(1.+1j))*0.
+        self.tmpphi = (self.fgreen*(1.+1j))*0.
+
         self.Dh = Dh
         self.nx = nx
         self.ny = ny
+
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
         if rho == None:
             rho = self.rho
 
-        phi, efx, efy = self._solve_core(rho)
+        self._solve_core(rho)
 
-        self.phi = np.real(phi)
-        self.efx = np.real(efx)
-        self.efy = np.real(efy) 
+        self.phi = np.real(self.hlpphi)
+        self.efx = np.real(self.hlpefx)
+        self.efy = np.real(self.hlpefy) 
 
 
     def get_state_object(self):
@@ -197,44 +218,41 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
             raise ValueError('Not implemented yet! Sorry.')
 
         elif len(states) == 1:
+
             state = states[0]
-            phi, efx, efy = self._solve_core(state.rho)
             
-            state.phi = np.real(phi)
-            state.efx = np.real(efx)
-            state.efy = np.real(efy) 
+            self._solve_core(state.rho)
+            
+            state.phi = np.real(self.hlpphi)
+            state.efx = np.real(self.hlpefx)
+            state.efy = np.real(self.hlpefy) 
 
         else:
             rho = 1*states[0].rho + 1j*states[1].rho
-            phi, efx, efy = self._solve_core(rho)
             
-            states[1].phi = np.imag(phi)
-            states[1].efx = np.imag(efx)
-            states[1].efy = np.imag(efy)
-            states[0].phi = np.real(phi)
-            states[0].efx = np.real(efx)
-            states[0].efy = np.real(efy)
+            self._solve_core(rho)
+            
+            states[1].phi = np.imag(self.hlpphi)
+            states[1].efx = np.imag(self.hlpefx)
+            states[1].efy = np.imag(self.hlpefy)
+            states[0].phi = np.real(self.hlpphi)
+            states[0].efx = np.real(self.hlpefx)
+            states[0].efy = np.real(self.hlpefy)
 
     #@profile
     def _solve_core(self, rho):
 
-        tmprho = (self.fgreen*(1.+1j))*0.
-        tmprho[:self.ny, :self.nx] = rho.T
-        
-        fftphi = self.fft2(tmprho) * self.fgreentr
+        self.tmprho[:self.ny, :self.nx] = rho.T
 
-        tmpphi = self.ifft2(fftphi)
-        phi = 1./(4. * np.pi * eps0)*(tmpphi[:self.ny, :self.nx]).T
+        self.fft2()
+
+        self.hlpphi = 1./(4. * np.pi * eps0)*(self.tmpphi[:self.ny, :self.nx]).T
+
+        self.hlpefx[1:self.Nxg-1,:] = self.hlpphi[0:self.Nxg-2,:] - self.hlpphi[2:self.Nxg,:];  #central difference on internal nodes
+        self.hlpefy[:,1:self.Nyg-1] = self.hlpphi[:,0:self.Nyg-2] - self.hlpphi[:,2:self.Nyg];  #central difference on internal nodes
         
-        efx = 0.*phi
-        efy = 0.*phi
-        
-        efx[1:self.Nxg-1,:] = phi[0:self.Nxg-2,:] - phi[2:self.Nxg,:];  #central difference on internal nodes
-        efy[:,1:self.Nyg-1] = phi[:,0:self.Nyg-2] - phi[:,2:self.Nyg];  #central difference on internal nodes
-        
-        efx = efx/(2*self.dx)
-        efy = efy/(2*self.dy)
-        
-        return phi, efx, efy
+        self.hlpefx = self.hlpefx/(2*self.dx)
+        self.hlpefy = self.hlpefy/(2*self.dy)
+
 
 
