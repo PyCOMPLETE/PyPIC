@@ -53,7 +53,7 @@
 import numpy as np
 import rhocompute as rhocom
 import int_field_for as iff
-from abc import abstractmethod, ABCMeta
+#~ from abc import abstractmethod, ABCMeta
 
 na = lambda x:np.array([x])
 
@@ -61,78 +61,75 @@ qe=1.602176565e-19;
 eps0=8.8541878176e-12;
 
 class PyPIC_Scatter_Gather(object):
+	#__metadata__ = ABCMeta
+	
+	def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
+				x_min=None, x_max=None, y_min=None, y_max=None, *args, **kwargs):
 
-    __metadata__ = ABCMeta
+		print 'PyPIC Version 1.04'
+		
+		if xg!=None and yg!=None:
+			assert(x_aper==None and y_aper==None and dx==None and dy==None)
+			assert(x_min==None and x_max==None and y_min==None and y_max==None)
 
-    def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
-                x_min=None, x_max=None, y_min=None, y_max=None, verbose = True, *args, **kwargs):
+			Nxg=len(xg);
+			bias_x=min(xg);
 
-        self.verbose = verbose
-        if self.verbose:
-            print 'PyPIC Version 2.0.0'
-        
-        if xg!=None and yg!=None:
-            assert(x_aper==None and y_aper==None and dx==None and dy==None)
-            assert(x_min==None and x_max==None and y_min==None and y_max==None)
+			Nyg=len(yg);
+			bias_y=min(yg);
+			
+			dx = xg[1]-xg[0]
+			dy = yg[1]-yg[0]
 
-            Nxg=len(xg);
-            bias_x=min(xg);
+		elif dx!=None and dy!=None:
+			assert(xg==None and yg==None)
+			# box given
+			if x_min!=None and x_max!=None and y_min!=None and y_max!=None:
+				assert(x_aper==None and y_aper==None)
 
-            Nyg=len(yg);
-            bias_y=min(yg);
-            
-            dx = xg[1]-xg[0]
-            dy = yg[1]-yg[0]
+				x_aper = (x_max-x_min)/2.
+				x_center = (x_max+x_min)/2.
 
-        elif dx!=None and dy!=None:
-            assert(xg==None and yg==None)
-            # box given
-            if x_min!=None and x_max!=None and y_min!=None and y_max!=None:
-                assert(x_aper==None and y_aper==None)
+				y_aper = (y_max-y_min)/2.
+				y_center = (y_max+y_min)/2.
+			# aperture given
+			elif x_aper!=None and y_aper!=None:
+				assert(x_min==None and x_max==None and y_min==None and y_max==None)
 
-                x_aper = (x_max-x_min)/2.
-                x_center = (x_max+x_min)/2.
+				x_center = 0.
+				y_center = 0.
 
-                y_aper = (y_max-y_min)/2.
-                y_center = (y_max+y_min)/2.
-            # aperture given
-            elif x_aper!=None and y_aper!=None:
-                assert(x_min==None and x_max==None and y_min==None and y_max==None)
+			else:
+				raise ValueError('x_aper and y_aper, or x_min, x_max and y_min, y_max must be specified!!!')
 
-                x_center = 0.
-                y_center = 0.
+			xg=np.arange(0, x_aper+5.*dx,dx,float)  
+			xgr=xg[1:]
+			xgr=xgr[::-1]#reverse array
+			xg=np.concatenate((-xgr,xg),0)
+			xg = xg + x_center
+			Nxg=len(xg);
+			bias_x=min(xg);
 
-            else:
-                raise ValueError('x_aper and y_aper, or x_min, x_max and y_min, y_max must be specified!!!')
+			yg=np.arange(0,y_aper+4.*dy,dy,float)  
+			ygr=yg[1:]
+			ygr=ygr[::-1]#reverse array
+			yg=np.concatenate((-ygr,yg),0)
+			yg = yg + y_center
+			Nyg=len(yg);
+			bias_y=min(yg);	
 
-            xg=np.arange(0, x_aper+5.*dx,dx,float)  
-            xgr=xg[1:]
-            xgr=xgr[::-1]#reverse array
-            xg=np.concatenate((-xgr,xg),0)
-            xg = xg + x_center
-            Nxg=len(xg);
-            bias_x=min(xg);
-
-            yg=np.arange(0,y_aper+4.*dy,dy,float)  
-            ygr=yg[1:]
-            ygr=ygr[::-1]#reverse array
-            yg=np.concatenate((-ygr,yg),0)
-            yg = yg + y_center
-            Nyg=len(yg);
-            bias_y=min(yg);	
-
-        else:
-            raise ValueError('dx and dy, or xg and yg must be specified!!!')
+		else:
+			raise ValueError('dx and dy, or xg and yg must be specified!!!')
 
 
-        self.dx = dx
-        self.xg = xg
-        self.Nxg = Nxg
-        self.bias_x = bias_x
-        self.dy = dy
-        self.yg = yg
-        self.Nyg = Nyg
-        self.bias_y = bias_y
+		self.dx = dx
+		self.xg = xg
+		self.Nxg = Nxg
+		self.bias_x = bias_x
+		self.dy = dy
+		self.yg = yg
+		self.Nyg = Nyg
+		self.bias_y = bias_y
 
                         
     #@profile
@@ -195,7 +192,7 @@ class PyPIC_Scatter_Gather(object):
             
         return rho_sc_n
 
-    @abstractmethod
+    #@abstractmethod
     def solve(self, *args, **kwargs):
         '''Computes the electric field maps from the stored 
         charge distribution (self.rho) and stores them in
