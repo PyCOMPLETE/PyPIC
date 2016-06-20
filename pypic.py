@@ -36,7 +36,6 @@ def idivup(a, b):
     z = (a // b + 1) if (a % b != 0) else (a // b)
     return int(z)
 
-
 class PyPIC(object):
     '''Encodes the algorithm of PyPIC for a static mesh
     on the CPU:
@@ -568,6 +567,9 @@ class PyPIC_GPU(PyPIC):
         mesh to particle interpolation to be 0.25x quicker.
         (Timing for 1e6 particles and a 64x64x32 mesh includes sorting.)
 
+        The optional keyword argument state=None gets rho, phi and
+        mesh_e_fields assigned as members if provided.
+
         Return as many interpolated fields per particle as
         dimensions in mp_coords are given.
         '''
@@ -578,6 +580,8 @@ class PyPIC_GPU(PyPIC):
 
         lower_bounds = kwargs.pop('lower_bounds', None)
         upper_bounds = kwargs.pop('upper_bounds', None)
+
+        state = kwargs.pop('state', None)
 
         if lower_bounds is not None and upper_bounds is not None:
             mesh_charges = self.sorted_particles_to_mesh(
@@ -591,9 +595,15 @@ class PyPIC_GPU(PyPIC):
         rho = mesh_charges / self.mesh.volume_elem
         if getattr(self.poissonsolver, 'is_25D', False):
             rho *= self.mesh.dz
+        if state: state.rho = rho.copy()
+
         phi = self.poisson_solve(rho)
+        if state: state.phi = phi
+
         mesh_e_fields = self.get_electric_fields(phi)
         self._context.synchronize()
+        if state: state.mesh_e_fields = mesh_e_fields
+
         mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
         fields = self.field_to_particles(*mesh_fields_and_mp_coords, **kwargs)
         self._context.synchronize()
