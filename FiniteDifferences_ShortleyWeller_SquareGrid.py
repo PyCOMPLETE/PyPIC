@@ -220,7 +220,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 			self.flag_inside_n = flag_inside_n
 			self.flag_outside_n = flag_outside_n
 			self.flag_outside_n_mat = flag_outside_n_mat
-			self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
 			self.flag_force_zero = flag_force_zero
 			self.Asel = Asel
 
@@ -242,25 +241,28 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 
 			self.tol_der = tol_der
 			self.tol_stem = tol_stem
+			
 
-			self.chamb = chamb
-
-			self.rho = np.zeros((self.Nxg,self.Nyg));
-			self.phi = np.zeros((self.Nxg,self.Nyg));
-			self.efx = np.zeros((self.Nxg,self.Nyg));
-			self.efy = np.zeros((self.Nxg,self.Nyg));
 			
 			print 'Done PIC init.'
 			
 		else:
-			self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)			
-
+			
+			self.solve = self._solve_for_states
+			
+		self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)			
+		self.chamb = chamb
+		self.rho = np.zeros((self.Nxg,self.Nyg));
+		self.phi = np.zeros((self.Nxg,self.Nyg));
+		self.efx = np.zeros((self.Nxg,self.Nyg));
+		self.efy = np.zeros((self.Nxg,self.Nyg));
+				
     #@profile    
 	def solve(self, rho = None, flag_verbose = False):
 
 		if rho == None:
 			rho = self.rho
-		
+
 		b=-rho.flatten()/eps0;
 		b[(self.flag_force_zero)]=0; #boundary condition
 		
@@ -342,16 +344,16 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		
 		if len(states) == 1:
 			state = states[0]
-			self.solve_core(state, state.rho)			
-			
+			self._solve_core(state, state.rho)	
+
 		else:
 			for ii in xrange(len(states)):
 				state = states[ii]
-				self.solve_core(state, state.rho)
+				self._solve_core(state, state.rho)
 				
 				
-	def solve_core(self, state, rho):
-
+	def _solve_core(self, state, rho):
+			
 		b=-rho.flatten()/eps0;
 		b[(self.flag_force_zero)]=0; 
 		b_sel = self.Msel_T*b
@@ -368,4 +370,4 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		state.phi = phi
 
 
-				
+		
