@@ -194,7 +194,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
         if rho == None:
             rho = self.rho
             
-        self._solve_core(self, rho, pic_external)
+        self._solve_core(self, rho, pic_external) #change 2
 
         
     def get_state_object(self):
@@ -217,7 +217,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
             
         else:
             if pic_external is not None:
-                raise ValueError('This will not work!')
+                raise ValueError('This will not work!')#change 1
             for ii in xrange(len(states)):
                 state = states[ii]
                 self._solve_core(state, state.rho, pic_external)
