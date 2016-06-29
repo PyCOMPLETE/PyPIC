@@ -262,33 +262,8 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 
 		if rho == None:
 			rho = self.rho
+		self._solve_core(self, rho)
 
-		b=-rho.flatten()/eps0;
-		b[(self.flag_force_zero)]=0; #boundary condition
-		
-		if flag_verbose:
-			print 'Start Linear System Solution.'
-		b_sel = self.Msel_T*b
-		phi_sel = self.luobj.solve(b_sel)
-		phi = self.Msel*phi_sel
-		
-		U_sc_eV_stp = -0.5*eps0*np.sum(b*phi)*self.Dh*self.Dh/qe
-		
-		if flag_verbose:
-			print 'Start field computation.'
-		
-		efx = self.Dx*phi
-		efy = self.Dy*phi
-		phi=np.reshape(phi,(self.Nxg,self.Nyg))
-		efx=np.reshape(efx,(self.Nxg,self.Nyg))
-		efy=np.reshape(efy,(self.Nxg,self.Nyg))
-		   
-		self.rho = rho
-		self.b = b
-		self.phi = phi
-		self.efx = efx
-		self.efy = efy
-		self.U_sc_eV_stp = U_sc_eV_stp
 		
 	def gather(self, x_mp, y_mp):
 		
