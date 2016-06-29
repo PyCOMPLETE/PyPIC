@@ -316,15 +316,9 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 	def solve_states(self, states):
 		
 		states = np.atleast_1d(states)
-		
-		if len(states) == 1:
-			state = states[0]
-			self._solve_core(state, state.rho)	
-
-		else:
-			for ii in xrange(len(states)):
-				state = states[ii]
-				self._solve_core(state, state.rho)
+		for ii in xrange(len(states)):
+			state = states[ii]
+			self._solve_core(state, state.rho)
 				
 				
 	def _solve_core(self, state, rho):
