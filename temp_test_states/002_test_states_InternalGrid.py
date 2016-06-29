@@ -1,7 +1,7 @@
 import sys, os
-BIN=os.path.expanduser('../')
+BIN=os.path.expanduser('../../')
 sys.path.append(BIN)
-BIN=os.path.expanduser('../PyHEADTAIL/testing/script-tests/')
+BIN=os.path.expanduser('../../PyHEADTAIL/testing/script-tests/')
 sys.path.append(BIN)
 from LHC import LHC
 from PyPIC.MultiGrid import AddInternalGrid
