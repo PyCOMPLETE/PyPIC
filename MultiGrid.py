@@ -143,6 +143,7 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 		pic_list = [pic_main]
 		for ii in xrange(n_grids):
 			print 'GRID %d/%d'%(ii,n_grids)
+            
 			x_min_internal = grids[ii]['x_min_internal']
 			x_max_internal = grids[ii]['x_max_internal']
 			y_min_internal = grids[ii]['y_min_internal']

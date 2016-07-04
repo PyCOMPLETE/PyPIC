@@ -216,7 +216,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
             pic_s_external = np.atleast_1d(pic_s_external)
             
         if len(pic_s_external) != len(states):
-            raise ValueError('Found len(pic_s_external) != len(states!!!!')
+            raise ValueError('Found len(pic_s_external) != len(states)!!!!')
         
         for ii in xrange(len(states)):
             state = states[ii]
