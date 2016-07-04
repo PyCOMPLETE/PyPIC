@@ -72,13 +72,13 @@ fact_single_state = 2.5
 single_state = pic.get_state_object()
 single_state.scatter(x_mp, y_mp, nel_mp*fact_single_state, charge = qe)
 pic.solve_states(single_state)
-Ex_prb_single_state, Ey_prb_single_state = state.gather(x_probes, y_probes)
+Ex_prb_single_state, Ey_prb_single_state = single_state.gather(x_probes, y_probes)
 colorcurr = 'black'
 pl.subplot(2,1,1)
-pl.plot(theta_probes, Ex_prb_state, '.', color=colorcurr)
+pl.plot(theta_probes, Ex_prb_single_state, '.', color=colorcurr)
 pl.plot(theta_probes, Ex_probes*fact_single_state, '-', color=colorcurr)
 pl.subplot(2,1,2)
-pl.plot(theta_probes, Ey_prb_state, '.', color=colorcurr)
+pl.plot(theta_probes, Ey_prb_single_state, '.', color=colorcurr)
 pl.plot(theta_probes, Ey_probes*fact_single_state, '-', color=colorcurr)
 
 pl.show()
