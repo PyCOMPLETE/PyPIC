@@ -149,13 +149,11 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 			y_max_internal = grids[ii]['y_max_internal']
 			Dh_internal = grids[ii]['Dh_internal']
 			N_nodes_discard = grids[ii]['N_nodes_discard']
-			if include_solver:
-				pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
-								y_max_internal, Dh_internal, N_nodes_discard, sparse_solver=sparse_solver, include_solver = True))
-			else:
-				pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
-				y_max_internal, Dh_internal, N_nodes_discard, sparse_solver=sparse_solver, include_solver = False))
-			
+
+			pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
+								y_max_internal, Dh_internal, N_nodes_discard, sparse_solver=sparse_solver, 
+                                include_solver = include_solver))
+
 							
 		pic_list = pic_list[1:]
 		self.n_grids = n_grids
