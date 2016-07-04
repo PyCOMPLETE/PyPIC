@@ -202,11 +202,11 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         return state
 
         
-    def load_state_object(self, state):
-        self.rho = state.rho.copy()
-        self.phi = state.phi.copy()
-        self.efx = state.efx.copy()
-        self.efy = state.efy.copy()
+    #~ def load_state_object(self, state):
+        #~ self.rho = state.rho.copy()
+        #~ self.phi = state.phi.copy()
+        #~ self.efx = state.efx.copy()
+        #~ self.efy = state.efy.copy()
 
         
     #@profile
