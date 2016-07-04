@@ -129,11 +129,11 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
 							
 	def solve_states(self, states):
 		states = np.atleast_1d(states)
-		raise ValueError('This is suboptimal and not clear!')
+		#raise ValueError('This is suboptimal and not clear!')
 		for ii in xrange(len(states)):
 			state = states[ii]
 			self.pic_external.solve_states(state.pic_external)
-			self.pic_internal.solve_states(state.pic_internal, pic_external=state.pic_external)
+			self.pic_internal.solve_states(state.pic_internal, pic_s_external=state.pic_external)
 	
 		
 class AddMultiGrids(PyPIC_Scatter_Gather):
