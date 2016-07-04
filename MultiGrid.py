@@ -178,9 +178,6 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 		
 		self.solve_states = self.pic_list[-1].solve_states		
 
-
-
-
 		
 	@property
 	def rho(self):
@@ -199,13 +196,11 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 		return self.pic_list[-1].pic_internal.efy
 		
 	def get_state_object(self):
-		state_multi = AddMultiGrids(pic_main = self.pic_main, grids = self.grids, sparse_solver='PyKLU', include_solver = False)	
-		state = state_multi.pic_list[-1].get_state_object()	
-		return state
+		return self.pic_list[-1].get_state_object()	
 		
 		
-			
-        
+		
+
 class AddTelescopicGrids(AddMultiGrids):
 	def __init__(self, pic_main, f_telescope, target_grid, N_nodes_discard, N_min_Dh_main,
 					sparse_solver='PyKLU'):
