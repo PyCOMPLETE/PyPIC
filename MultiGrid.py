@@ -120,7 +120,7 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
 		state = AddInternalGrid(state_external, self.x_min_internal, self.x_max_internal, self.y_min_internal, 
 				self.y_max_internal, self.Dh_internal, self.N_nodes_discard, sparse_solver=self.sparse_solver, include_solver = False)
 				
-		state.pic_internal.rho = self.pic_internal.rho.copy()		
+		state.pic_internal.rho = self.pic_internal.rho.copy()
 		state.pic_internal.phi = self.pic_internal.phi.copy()				
 		state.pic_internal.efx = self.pic_internal.efx.copy()	
 		state.pic_internal.efy = self.pic_internal.efy.copy()
@@ -152,7 +152,7 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 
 			pic_list.append(AddInternalGrid(pic_list[-1], x_min_internal, x_max_internal, y_min_internal, 
 								y_max_internal, Dh_internal, N_nodes_discard, sparse_solver=sparse_solver, 
-                                include_solver = include_solver))
+								include_solver = include_solver))
 
 							
 		pic_list = pic_list[1:]
@@ -176,7 +176,8 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 		self.Nyg = self.pic_list[-1].pic_internal.Nyg
 		self.bias_y = self.pic_list[-1].pic_internal.bias_y
 		
-		self.solve_states = self.pic_list[-1].solve_states		
+		self.solve_states = self.pic_list[-1].solve_states
+		self.get_state_object = self.pic_list[-1].get_state_object
 
 		
 	@property
@@ -195,8 +196,6 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 	def efy(self):
 		return self.pic_list[-1].pic_internal.efy
 		
-	def get_state_object(self):
-		return self.pic_list[-1].get_state_object()	
 		
 		
 		
