@@ -67,6 +67,8 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu'):
         
+        raise ValueError('This module has been discontinued') # All the state stuff has not been implemented
+        
 		print 'Start PIC init.:'
 		print 'Finite Differences, Shortley-Weller, Square Grid'
 		print 'Using Shortley-Weller boundary approx.'
