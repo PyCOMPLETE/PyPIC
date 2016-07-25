@@ -1,4 +1,3 @@
-
 import numpy as np
 import pylab as pl
 from scipy.constants import e as qe
@@ -24,7 +23,6 @@ x_probes = n_sigma_probes*sigmax*np.cos(theta_probes)
 y_probes = n_sigma_probes*sigmay*np.sin(theta_probes)
 
 # build pics
-
 pic_list = []
 
 # Finite Difference Shortley-Weller
@@ -75,22 +73,25 @@ for i_pic, pic in enumerate(pic_list):
     pic.solve_states(list_states)
 
     # gather and plot
-    pl.figure(1+i_pic)
-    pl.subplot(2,1,1)
+    pl.figure(1+i_pic, figsize=(10, 6)).patch.set_facecolor('w')
+    sp1 = pl.subplot(2,1,1)
     pl.plot(theta_probes, Ex_probes)
-    pl.subplot(2,1,2)
+    sp2 = pl.subplot(2,1,2)
     pl.plot(theta_probes, Ey_probes)
 
     for i_state, state in enumerate(list_states):
         colorcurr = ms.colorprog(i_state, N_states)
         Ex_prb_state, Ey_prb_state = state.gather(x_probes, y_probes)
         pl.subplot(2,1,1)
-        pl.plot(theta_probes, Ex_prb_state, '.', color=colorcurr)
-        pl.plot(theta_probes, Ex_probes*fact_states[i_state], '-', color=colorcurr)
+        pl.plot(theta_probes, Ex_prb_state, '.', color=colorcurr, label = 'State %d'%i_state)
+        pl.plot(theta_probes, Ex_probes*fact_states[i_state], '-', color=colorcurr, label = 'Ref. %d'%i_state)
+        pl.xlabel('theta [deg]')
+        pl.ylabel('Ex [V/m]')
         pl.subplot(2,1,2)
-        pl.plot(theta_probes, Ey_prb_state, '.', color=colorcurr)
-        pl.plot(theta_probes, Ey_probes*fact_states[i_state], '-', color=colorcurr)
-
+        pl.plot(theta_probes, Ey_prb_state, '.', color=colorcurr, label = 'State %d'%i_state)
+        pl.plot(theta_probes, Ey_probes*fact_states[i_state], '-', color=colorcurr, label = 'Ref. %d'%i_state)
+        pl.xlabel('theta [deg]')
+        pl.ylabel('Ey [V/m]')
     #check single state case
     fact_single_state = 2.5
     single_state = pic.get_state_object()
@@ -99,12 +100,18 @@ for i_pic, pic in enumerate(pic_list):
     Ex_prb_single_state, Ey_prb_single_state = single_state.gather(x_probes, y_probes)
     colorcurr = 'black'
     pl.subplot(2,1,1)
-    pl.plot(theta_probes, Ex_prb_single_state, '.', color=colorcurr)
-    pl.plot(theta_probes, Ex_probes*fact_single_state, '-', color=colorcurr)
+    pl.plot(theta_probes, Ex_prb_single_state, '.', color=colorcurr, label = 'Single state')
+    pl.plot(theta_probes, Ex_probes*fact_single_state, '-', color=colorcurr, label = 'Single ref.')
     pl.subplot(2,1,2)
-    pl.plot(theta_probes, Ey_prb_single_state, '.', color=colorcurr)
-    pl.plot(theta_probes, Ey_probes*fact_single_state, '-', color=colorcurr)
+    pl.plot(theta_probes, Ey_prb_single_state, '.', color=colorcurr, label = 'Single state')
+    pl.plot(theta_probes, Ey_probes*fact_single_state, '-', color=colorcurr, label = 'Single ref.')
     
+    sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+    sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
+    sp1.legend(loc='center left', bbox_to_anchor=(1, 0.))
+    sp2.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+    sp2.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
+    pl.subplots_adjust(left = .10, right = .77, bottom = .13,top = .90, hspace = .40)
     pl.suptitle(str(pic.__class__).replace('<','').replace('>','').split('.')[-1].replace("'", ''))
 
 pl.show()
