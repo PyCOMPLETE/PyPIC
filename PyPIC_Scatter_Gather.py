@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 2.0.0                     
+#		           PyPIC Version 2.1.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -53,7 +53,7 @@
 import numpy as np
 import rhocompute as rhocom
 import int_field_for as iff
-from abc import abstractmethod, ABCMeta
+#~ from abc import abstractmethod, ABCMeta
 
 na = lambda x:np.array([x])
 
@@ -61,15 +61,12 @@ qe=1.602176565e-19;
 eps0=8.8541878176e-12;
 
 class PyPIC_Scatter_Gather(object):
-
-    __metadata__ = ABCMeta
+    #__metadata__ = ABCMeta
 
     def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
-                x_min=None, x_max=None, y_min=None, y_max=None, verbose = True, *args, **kwargs):
+                x_min=None, x_max=None, y_min=None, y_max=None, *args, **kwargs):
 
-        self.verbose = verbose
-        if self.verbose:
-            print 'PyPIC Version 2.0.0'
+        print 'PyPIC Version 2.1.0'
         
         if xg!=None and yg!=None:
             assert(x_aper==None and y_aper==None and dx==None and dy==None)
@@ -195,7 +192,7 @@ class PyPIC_Scatter_Gather(object):
             
         return rho_sc_n
 
-    @abstractmethod
+    #@abstractmethod
     def solve(self, *args, **kwargs):
         '''Computes the electric field maps from the stored 
         charge distribution (self.rho) and stores them in
@@ -206,3 +203,7 @@ class PyPIC_Scatter_Gather(object):
     def scatter_and_solve(self, x_mp, y_mp, nel_mp, charge = -qe):
         self.scatter(x_mp, y_mp, nel_mp, charge)
         self.solve()
+
+
+    def _solve_for_states(self,*args, **kwargs):
+        raise ValueError('I am a state, I cannot solve!')

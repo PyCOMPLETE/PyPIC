@@ -1,9 +1,9 @@
 from matplotlib import rc, rcdefaults
 import pylab as pl
-from colorsys import hsv_to_rgb
 
 
-def mystyle(fontsz=16):
+
+def mystyle(fontsz=10):
 	
 	font = {#'family' : 'normal',
 			#'weight' : 'bold',
@@ -12,7 +12,7 @@ def mystyle(fontsz=16):
 	rcdefaults()
 	rc('font', **font)
 	
-def mystyle_arial(fontsz=16, dist_tick_lab=10):
+def mystyle_arial(fontsz=10, dist_tick_lab=7):
 	
 	rcdefaults()
 	rc('font',**{'family':'sans-serif','sans-serif':['arial'], 'size':fontsz})
@@ -25,7 +25,3 @@ def sciy():
 	
 def scix():
 	pl.gca().ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
-
-
-def colorprog(i_prog, Nplots, v1 = .9, v2 = 1.):
-	return hsv_to_rgb(float(i_prog)/float(Nplots), v1, v2)

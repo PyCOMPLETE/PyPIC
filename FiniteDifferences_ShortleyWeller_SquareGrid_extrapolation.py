@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 2.0.0                     
+#		           PyPIC Version 2.1.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -66,6 +66,8 @@ eps0 = epsilon_0
 class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu'):
+        
+        raise ValueError('This module has been discontinued') # All the state stuff has not been implemented
         
 		print 'Start PIC init.:'
 		print 'Finite Differences, Shortley-Weller, Square Grid'
