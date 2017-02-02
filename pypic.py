@@ -371,12 +371,13 @@ class PyPIC_GPU(PyPIC):
         if dtype == np.float32:
             args += [mw.astype(dtype) for mw in mesh_weights]
             args += list(mesh_indices)
-            self._particles_to_mesh_kernel(*args, block=block, grid=grid)
+            self._particles_to_mesh_kernel.prepared_call(
+                grid, block, *args)
             mesh_count = mesh_count.astype(np.float64)
         elif dtype == np.float64:
             args += mesh_weights + mesh_indices
-            self._particles_to_mesh_64atomics_kernel(*args,
-                                                     block=block, grid=grid)
+            self._particles_to_mesh_64atomics_kernel.prepared_call(
+                grid, block, *args)
         else:
             raise ValueError("PyPIC: particles_to_mesh() got unknown dtype "
                              "argument, expected either np.float32 or "
