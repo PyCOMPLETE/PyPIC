@@ -366,16 +366,17 @@ class PyPIC_GPU(PyPIC):
         grid = self.kernel_call_config['p2m']['grid']
 
         mesh_count = gpuarray.zeros(shape=self.mesh.shape, dtype=dtype)
-        args = [np.int32(n_macroparticles)] + [mesh_count]
+        args = [np.int32(n_macroparticles)] + [mesh_count.gpudata]
         args += self.mesh.shape_r
         if dtype == np.float32:
-            args += [mw.astype(dtype) for mw in mesh_weights]
-            args += list(mesh_indices)
+            args += [mw.astype(dtype).gpudata for mw in mesh_weights]
+            args += list(map(attrgetter('gpudata'), mesh_indices))
             self._particles_to_mesh_kernel.prepared_call(
                 grid, block, *args)
             mesh_count = mesh_count.astype(np.float64)
         elif dtype == np.float64:
-            args += mesh_weights + mesh_indices
+            args += list(map(attrgetter('gpudata'),
+                             mesh_weights + mesh_indices))
             self._particles_to_mesh_64atomics_kernel.prepared_call(
                 grid, block, *args)
         else:
