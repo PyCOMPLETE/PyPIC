@@ -94,8 +94,8 @@ class PyPIC(object):
         Further keyword arguments are
         mesh_indices=None, mesh_distances=None, mesh_weights=None .
 
-        Return the charge distribution on the mesh (which is mesh_charges =
-        rho*volume).
+        Return the charge distribution on the mesh (which is
+        mesh_charges = rho*volume).
         '''
         mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.get("charge", e)
@@ -184,14 +184,23 @@ class PyPIC(object):
                 self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.pop("charge", e)
 
+        # get density on mesh:
         mesh_charges = self.particles_to_mesh(
             *mp_coords, charge=charge, **kwargs)
         rho = mesh_charges / self.mesh.volume_elem
+
+        # solve for potential on mesh:
         phi = self.poisson_solve(rho)
+
+        # fields = - grad (potential)
         mesh_e_fields = self.get_electric_fields(phi)
+
+        # semantics (dimensional independence)
         for i, field in enumerate(mesh_e_fields):
             mesh_e_fields[i] = field.flatten()
         mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
+
+        # get fields at particle locations:
         fields = self.field_to_particles(*mesh_fields_and_mp_coords, **kwargs)
         return fields
 
@@ -349,8 +358,8 @@ class PyPIC_GPU(PyPIC):
         dtype=np.float32 which can be set to np.float64 to use
         non-hardware-accelerated double precision atomics.
 
-        Return the charge distribution on the mesh (which is mesh_charges =
-        rho*volume).
+        Return the charge distribution on the mesh (which is
+        mesh_charges = rho*volume).
         '''
         mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.get("charge", e)
@@ -395,16 +404,16 @@ class PyPIC_GPU(PyPIC):
         the macro-particles, e.g. in 3D
             mp_coords = (x, y, z)
 
-        The two mandatory keyword arguments lower_bounds and upper_bounds
-        are index arrays. They indicate the start and end indices
-        within the sorted particle arrays for each node id.
+        The two mandatory keyword arguments lower_bounds and
+        upper_bounds are index arrays. They indicate the start and end
+        indices within the sorted particle arrays for each node id.
         The respective node id is identical to the index within
         lower_bounds and upper_bounds.
 
         The keyword argument charge=e is the charge per macro-particle.
 
-        Return the charge distribution on the mesh (which is mesh_charges =
-        rho*volume).
+        Return the charge distribution on the mesh (which is
+        mesh_charges = rho*volume).
         '''
         lower_bounds = kwargs['lower_bounds']
         upper_bounds = kwargs['upper_bounds']
@@ -454,15 +463,14 @@ class PyPIC_GPU(PyPIC):
         # mesh_charges = pypicalg.particles_to_mesh(beam.x, beam.y, beam.z)
         # context.synchronize()
 
-    def poisson_solve(self, mesh_charges):
+    def poisson_solve(self, rho):
         '''Solve the discrete Poisson equation with the charge
         distribution rho on the mesh, -divgrad phi = rho / epsilon_0 .
-        mesh_charges  =rho*volume
 
         Return the potential phi.
         '''
         # does self._context.synchronize() within solve
-        return self.poissonsolver.poisson_solve(mesh_charges)
+        return self.poissonsolver.poisson_solve(rho)
 
     def poisson_cholsolve(self, rho):
         '''test only'''

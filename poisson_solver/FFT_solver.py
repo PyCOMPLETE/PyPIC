@@ -134,7 +134,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
         self.setup_mesh(mesh)
 
     def setup_mesh(self, mesh):
-        '''Create the meshgrid, comnpute and store integrated Green's
+        '''Create the meshgrid, compute and store integrated Green's
         function from mesh distances.
         Only accepts meshes with same shape as self.mesh .
         '''
@@ -332,7 +332,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         self.setup_mesh(mesh)
 
     def setup_mesh(self, mesh):
-        '''Create the meshgrid, comnpute and store integrated Green's
+        '''Create the meshgrid, compute and store integrated Green's
         function from mesh distances.
         Only accepts meshes with same shape as self.mesh .
         '''
@@ -411,7 +411,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     '''
-    Wrapper for the old PyPIC FFT open boundary solver
+    Wrapper for the previous PyPIC FFT open boundary solver
     '''
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw', ext_boundary=False):
         na = lambda x:np.array([x])
@@ -501,7 +501,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
 
 class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
     '''
-    Wrapper for the old PyPIC FFT perdiodic boundary solver
+    Wrapper for the previous PyPIC FFT perdiodic boundary solver
     '''
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw', ext_boundary=False):
         na = lambda x:np.array([x])
