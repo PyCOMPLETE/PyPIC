@@ -216,7 +216,6 @@ class RectMesh3D(Mesh):
         been determined by a previous call to
         self.get_indices(x, y, z) .
         '''
-        # TODO: implement sorting mechanism in addition to node id
         if indices:
             i, j, k = indices
         else:
@@ -356,7 +355,6 @@ class RectMesh2D(Mesh):
         been determined by a previous call to
         self.get_indices(x, y).
         '''
-        # TODO: implement sorting mechanism in addition to node id
         if indices:
             i, j = indices
         else:
@@ -453,7 +451,6 @@ class UniformMesh1D(Mesh):
         been determined by a previous call to
         self.get_indices(x).
         '''
-        # TODO: implement sorting mechanism in addition to node id
         if indices:
             i, = indices
         else:
