@@ -98,50 +98,59 @@ class GPUFFTPoissonSolver(PoissonSolver):
         # create the mesh grid and compute the greens function on it
         self.mesh = mesh
         self._context = context
-        mesh_shape = self.mesh.shape # nz, ny, (nx)
-        mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
-        mesh_distances = list(reversed(self.mesh.distances)) #dz, dy, dx
-        self.fgreentr = gpuarray.empty(mesh_shape2,
-                        dtype=np.complex128)
-        self.tmpspace = gpuarray.zeros_like(self.fgreentr)
+        mesh_shape2 = [2*n for n in mesh.shape] # 2*nz, 2*ny, (2*nx)
+        self.tmpspace = gpuarray.zeros(mesh_shape2, dtype=np.complex128)
+        self.fgreentr = gpuarray.empty_like(self.tmpspace)
         sizeof_complex = np.dtype(np.complex128).itemsize
 
         # dimensionality function dispatch
-        dim = self.mesh.dimension
+        dim = mesh.dimension
         self._fgreen = getattr(self, '_fgreen' + str(dim) + 'd')
         self._mirror = getattr(self, '_mirror' + str(dim) + 'd')
         copy_fn = {'3d' : get_Memcpy3D_d2d, '2d': get_Memcpy2D_d2d}
         memcpy_nd = copy_fn[str(dim) + 'd']
-        dim_args = self.mesh.shape
+        dim_args = mesh.shape
         self._cpyrho2tmp = memcpy_nd(
             src=None, dst=self.tmpspace, # None because src(rho) not yet known
-            src_pitch=self.mesh.nx*sizeof_complex,
-            dst_pitch=2*self.mesh.nx*sizeof_complex,
+            src_pitch=mesh.nx*sizeof_complex,
+            dst_pitch=2*mesh.nx*sizeof_complex,
             dim_args=dim_args,
             itemsize=np.dtype(np.complex128).itemsize,
-            src_height=self.mesh.ny,
-            dst_height=2*self.mesh.ny)
+            src_height=mesh.ny,
+            dst_height=2*mesh.ny)
         self._cpytmp2rho = memcpy_nd(
             src=self.tmpspace, dst=None, # None because dst(rho) not yet know
-            src_pitch=2*self.mesh.nx*sizeof_complex,
-            dst_pitch=self.mesh.nx*sizeof_complex,
+            src_pitch=2*mesh.nx*sizeof_complex,
+            dst_pitch=mesh.nx*sizeof_complex,
             dim_args=dim_args,
             itemsize=np.dtype(np.complex128).itemsize,
-            src_height=2*self.mesh.ny,
-            dst_height=self.mesh.ny)
-        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh_shape[i]+1)
-                                            * mesh_distances[i]
-                    for i in xrange(self.mesh.dimension)
-                   ]
+            src_height=2*mesh.ny,
+            dst_height=mesh.ny)
+        self.plan_forward = cu_fft.Plan(
+            self.tmpspace.shape, in_dtype=np.complex128,
+            out_dtype=np.complex128)
+        self.plan_backward = self.plan_forward
+
+        self.setup_mesh(mesh)
+
+    def setup_mesh(self, mesh):
+        '''Create the meshgrid, compute and store integrated Green's
+        function from mesh distances.
+        Only accepts meshes with same shape as self.mesh .
+        '''
+        assert (mesh.shape == self.mesh.shape)
+        self.mesh = mesh
+        mesh_arr = [
+            -mesh.distances[i]/2 +
+            np.arange(mesh.shape_r[i] + 1.) * mesh.distances[i]
+            for i in reversed(xrange(mesh.dimension))
+           ]
         # mesh_arr is [mz, my, mx]
         mesh_grids = np.meshgrid(*mesh_arr, indexing='ij')
         fgreen = self._fgreen(*mesh_grids)
         fgreen = self._mirror(fgreen)
-        self.plan_forward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
-                                        out_dtype=np.complex128)
-        self.plan_backward = cu_fft.Plan(self.tmpspace.shape, in_dtype=np.complex128,
-                                         out_dtype=np.complex128)
-        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr, plan=self.plan_forward)
+        cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr,
+                   plan=self.plan_forward)
 
     def poisson_solve(self, rho):
         ''' Solve the poisson equation with the given charge distribution
@@ -276,13 +285,12 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
             print ('Error: Use a 3d mesh for the 2.5d algorithm!. Abort.')
             return None
         self.is_25D = True
+        self.save_memory = save_memory
 
         self.mesh = mesh
         self._context = context
-        mesh_shape = self.mesh.shape # nz, ny, (nx)
-        nz, ny, nx = mesh_shape
-        mesh_shape2 = [2*n for n in mesh_shape] # 2*nz, 2*ny, (2*nx)
-        mesh_distances = list(reversed(self.mesh.distances)) #dz, dy, dx
+        nz, ny, nx = mesh.shape
+        mesh_shape2 = [2*n for n in mesh.shape] # 2*nz, 2*ny, (2*nx)
         if save_memory:
             self.fgreentr = gpuarray.empty((2*ny, 2*nx),
                             dtype=np.complex128)
@@ -300,48 +308,56 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         #copy_fn = {'3d' : get_Memcpy3D_d2d, '2d': get_Memcpy2D_d2d}
         memcpy_nd = get_Memcpy3D_d2d
         #memcpy_nd = copy_fn[str(dim) + 'd']
-        dim_args = self.mesh.shape
+        dim_args = mesh.shape
         self._cpyrho2tmp = memcpy_nd(
             src=None, dst=self.tmpspace, # None because src(rho) not yet known
-            src_pitch=self.mesh.nx*sizeof_complex,
-            dst_pitch=2*self.mesh.nx*sizeof_complex,
+            src_pitch=mesh.nx*sizeof_complex,
+            dst_pitch=2*mesh.nx*sizeof_complex,
             dim_args=dim_args,
             itemsize=np.dtype(np.complex128).itemsize,
-            src_height=self.mesh.ny,
-            dst_height=2*self.mesh.ny)
+            src_height=mesh.ny,
+            dst_height=2*mesh.ny)
         self._cpytmp2rho = memcpy_nd(
-            src=self.tmpspace, dst=None, # None because dst(rho) not yet know
-            src_pitch=2*self.mesh.nx*sizeof_complex,
-            dst_pitch=self.mesh.nx*sizeof_complex,
+            src=self.tmpspace, dst=None, # None because dst(rho) not yet known
+            src_pitch=2*mesh.nx*sizeof_complex,
+            dst_pitch=mesh.nx*sizeof_complex,
             dim_args=dim_args,
             itemsize=np.dtype(np.complex128).itemsize,
-            src_height=2*self.mesh.ny,
-            dst_height=self.mesh.ny)
+            src_height=2*mesh.ny,
+            dst_height=mesh.ny)
+        self.plan_forward = cu_fft.Plan([2*mesh.ny, 2*mesh.nx],
+            in_dtype=np.complex128, out_dtype=np.complex128, batch=mesh.nz)
+        self.plan_backward = self.plan_forward
 
-        mesh_arr = [-mesh_distances[i]/2 + np.arange(mesh.shape[i]+1)
-                                            * mesh_distances[i]
-                    for i in [1,2]
-                   ]
-        # mesh_arr is [mz, my, mx]
+        self.setup_mesh(mesh)
+
+    def setup_mesh(self, mesh):
+        '''Create the meshgrid, compute and store integrated Green's
+        function from mesh distances.
+        Only accepts meshes with same shape as self.mesh .
+        '''
+        assert (mesh.shape == self.mesh.shape)
+        self.mesh = mesh
+        mesh_arr = [
+            -mesh.distances[i]/2 +
+            np.arange(mesh.shape_r[i] + 1.) * mesh.distances[i]
+            for i in [1, 0]
+           ]
+        # mesh_arr is [my, mx]
         mesh_grids = np.meshgrid(*mesh_arr, indexing='ij') #choose my, mx
         fgreen2 = self._fgreen(*mesh_grids)
         fgreen2 = self._mirror(fgreen2)
-        fgreen = np.empty(shape=(mesh.nz, 2*mesh.ny, 2*mesh.nx),
-           dtype=np.complex128)
-        for nn in xrange(mesh.nz):
-           fgreen[nn,:,:] = fgreen2
         # tile in 3d dimension, yields to memerror, uses huuge amount of memory!
         #fgreen = np.tile(fgreen, (mesh.nz, 2*mesh.ny, 2*mesh.nx))
-
-        self.plan_forward = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
-            in_dtype=np.complex128, out_dtype=np.complex128, batch=self.mesh.nz)
-        self.plan_backward = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
-            in_dtype=np.complex128, out_dtype=np.complex128, batch=self.mesh.nz)
-        if save_memory:
+        if self.save_memory:
             plan_2d = cu_fft.Plan([2*self.mesh.ny, 2*self.mesh.nx],
                 in_dtype=np.complex128, out_dtype=np.complex128)
             cu_fft.fft(gpuarray.to_gpu(fgreen2), self.fgreentr, plan=plan_2d)
         else:
+            fgreen = np.empty(shape=(mesh.nz, 2*mesh.ny, 2*mesh.nx),
+                dtype=np.complex128)
+            for nn in xrange(mesh.nz):
+                fgreen[nn,:,:] = fgreen2
             cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr,
                 plan=self.plan_forward)
 
@@ -395,7 +411,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
 
 class FFT_OpenBoundary_SquareGrid(PoissonSolver):
     '''
-    Wrapper for the old PyPIC FFT open boundary solver
+    Wrapper for the previous PyPIC FFT open boundary solver
     '''
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw', ext_boundary=False):
         na = lambda x:np.array([x])
@@ -485,7 +501,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
 
 class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
     '''
-    Wrapper for the old PyPIC FFT perdiodic boundary solver
+    Wrapper for the previous PyPIC FFT perdiodic boundary solver
     '''
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw', ext_boundary=False):
         na = lambda x:np.array([x])

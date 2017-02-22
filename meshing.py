@@ -216,7 +216,6 @@ class RectMesh3D(Mesh):
         been determined by a previous call to
         self.get_indices(x, y, z) .
         '''
-        # TODO: implement sorting mechanism in addition to node id
         if indices:
             i, j, k = indices
         else:
@@ -275,6 +274,31 @@ class RectMesh3D(Mesh):
                 weight_ijk1, weight_i1jk1, weight_ij1k1, weight_i1j1k1)
 
 
+class RectMesh25D(RectMesh3D):
+    '''Rectangular three-dimensional mesh with dimension-wise uniformly
+    spaced nodes. The only difference to RectMesh3D is the distance
+    function in the longitudinal employing zero-order Nearest-Grid-Point
+    instead of first-order Cloud-In-Cell interpolation. This is useful
+    when identifying the longitudinal mesh nodes with slice boundaries
+    of PyHEADTAIL (uniform) SliceSets.
+    '''
+    def get_distances(self, x, y, z, indices=None):
+        '''Return distances of particles to next mesh node.
+        If indices are given, they are used instead of calling
+        get_indices(x, y, z). These indices (i, j, k) may already have
+        been determined by a previous call to
+        self.get_indices(x, y, z) .
+        '''
+        if indices:
+            i, j, k = indices
+        else:
+            i, j, k = self.get_indices(x, y, z)
+        dx = x - (self.x0 + j*self.dx) #self.dx[i] if dx are not uniform
+        dy = y - (self.y0 + i*self.dy)
+        dz = z * 0
+        return (dx, dy, dz)
+
+
 
 class RectMesh2D(Mesh):
     '''Rectangular two-dimensional mesh with dimension-wise uniformly
@@ -331,7 +355,6 @@ class RectMesh2D(Mesh):
         been determined by a previous call to
         self.get_indices(x, y).
         '''
-        # TODO: implement sorting mechanism in addition to node id
         if indices:
             i, j = indices
         else:
@@ -428,7 +451,6 @@ class UniformMesh1D(Mesh):
         been determined by a previous call to
         self.get_indices(x).
         '''
-        # TODO: implement sorting mechanism in addition to node id
         if indices:
             i, = indices
         else:
@@ -470,3 +492,5 @@ class UniformMesh1D(Mesh):
         weight_i = 1 - dx/self.dx
         weight_i1 = dx/self.dx
         return (weight_i, weight_i1)
+
+RectMesh1D = UniformMesh1D
