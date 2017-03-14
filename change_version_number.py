@@ -9,8 +9,8 @@ for filename in files:
         with open(filename) as fid:
             content=fid.read()
         if 'giovanni.iadarola@cern.ch' in content:
-            content=content.replace('PyPIC Version 2.1.0', 'PyPIC Version 2.1.0')
+            content=content.replace('PyPIC Version 2.2.0', 'PyPIC Version 2.2.0')
             with open(filename,'w') as fid:
                 fid.write(content)
-        
+
 os.system('rm *.pyold')
