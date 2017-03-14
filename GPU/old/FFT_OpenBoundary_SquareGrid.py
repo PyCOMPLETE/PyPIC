@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 2.2.0                     
+#		           PyPIC Version 1.03                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -51,133 +51,121 @@
 #----------------------------------------------------------------------
 
 import numpy as np
+import scipy.sparse as scsp
+from scipy.sparse.linalg import spsolve
+import scipy.sparse.linalg as ssl
+from vectsum import vectsum
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
-import scipy as sp
 
 na = lambda x:np.array([x])
-
 
 qe=e
 eps0=epsilon_0
 
-
-
-	
-
-class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
+class FFT_OpenBoundary_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
+    def __init__(self, x_aper, y_aper, Dh, xg=None, yg=None, fftlib = 'pyfftw'):
         
 		print 'Start PIC init.:'
-		print 'FFT, PEC Boundary, Square Grid'
+		print 'FFT, Open Boundary, Square Grid'
 
 
-		self.Dh = Dh		
-		super(FFT_PEC_Boundary_SquareGrid, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
+		super(FFT_OpenBoundary_SquareGrid, self).__init__(x_aper, y_aper, Dh, xg, yg)
 
 		
-		
-		self.i_min = np.min(np.where(self.xg>=-x_aper)[0])
-		self.i_max = np.max(np.where(self.xg<=x_aper)[0])+1
-		self.j_min = np.min(np.where(self.yg>=-y_aper)[0])
-		self.j_max = np.max(np.where(self.yg<=y_aper)[0])+1
+		dx = self.Dh
+		dy = self.Dh
+		nx = len(self.xg)
+		ny = len(self.yg)
 
+
+		mx = -dx / 2 + np.arange(nx + 1) * dx
+		my = -dy / 2 + np.arange(ny + 1) * dy
+		x, y = np.meshgrid(mx, my)
+		r2 = x ** 2 + y ** 2
+		# Antiderivative
+		tmpfgreen = -1 / 2 * (-3 * x * y + x * y * np.log(r2)
+				   + x * x * np.arctan(y / x) + y * y * np.arctan(x / y)) # * 2 / dx / dy
+				   
+		fgreen = np.zeros((2 * ny, 2 * nx))
+		# Integration and circular Green's function
+		fgreen[:ny, :nx] = tmpfgreen[1:, 1:] + tmpfgreen[:-1, :-1] - tmpfgreen[1:, :-1] - tmpfgreen[:-1, 1:]
+		fgreen[ny:, :nx] = fgreen[ny:0:-1, :nx]
+		fgreen[:ny, nx:] = fgreen[:ny, nx:0:-1]
+		fgreen[ny:, nx:] = fgreen[ny:0:-1, nx:0:-1]
+		
+		if fftlib == 'pyfftw':
+			try:
+				import pyfftw
+				print 'Using PyFFTW'
+				#prepare fftw's
+				tmprho = fgreen.copy()
+				fft_first = pyfftw.builders.fft(tmprho[:ny, :].copy(), axis = 1)
+				transf1 = (fgreen*(1.+1j))*0.
+				transf1[:ny, :] = fft_first(tmprho[:ny, :].copy())
+				fft_second = pyfftw.builders.fft(transf1.copy(), axis = 0)
+				fftphi_new = fft_second(transf1.copy())* fgreen
+				ifft_first = pyfftw.builders.ifft(fftphi_new.copy(), axis = 0)
+				itransf1 = ifft_first(fftphi_new.copy())
+				ifft_second = pyfftw.builders.ifft(itransf1[:ny, :].copy(), axis = 1)
+
+				def fft2(x):
+					tmp = (x*(1.+1j))*0.
+					tmp[:ny, :] = fft_first(x[:ny, :])
+					return fft_second(tmp)
+					
+				def ifft2(x):
+					tmp = ifft_first(x)
+					res = 0*x
+					res[:ny, :] = np.real(ifft_second(tmp[:ny, :]))
+					return res
+				
+				self.fft2 = fft2
+				self.ifft2 = ifft2
+				
+			except ImportError as err:
+				print 'Failed to import pyfftw'
+				print 'Got exception: ', err
+				print 'Using numpy fft'
+				self.fft2 = np.fft.fft2
+				self.ifft2 = np.fft.ifft2
+		elif fftlib == 'numpy':
+			print 'Using numpy FFT'
+			self.fft2 = np.fft.fft2
+			self.ifft2 = np.fft.ifft2
+		else:
+			raise ValueError('fftlib not recognized!!!!')
+			
+		self.fgreen = fgreen
+		self.fgreentr = np.fft.fft2(fgreen).copy()
 		self.rho = np.zeros((self.Nxg,self.Nyg))
 		self.phi = np.zeros((self.Nxg,self.Nyg))
 		self.efx = np.zeros((self.Nxg,self.Nyg))
 		self.efy = np.zeros((self.Nxg,self.Nyg))
 		
-		
-		m, n = self.rho[self.i_min:self.i_max,self.j_min:self.j_max].shape;
-
-		xx = np.arange(1,m+0.5,1);
-		yy = np.arange(1,n+0.5,1);
-		
-		YY, XX = np.meshgrid(yy,xx) 
-		self.green = 4.*eps0*(np.sin(XX/2*np.pi/float(m+1.))**2/self.Dh**2+\
-				   np.sin(YY/2.*np.pi/float(n+1.))**2/self.Dh**2);
-				   
-		
-		# handle border
-		[xn, yn]=np.meshgrid(self.xg,self.yg)		   
-		
-		xn=xn.T
-		xn=xn.flatten()
-
-		yn=yn.T
-		yn=yn.flatten()
-		#% xn and yn are stored such that the external index is on x 
-
-		flag_outside_n=np.logical_or(np.abs(xn)>x_aper,np.abs(yn)>y_aper)
-		flag_inside_n=~(flag_outside_n)
-
-
-		flag_outside_n_mat=np.reshape(flag_outside_n,(self.Nyg,self.Nxg),'F');
-		flag_outside_n_mat=flag_outside_n_mat.T
-		[gx,gy]=np.gradient(np.double(flag_outside_n_mat));
-		gradmod=abs(gx)+abs(gy);
-		flag_border_mat=np.logical_and((gradmod>0), flag_outside_n_mat);
-		self.flag_border_mat = flag_border_mat
-		
-		if fftlib == 'pyfftw':
-			try:
-				import pyfftw
-				rhocut = self.rho[self.i_min:self.i_max,self.j_min:self.j_max]
-				m, n = rhocut.shape;
-				tmp = np.zeros((2*m + 2, n))
-				self.ffti = pyfftw.builders.fft(tmp.copy(), axis=0)
-				tmp = np.zeros((m, 2*n + 2))
-				self.fftj = pyfftw.builders.fft(tmp.copy(), axis=1)
-			except ImportError as err:
-				print 'Failed to import pyfftw'
-				print 'Got exception: ', err
-				print 'Using numpy fft'
-				self.ffti = lambda xx: np.fft.fft(xx, axis=0)
-				self.fftj = lambda xx: np.fft.fft(xx, axis=1)
-		elif fftlib == 'numpy':
-				self.ffti = lambda xx: np.fft.fft(xx, axis=0)
-				self.fftj = lambda xx: np.fft.fft(xx, axis=1)
-		else:
-			raise ValueError('fftlib not recognized!!!!')
+		self.dx = dx
+		self.dy = dy
+		self.nx = nx
+		self.ny = ny
                         
-
-    def dst2(self, x):
-		m, n = x.shape;
-		
-		#transform along i
-		tmp = np.zeros((2*m + 2, n))
-		tmp[1:m+1, :] = x
-		tmp=-(self.ffti(tmp).imag)	
-		xtr_i = np.sqrt(2./(m+1.))*tmp[1:m+1, :]
-		
-		#transform along j
-		tmp = np.zeros((m, 2*n + 2))
-		tmp[:, 1:n+1] = xtr_i
-		tmp=-(self.fftj(tmp).imag)	
-		x_bar = np.sqrt(2./(n+1.))*tmp[:, 1:n+1]
-		
-		return x_bar
-
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
 		if rho == None:
 			rho = self.rho
 
-		rhocut = rho[self.i_min:self.i_max,self.j_min:self.j_max]
-		
-		rho_bar =  self.dst2(rhocut)       
-		phi_bar = rho_bar/self.green    
-		self.phi[self.i_min:self.i_max,self.j_min:self.j_max] = self.dst2(phi_bar).copy()
+		tmprho = 0.*self.fgreen
+		tmprho[:self.ny, :self.nx] = rho.T
 
+		fftphi = self.fft2(tmprho) * self.fgreentr
 		
+		tmpphi = self.ifft2(fftphi)
+		self.phi = 1./(4. * np.pi * eps0)*np.real(tmpphi[:self.ny, :self.nx]).T
+
 		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
 		self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes
 
-		self.efx[self.flag_border_mat]=self.efx[self.flag_border_mat]*2;
-		self.efy[self.flag_border_mat]=self.efy[self.flag_border_mat]*2;
-		
 		
 		self.efy = self.efy/(2*self.Dh)
 		self.efx = self.efx/(2*self.Dh)

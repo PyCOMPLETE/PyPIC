@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 2.2.0                     
+#		           PyPIC Version 1.03                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -53,136 +53,131 @@
 import numpy as np
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
-import scipy as sp
-
-na = lambda x:np.array([x])
+from errffor import errf
 
 
-qe=e
-eps0=epsilon_0
+qe = e
+eps0 = epsilon_0
 
-
-
-	
-
-class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
+class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
     #@profile
-    def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
+    def __init__(self, x_aper, y_aper, Dh, sigmax, sigmay, 
+		n_imag_ellip=0, tot_charge=1.):
         
 		print 'Start PIC init.:'
-		print 'FFT, PEC Boundary, Square Grid'
+		print 'Bassetti-Erskine, Square Grid'
 
 
-		self.Dh = Dh		
-		super(FFT_PEC_Boundary_SquareGrid, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
-
+		super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, Dh)
 		
+		xx = self.xg
+		yy = self.yg
 		
-		self.i_min = np.min(np.where(self.xg>=-x_aper)[0])
-		self.i_max = np.max(np.where(self.xg<=x_aper)[0])+1
-		self.j_min = np.min(np.where(self.yg>=-y_aper)[0])
-		self.j_max = np.max(np.where(self.yg<=y_aper)[0])+1
+		Ex=np.zeros((len(xx),len(yy)),dtype=complex);
+		Ey=np.zeros((len(xx),len(yy)),dtype=complex);
+		
+		for ii in range(len(xx)):
 
-		self.rho = np.zeros((self.Nxg,self.Nyg))
+			if np.mod(ii, len(xx)/20)==0:
+				print ('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%""")
+
+			for jj in range(len(yy)):
+				x=xx[ii];
+				y=yy[jj];
+				Ex_imag,Ey_imag  = ImageTerms(x,y,x_aper,y_aper,0,0, n_imag_ellip)
+				Ex_BE,Ey_BE      = BassErsk(x,y,sigmax,sigmay)
+				Ex[ii,jj] = Ex_BE + Ex_imag
+				Ey[ii,jj] = Ey_BE + Ey_imag
+				
+		YY,XX = np.meshgrid(self.yg, self.xg)		
+		self.rho = tot_charge/(2.*np.pi*sigmax*sigmay)*np.exp(-(XX)**2/(2.*sigmax**2)-(YY)**2/(2.*sigmay**2))
 		self.phi = np.zeros((self.Nxg,self.Nyg))
-		self.efx = np.zeros((self.Nxg,self.Nyg))
-		self.efy = np.zeros((self.Nxg,self.Nyg))
-		
-		
-		m, n = self.rho[self.i_min:self.i_max,self.j_min:self.j_max].shape;
-
-		xx = np.arange(1,m+0.5,1);
-		yy = np.arange(1,n+0.5,1);
-		
-		YY, XX = np.meshgrid(yy,xx) 
-		self.green = 4.*eps0*(np.sin(XX/2*np.pi/float(m+1.))**2/self.Dh**2+\
-				   np.sin(YY/2.*np.pi/float(n+1.))**2/self.Dh**2);
-				   
-		
-		# handle border
-		[xn, yn]=np.meshgrid(self.xg,self.yg)		   
-		
-		xn=xn.T
-		xn=xn.flatten()
-
-		yn=yn.T
-		yn=yn.flatten()
-		#% xn and yn are stored such that the external index is on x 
-
-		flag_outside_n=np.logical_or(np.abs(xn)>x_aper,np.abs(yn)>y_aper)
-		flag_inside_n=~(flag_outside_n)
-
-
-		flag_outside_n_mat=np.reshape(flag_outside_n,(self.Nyg,self.Nxg),'F');
-		flag_outside_n_mat=flag_outside_n_mat.T
-		[gx,gy]=np.gradient(np.double(flag_outside_n_mat));
-		gradmod=abs(gx)+abs(gy);
-		flag_border_mat=np.logical_and((gradmod>0), flag_outside_n_mat);
-		self.flag_border_mat = flag_border_mat
-		
-		if fftlib == 'pyfftw':
-			try:
-				import pyfftw
-				rhocut = self.rho[self.i_min:self.i_max,self.j_min:self.j_max]
-				m, n = rhocut.shape;
-				tmp = np.zeros((2*m + 2, n))
-				self.ffti = pyfftw.builders.fft(tmp.copy(), axis=0)
-				tmp = np.zeros((m, 2*n + 2))
-				self.fftj = pyfftw.builders.fft(tmp.copy(), axis=1)
-			except ImportError as err:
-				print 'Failed to import pyfftw'
-				print 'Got exception: ', err
-				print 'Using numpy fft'
-				self.ffti = lambda xx: np.fft.fft(xx, axis=0)
-				self.fftj = lambda xx: np.fft.fft(xx, axis=1)
-		elif fftlib == 'numpy':
-				self.ffti = lambda xx: np.fft.fft(xx, axis=0)
-				self.fftj = lambda xx: np.fft.fft(xx, axis=1)
-		else:
-			raise ValueError('fftlib not recognized!!!!')
-                        
-
-    def dst2(self, x):
-		m, n = x.shape;
-		
-		#transform along i
-		tmp = np.zeros((2*m + 2, n))
-		tmp[1:m+1, :] = x
-		tmp=-(self.ffti(tmp).imag)	
-		xtr_i = np.sqrt(2./(m+1.))*tmp[1:m+1, :]
-		
-		#transform along j
-		tmp = np.zeros((m, 2*n + 2))
-		tmp[:, 1:n+1] = xtr_i
-		tmp=-(self.fftj(tmp).imag)	
-		x_bar = np.sqrt(2./(n+1.))*tmp[:, 1:n+1]
-		
-		return x_bar
-
+		self.efx = tot_charge * Ex.real
+		self.efy = tot_charge * Ey.real
+		                
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
-		if rho == None:
-			rho = self.rho
-
-		rhocut = rho[self.i_min:self.i_max,self.j_min:self.j_max]
-		
-		rho_bar =  self.dst2(rhocut)       
-		phi_bar = rho_bar/self.green    
-		self.phi[self.i_min:self.i_max,self.j_min:self.j_max] = self.dst2(phi_bar).copy()
-
-		
-		self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #central difference on internal nodes
-		self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes
-
-		self.efx[self.flag_border_mat]=self.efx[self.flag_border_mat]*2;
-		self.efy[self.flag_border_mat]=self.efy[self.flag_border_mat]*2;
-		
-		
-		self.efy = self.efy/(2*self.Dh)
-		self.efx = self.efx/(2*self.Dh)
-        
+		print ('Bassetti_Erskine: nothing to solve!!!!')
         
 
+
+def wfun(z):
+    x=z.real
+    y=z.imag
+    wx,wy=errf(x,y)
+    return wx+1j*wy
+
+def BassErsk(xin,yin,sigmax,sigmay):
+        
+    x=abs(xin);
+    y=abs(yin);
+    
+    
+    
+    if sigmax>sigmay:
+    
+        S=np.sqrt(2*(sigmax*sigmax-sigmay*sigmay));
+        factBE=1/(2*eps0*np.sqrt(np.pi)*S);
+        etaBE=sigmay/sigmax*x+1j*sigmax/sigmay*y;
+        zetaBE=x+1j*y;
+        
+        val=factBE*(wfun(zetaBE/S)-np.exp( -x*x/(2*sigmax*sigmax)-y*y/(2*sigmay*sigmay))*wfun(etaBE/S) );
+           
+        Ex=abs(val.imag)*np.sign(xin);
+        Ey=abs(val.real)*np.sign(yin);
+    
+    else:
+    
+        S=np.sqrt(2*(sigmay*sigmay-sigmax*sigmax));
+        factBE=1/(2*eps0*np.sqrt(pi)*S);
+        etaBE=sigmax/sigmay*y+1j*sigmay/sigmax*x;
+        yetaBE=y+1j*x;
+        
+        val=factBE*(wfun(yetaBE/S)-np.exp( -y*y/(2*sigmay*sigmay)-x*x/(2*sigmax*sigmax))*wfun(etaBE/S) );
+           
+        Ey=abs(val.imag)*np.sign(yin);
+        Ex=abs(val.real)*np.sign(xin);
+         
+    return Ex, Ey
+
+def ImageTerms(x,y,a,b,x0,y0, nimag):
+    
+        
+    eps0=epsilon_0;    
+    
+    if nimag>0 and abs((a-b)/a)>1e-3:    
+        g=np.sqrt(a*a-b*b)
+        z=x+1j*y
+        q=np.arccosh(z/g)
+        mu=q.real
+        phi=q.imag
+        
+        z0=x0+1j*y0
+        q0=np.arccosh(z0/g)
+        mu0=q0.real
+        phi0=q0.imag
+        
+        mu1=0.5*np.log((a+b)/(a-b))
+        
+        Ecpx=0+0j
+        
+        
+        q=np.conj(q)
+        for nn in range(1,nimag+1):
+            Ecpx=Ecpx+np.exp(-nn*mu1) * ( (np.cosh(nn*mu0)*np.cos(nn*phi0)) / (np.cosh(nn*mu1)) + 1j * (np.sinh(nn*mu0)*np.sin(nn*phi0)) / (np.sinh(nn*mu1))   )* (np.sinh(nn*q))/(np.sinh(q))
+            
+        
+        Ecpx=Ecpx/(4*np.pi*eps0)*4/g
+        Ex=Ecpx.real
+        Ey=Ecpx.imag
+    else:
+        if (x0==0) and (y0==0):
+            Ex=0.
+            Ey=0.
+        else:
+            print('This case has not been implemented yet')
+    
+    return Ex, Ey
 
 

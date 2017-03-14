@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 2.2.0                     
+#		           PyPIC Version 1.03                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -58,6 +58,9 @@ from vectsum import vectsum
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 
+import int_field_for_border as iffb
+
+
 na = lambda x:np.array([x])
 
 qe = e
@@ -67,14 +70,11 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self,chamb, Dh, sparse_solver = 'scipy_slu'):
         
-        raise ValueError('This module has been discontinued') # All the state stuff has not been implemented
-        
 		print 'Start PIC init.:'
 		print 'Finite Differences, Shortley-Weller, Square Grid'
 		print 'Using Shortley-Weller boundary approx.'
 
-		self.Dh = Dh
-		super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
+		super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, Dh)
 		Nyg, Nxg = self.Nyg, self.Nxg
 		
 		
@@ -89,8 +89,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 
 		flag_outside_n=chamb.is_outside(xn,yn)
 		flag_inside_n=~(flag_outside_n)
-		#flag_inside_n=(((xn/x_aper)**2 + (yn/y_aper)**2)<1);
-		#flag_outside_n= ~(flag_inside_n);
 
 		flag_outside_n_mat=np.reshape(flag_outside_n,(Nyg,Nxg),'F');
 		flag_outside_n_mat=flag_outside_n_mat.T
@@ -181,20 +179,10 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 					Dy[u,u] = (1./(2*he)-1./(2*hw))
 					Dy[u,u-1]=1./(2*hw)
 					Dy[u,u+1]=-1./(2*he)				
-
-					
+	
 			else:
 				# external nodes
 				A[u,u]=1.
-				if flag_border_n[u]:
-					handle_border(u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy)	
-
-		for u in list_internal_force_zero:
-			handle_border(u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy)
-
-		#~ A = A.tocsc()
-		#~ Dx = Dx.tocsc()
-		#~ Dy = Dy.tocsc()
 
 		flag_force_zero = flag_outside_n.copy()	
 		for ind in 	list_internal_force_zero:
@@ -202,18 +190,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 			
 		flag_force_zero_mat=np.reshape(flag_force_zero,(Nyg,Nxg),'F');
 		flag_force_zero_mat=flag_force_zero_mat.T
-		[gxc,gyc]=np.gradient(np.double(flag_force_zero_mat));
-		gradmodc=abs(gxc)+abs(gyc);
-		flag_border_mat_c=np.logical_and((gradmodc>0), flag_force_zero_mat);
-			
-		sumcurr = np.sum(flag_border_mat_c, axis=0)
-		jj_max_border = np.max((np.where(sumcurr>0))[0])
-		jj_min_border = np.min((np.where(sumcurr>0))[0])
-
-		sumcurr = np.sum(flag_border_mat_c, axis=1)# corrected in version 4.05. I it was: sumcurr = np.sum(flag_border_mat_c, axis=1)
-		ii_max_border = np.max((np.where(sumcurr>0))[0])
-		ii_min_border = np.min((np.where(sumcurr>0))[0])
-			
+		
 		print 'Internal nodes with 0 potential'
 		print list_internal_force_zero
 
@@ -233,23 +210,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 
 		Asel = Msel.T*A*Msel
 		Asel=Asel.tocsc()
-		
 
-		if sparse_solver == 'scipy_slu':
-			print "Using scipy superlu solver..."
-			luobj = ssl.splu(Asel.tocsc())
-		elif sparse_solver == 'PyKLU':
-			print "Using klu solver..."
-			try:
-				import PyKLU.klu as klu
-				luobj = klu.Klu(Asel.tocsc())
-			except StandardError, e: 
-				print "Got exception: ", e
-				print "Falling back on scipy superlu solver:"
-				luobj = ssl.splu(Asel.tocsc())
-		else:
-			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
-			
 		self.xn = xn
 		self.yn = yn
 		
@@ -257,31 +218,29 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 		self.flag_outside_n = flag_outside_n
 		self.flag_outside_n_mat = flag_outside_n_mat
 		self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
-		self.flag_border_mat = flag_border_mat
 		self.flag_force_zero = flag_force_zero
 		self.Asel = Asel
-		self.luobj = luobj
+
 		self.Dx = Dx.tocsc()
 		self.Dy = Dy.tocsc()
-
-		self.ii_max_border = ii_max_border
-		self.ii_min_border = ii_min_border
-		self.jj_max_border = jj_max_border
-		self.jj_min_border = jj_min_border
 
 		self.rho = np.zeros((self.Nxg,self.Nyg));
 		self.phi = np.zeros((self.Nxg,self.Nyg));
 		self.efx = np.zeros((self.Nxg,self.Nyg));
 		self.efy = np.zeros((self.Nxg,self.Nyg));
 
+		self.sparse_solver = sparse_solver
 		
 		self.U_sc_eV_stp=0.;
 
 		
 		self.Msel = Msel.tocsc()
 		self.Msel_T = (Msel.T).tocsc()
+		
+		#initialize self.luobj
+		self.build_sparse_solver()
 
-		self.chamb = chamb
+		
 		print 'Done PIC init.'
                         
 
@@ -310,18 +269,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         phi=np.reshape(phi,(self.Nxg,self.Nyg))
         efx=np.reshape(efx,(self.Nxg,self.Nyg))
         efy=np.reshape(efy,(self.Nxg,self.Nyg))
-        
-        for jj in xrange(self.jj_max_border, self.Nyg):
-			efx[:, jj]=efx[:, self.jj_max_border-1] 
-			
-        for jj in xrange(0, self.jj_min_border+1):
-			efx[:, jj]=efx[:, self.jj_min_border+1] 
-			
-        for ii in xrange(self.ii_max_border, self.Nxg):
-			efy[ii, :]=efy[self.ii_max_border-1, :] 
-			
-        for ii in xrange(0, self.ii_min_border+1):
-			efy[ii,:]=efy[self.ii_min_border+1,:] 
 		   
         self.rho = rho
         self.b = b
@@ -330,138 +277,38 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         self.efy = efy
         self.U_sc_eV_stp = U_sc_eV_stp
         
-
-
-def handle_border(u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy):
-	#print u
-	jjj = np.floor(u/Nyg)
-	
-	if flag_inside_n[u+Nyg]: 
-		if not flag_inside_n[u]:
-			x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u+Nyg]), na(yn[u+Nyg]), na(0.), 
-				na(xn[u]), na(yn[u]), na(0.), resc_fac=.995, flag_robust=False)
-			hs = np.abs(x_int[0]-xn[u+Nyg])
-		else: #this is the case for internal nodes with zero potential (very close to the boundary)
-			hs = Dh
+    def gather(self, x_mp, y_mp):
 		
-		hn = Dh
+		if not (len(x_mp)==len(y_mp)):
+			raise ValueError('x_mp, y_mp should have the same length!!!')
 
-		if hs<Dh/100.:
-			Dx[u,u+Nyg] = (1./(hn))
-			Dx[u,u+Nyg+Nyg]=-1./(hn)
-			
-			nnn=1
-			while u-nnn*Nyg>=0:
-				Dx[u-nnn*Nyg,u+Nyg] = (1./(hn))
-				Dx[u-nnn*Nyg,u+Nyg+Nyg]=-1./(hn)
-				nnn+=1
-			
+		if len(x_mp)>0:    
+			## compute beam electric field
+			Ex_sc_n, Ey_sc_n = iffb.int_field_border(x_mp,y_mp,self.bias_x,self.bias_y,self.Dh,
+										 self.Dh, self.efx, self.efy, self.flag_inside_n_mat)
+					   
 		else:
-			Dx[u,u+Nyg] = (1./(2*hn)-1./(2*hs))
-			Dx[u,u-Nyg+Nyg] = 1./(2*hs)
-			Dx[u,u+Nyg+Nyg] = -1./(2*hn)
+			Ex_sc_n=0.
+			Ey_sc_n=0.
 			
-			nnn=1
-			while u-nnn*Nyg>=0:
-				Dx[u-nnn*Nyg,u+Nyg] = Dx[u,u+Nyg]
-				Dx[u-nnn*Nyg,u-Nyg+Nyg] = Dx[u,u-Nyg+Nyg]
-				Dx[u-nnn*Nyg,u+Nyg+Nyg] = Dx[u,u+Nyg+Nyg]
-				nnn+=1
+		return Ex_sc_n, Ey_sc_n
 
-	
-	elif flag_inside_n[u-Nyg]: 
-		if not flag_inside_n[u]:
-			x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u-Nyg]), na(yn[u-Nyg]), na(0.), 
-				na(xn[u]), na(yn[u]), na(0.), resc_fac=.995, flag_robust=False)
-			hn = np.abs(x_int[0]-xn[u-Nyg])
-		else:#this is the case for internal nodes with zero potential (very close to the boundary)
-			hn = Dh
+    def build_sparse_solver(self):
 		
-		hs = Dh
-
-		if hn<Dh/100.:
-			Dx[u,u-Nyg] = -1./(hs)
-			Dx[u,u-Nyg-Nyg]=1./(hs)
-			
-			nnn=1
-			while u+nnn*Nyg<Nxg*Nyg:
-				Dx[u+nnn*Nyg,u-Nyg] = -1./(hs)
-				Dx[u+nnn*Nyg,u-Nyg-Nyg]=1./(hs)
-				nnn+=1
-			
+		if self.sparse_solver == 'scipy_slu':
+			print "Using scipy superlu solver..."
+			luobj = ssl.splu(self.Asel.tocsc())
+		elif self.sparse_solver == 'PyKLU':
+			print "Using klu solver..."
+			try:
+				import PyKLU.klu as klu
+				luobj = klu.Klu(self.Asel.tocsc())
+			except StandardError, e: 
+				print "Got exception: ", e
+				print "Falling back on scipy superlu solver:"
+				luobj = ssl.splu(self.Asel.tocsc())
 		else:
-			Dx[u,u-Nyg] = (1./(2*hn)-1./(2*hs))
-			Dx[u,u-Nyg-Nyg]=1./(2*hs)
-			Dx[u,u+Nyg-Nyg]=-1./(2*hn)
-			
-			nnn=1
-			while u+nnn*Nyg<Nxg*Nyg:
-				Dx[u+nnn*Nyg,u-Nyg] = Dx[u,u-Nyg]
-				Dx[u+nnn*Nyg,u-Nyg-Nyg] = Dx[u,u-Nyg-Nyg]
-				Dx[u+nnn*Nyg,u+Nyg-Nyg] = Dx[u,u+Nyg-Nyg]
-				nnn+=1
-			
-	if flag_inside_n[u+1]:
-		if not flag_inside_n[u]: 
-			x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u+1]), na(yn[u+1]), na(0.), 
-				na(xn[u]), na(yn[u]),na(0.), resc_fac=.995, flag_robust=False)
-			hw = np.abs(y_int[0]-yn[u+1])
-		else:#this is the case for internal nodes with zero potential (very close to the boundary)
-			hw = Dh
-			
-		he = Dh
-		
-		if hw<Dh/100.:
-			Dy[u,u+1] = (1./(he))
-			Dy[u,u+1+1]=-1./(he)
-			
-			nnn=1
-			while u-nnn>=(jjj)*Nyg:
-				Dy[u-nnn*1,u+1] = (1./(he))
-				Dy[u-nnn*1,u+1+1]=-1./(he)
-				nnn+=1
-		else:
-			Dy[u,u+1] = (1./(2*he)-1./(2*hw))
-			Dy[u,u-1+1] = 1./(2*hw)
-			Dy[u,u+1+1] = -1./(2*he)
-			
-			nnn=1
-			while u-nnn>=(jjj)*Nyg:
-				#print nnn
-				Dy[u-nnn,u+1] = Dy[u,u+1]
-				Dy[u-nnn,u-1+1] = Dy[u,u-1+1]
-				Dy[u-nnn,u+1+1] = Dy[u,u+1+1]
-				nnn += 1
+			raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
 				
-	elif flag_inside_n[u-1]: 
-		if not flag_inside_n[u]:
-			x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal( na(xn[u-1]), na(yn[u-1]), na(0.), 
-				na(xn[u]), na(yn[u]),  na(0.), resc_fac=.995, flag_robust=False)
-			he = np.abs(y_int[0]-yn[u-1])
-		else:#this is the case for internal nodes with zero potential (very close to the boundary)
-			he=Dh
-			
-		hw = Dh
-
-		if he<Dh/100.:
-			Dy[u,u-1] = -1./(hw)
-			Dy[u,u-1-1]=1./(hw)
-			
-			nnn=1
-			while u+nnn<(jjj+1)*Nyg:
-				Dy[u+nnn,u-1] = -1./(hw)
-				Dy[u+nnn,u-1-1]=1./(hw)
-				nnn+=1
-			
-		else:
-			Dy[u,u-1] = (1./(2*he)-1./(2*hw))
-			Dy[u,u-1-1]=1./(2*hw)
-			Dy[u,u+1-1]=-1./(2*he)
-			
-			nnn=1
-			while u+nnn<(jjj+1)*Nyg:
-				Dy[u+nnn,u-1] = Dy[u,u-1]
-				Dy[u+nnn,u-1-1] = Dy[u,u-1-1]
-				Dy[u+nnn,u+1-1] = Dy[u,u+1-1]
-				nnn+=1
-	return Dx, Dy
+		self.luobj = luobj
+				

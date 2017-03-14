@@ -8,7 +8,7 @@
 #     This file is part of the code:
 #                                                                      		    
 # 
-#		           PyPIC Version 2.2.0                     
+#		           PyPIC Version 1.03                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -73,8 +73,7 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
 		print 'FFT, PEC Boundary, Square Grid'
 
 
-		self.Dh = Dh		
-		super(FFT_PEC_Boundary_SquareGrid, self).__init__(x_aper, y_aper, self.Dh, self.Dh)
+		super(FFT_PEC_Boundary_SquareGrid, self).__init__(x_aper, y_aper, Dh)
 
 		
 		
