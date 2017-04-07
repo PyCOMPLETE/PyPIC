@@ -43,7 +43,7 @@ bunch = machine.generate_6D_Gaussian_bunch(n_macroparticles = n_macroparticles, 
 Dh_single = 0.5*bunch.sigma_x() #.3
 
 # Bassetti-Erskine parameters
-Dh_BE = 0.3*bunch.sigma_x()
+Dh_BE = 0.2*bunch.sigma_x()
 
 #  Multi grid parameters
 Dh_single_ext = 1e-3
@@ -113,9 +113,11 @@ Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
 
 #plots
 pl.close('all')
-ms.mystyle_arial(fontsz=12)
+ms.mystyle_arial(fontsz=14)
 
 #electric field at probes
+
+
 pl.figure(1, figsize=(18,6)).patch.set_facecolor('w')
 pl.subplot(1,3,1)
 #~ pl.plot(pic_singlegrid.xn, pic_singlegrid.yn,'.y', label = 'Singlegrid')
@@ -174,15 +176,16 @@ for r_probes in np.logspace(np.log10(r_min), np.log10(r_max), 100):
 	RMSE_singlegrid.append(np.sqrt(np.sum((Ex_singlegrid-Ex_BE)**2+(Ey_singlegrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
 	RMSE_multigrid.append(np.sqrt(np.sum((Ex_multigrid-Ex_BE)**2+(Ey_multigrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
 pl.figure(2).patch.set_facecolor('w')
-pl.loglog(r_probes_val, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
-pl.loglog(r_probes_val, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
+pl.loglog(r_probes_val, RMSE_singlegrid, '.-r', label = 'Single grid (t=%.1f ms)'%(t_sw_single*1000.), linewidth=2, markersize=10)
+pl.loglog(r_probes_val, RMSE_multigrid, '.-b', label = 'Multi grid (t=%.1f ms)'%(t_sw_multi*1000.), linewidth=2, markersize=10)
+pl.xlim(r_min, r_max)
 pl.xlabel('r [m]')
 pl.ylabel('RMS error')
-pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
+pl.suptitle('$\sigma_x$ = %.2e m $\sigma_y$ = %.2e m\n $\Delta h_{single}$ = %.2e m $\Delta h_{multi}$ = %.2e m\n $\Delta h_{BE}$ = %.2e m\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
-pl.subplots_adjust(bottom = .13, top = .70)
+pl.subplots_adjust(bottom = .13, top = .75)
 pl.grid()
-pl.legend(loc='best')
+pl.legend(loc='best', prop={'size':14})
 
 
 # plot RMS error vs sigma
@@ -204,11 +207,11 @@ for n_sigma_probe in n_sigma_probes:
 	RMSE_singlegrid.append(np.sqrt(np.sum((Ex_singlegrid-Ex_BE)**2+(Ey_singlegrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
 	RMSE_multigrid.append(np.sqrt(np.sum((Ex_multigrid-Ex_BE)**2+(Ey_multigrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
 pl.figure(3).patch.set_facecolor('w')
-pl.loglog(n_sigma_probes, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
-pl.loglog(n_sigma_probes, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
+pl.loglog(n_sigma_probes, RMSE_singlegrid, '.-r', label = 'Single grid (t=%.1f ms)'%(t_sw_single*1000.), linewidth=3)
+pl.loglog(n_sigma_probes, RMSE_multigrid, '.-b', label = 'Multi grid (t=%.1f ms)'%(t_sw_multi*1000.), linewidth=3)
 pl.xlabel('$\sigma$')
 pl.ylabel('RMS error')
-pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
+pl.title('$\sigma_x$ = %.2e m $\sigma_y$ = %.2e m  \n $\Delta h_{single}$ = %.2e m $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
