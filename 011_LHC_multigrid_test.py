@@ -1,7 +1,9 @@
 import sys, os
 BIN=os.path.expanduser('../')
 sys.path.append(BIN)
-BIN=os.path.expanduser('../PyHEADTAIL/testing/script-tests/')
+BIN=os.path.expanduser('../PyHEADTAIL/')
+sys.path.append(BIN)
+BIN=os.path.expanduser('../PyHEADTAIL/PyHEADTAIL/testing/script-tests/')
 sys.path.append(BIN)
 from LHC import LHC
 import PyPIC.geom_impact_ellip as ell
