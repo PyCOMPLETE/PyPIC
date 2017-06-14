@@ -1,0 +1,10 @@
+*.pickle
+*.so
+*.pyc
+.project
+.pydevproject
+*.png
+norepository_*
+PyPIC.egg-info
+build
+.ipynb_checkpoints/
