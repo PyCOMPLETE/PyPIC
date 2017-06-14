@@ -3,14 +3,24 @@
    @author: Stefan Hegglin, Adrian Oeftiger
 */
 
+#include <cuda.h>
+
 // implementation from: http://docs.nvidia.com/cuda/cuda-c-programming-guide/#atomicadd
-// very slow, for testing purposes
-__device__ double atomicAdd(double* address, double val)
+// very slow, for <NVIDIA P100 purposes where double atomicAdd does not exist yet
+// 2017-05-22 edit based on:
+// http://stackoverflow.com/questions/39274472/error-function-atomicadddouble-double-has-already-been-defined
+
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+
+#else
+static __inline__ __device__ double atomicAdd(double* address, double val)
 {
     unsigned long long int* address_as_ull =
                               (unsigned long long int*)address;
     unsigned long long int old = *address_as_ull, assumed;
 
+    if (val==0.0)
+        return __longlong_as_double(old);
     do {
         assumed = old;
         old = atomicCAS(address_as_ull, assumed,
@@ -22,6 +32,7 @@ __device__ double atomicAdd(double* address, double val)
 
     return __longlong_as_double(old);
 }
+#endif
 
 
 extern "C" {
