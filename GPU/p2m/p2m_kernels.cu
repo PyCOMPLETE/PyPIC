@@ -10,7 +10,7 @@
 // 2017-05-22 edit based on:
 // http://stackoverflow.com/questions/39274472/error-function-atomicadddouble-double-has-already-been-defined
 
-#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
+#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 600
 
 #else
 static __inline__ __device__ double atomicAdd(double* address, double val)
