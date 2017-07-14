@@ -297,6 +297,9 @@ class PyPIC_GPU(PyPIC):
         with open(where + 'p2m/p2m_kernels.cu') as stream:
             source = stream.read()
         p2m_kernels = SourceModule(source)
+        with open(where + 'p2m/p2m_kernels_inclmeshing.cu') as stream:
+            source = stream.read()
+        p2m_kernels_inclmeshing = SourceModule(source)
         with open(where + 'm2p/m2p_kernels.cu') as stream:
             source = stream.read()
         m2p_kernels = SourceModule(source)
@@ -305,7 +308,7 @@ class PyPIC_GPU(PyPIC):
 
         # initialize in init because otherwise it tries to compile even if
         # no instance of the class is created -> errors if you import the module
-        # without having a running pycuda context
+        # without having a running pycuda context.
         # depending on the dimension, the correct funtions are loaded
         self._particles_to_mesh_kernel = (
             p2m_kernels.get_function('particles_to_mesh_' +
@@ -313,6 +316,12 @@ class PyPIC_GPU(PyPIC):
         self._particles_to_mesh_64atomics_kernel = ( # double precision atomics, slower
             p2m_kernels.get_function('particles_to_mesh_' +
                                      str(mesh.dimension) + 'd_64atomics'))
+        self._p2m_inclmeshing_32atomics_kernel = (
+            p2m_kernels_inclmeshing.get_function(
+                'p2m_rectmesh' + str(mesh.dimension) + 'd_32atomics'))
+        self._p2m_inclmeshing_64atomics_kernel = (
+            p2m_kernels_inclmeshing.get_function(
+                'p2m_rectmesh' + str(mesh.dimension) + 'd_64atomics'))
         self._sorted_particles_to_guard_mesh_kernel = (
             p2m_kernels.get_function('cic_guard_cell_weights_' +
                                      str(mesh.dimension) + 'd'))
@@ -333,6 +342,12 @@ class PyPIC_GPU(PyPIC):
         self._particles_to_mesh_64atomics_kernel.prepare(
                 'i' + 'P' + 'i'*(mesh.dimension) + 'P'*2**mesh.dimension +
                 'P'*mesh.dimension)
+        self._p2m_inclmeshing_32atomics_kernel.prepare(
+                'i' + 'P'*mesh.dimension + 'd'*mesh.dimension*2 +
+                'i'*mesh.dimension + 'P')
+        self._p2m_inclmeshing_64atomics_kernel.prepare(
+                'i' + 'P'*mesh.dimension + 'd'*mesh.dimension*2 +
+                'i'*mesh.dimension + 'P')
         self._field_to_particles_kernel.prepare(
                 'i' + 'PP' + 'i'*(mesh.dimension) + 'P'*2**mesh.dimension +
                 'P'*mesh.dimension)
@@ -342,9 +357,9 @@ class PyPIC_GPU(PyPIC):
         self._sorted_particles_to_guard_mesh_kernel.prepare(
                 'P'*mesh.dimension + 'd'*2*mesh.dimension +
                 'i'*(mesh.dimension-1) + 'i' + 'PP' + 'P'*2**mesh.dimension)
-        self._join_guard_cells_kernel.prepare('P'*2**mesh.dimension
-                + 'i' + 'i'*mesh.dimension + 'P')
-
+        self._join_guard_cells_kernel.prepare(
+                'P'*2**mesh.dimension +
+                'i' + 'i'*mesh.dimension + 'P')
 
 
     def particles_to_mesh(self, *mp_coords, **kwargs):
@@ -356,12 +371,11 @@ class PyPIC_GPU(PyPIC):
         Further possible keyword arguments are
         mesh_indices=None, mesh_distances=None, mesh_weights=None and
         dtype=np.float32 which can be set to np.float64 to use
-        non-hardware-accelerated double precision atomics.
+        (potentially not hardware-accelerated) double precision atomics.
 
         Return the charge distribution on the mesh (which is
         mesh_charges = rho*volume).
         '''
-        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         charge = kwargs.get("charge", e)
         dtype = kwargs.get("dtype", np.float32)
 
@@ -375,23 +389,48 @@ class PyPIC_GPU(PyPIC):
         grid = self.kernel_call_config['p2m']['grid']
 
         mesh_count = gpuarray.zeros(shape=self.mesh.shape, dtype=dtype)
-        args = [np.int32(n_macroparticles)] + [mesh_count.gpudata]
-        args += self.mesh.shape_r
-        if dtype == np.float32:
-            args += [mw.astype(dtype).gpudata for mw in mesh_weights]
-            args += list(map(attrgetter('gpudata'), mesh_indices))
-            self._particles_to_mesh_kernel.prepared_call(
-                grid, block, *args)
-            mesh_count = mesh_count.astype(np.float64)
-        elif dtype == np.float64:
-            args += list(map(attrgetter('gpudata'),
-                             mesh_weights + mesh_indices))
-            self._particles_to_mesh_64atomics_kernel.prepared_call(
-                grid, block, *args)
+
+        if "RectMesh" in str(self.mesh.__class__) and \
+                self.mesh.dimension in [2,3]:
+            args = [np.int32(n_macroparticles)]
+            args += list(map(attrgetter('gpudata'), mp_coords))
+            args += list(map(np.float64, self.mesh.origin))
+            args += list(map(np.float64, self.mesh.distances))
+            args += self.mesh.shape_r
+            args += [mesh_count.gpudata]
+            if dtype == np.float32:
+                self._p2m_inclmeshing_32atomics_kernel.prepared_call(
+                    grid, block, *args)
+            elif dtype == np.float64:
+                self._p2m_inclmeshing_32atomics_kernel.prepared_call(
+                    grid, block, *args)
+            else:
+                raise ValueError("PyPIC: particles_to_mesh() got unknown dtype "
+                                 "argument, expected either np.float32 or "
+                                 "np.float64!")
         else:
-            raise ValueError("PyPIC: particles_to_mesh() got unknown dtype "
-                             "argument, expected either np.float32 or "
-                             "np.float64!")
+            # old method of calculating mesh properties and floor division
+            # separately, which is much slower than above, cf.
+            # itest/PyPIC\ GPU\ Example\ improved_p2m.ipynb
+            mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
+
+            args = [np.int32(n_macroparticles)] + [mesh_count.gpudata]
+            args += self.mesh.shape_r
+            if dtype == np.float32:
+                args += [mw.astype(dtype).gpudata for mw in mesh_weights]
+                args += list(map(attrgetter('gpudata'), mesh_indices))
+                self._particles_to_mesh_kernel.prepared_call(
+                    grid, block, *args)
+                mesh_count = mesh_count.astype(np.float64)
+            elif dtype == np.float64:
+                args += list(map(attrgetter('gpudata'),
+                                 mesh_weights + mesh_indices))
+                self._particles_to_mesh_64atomics_kernel.prepared_call(
+                    grid, block, *args)
+            else:
+                raise ValueError("PyPIC: particles_to_mesh() got unknown dtype "
+                                 "argument, expected either np.float32 or "
+                                 "np.float64!")
         self._context.synchronize()
         mesh_charges = mesh_count*charge
         return mesh_charges
