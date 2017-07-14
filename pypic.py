@@ -303,6 +303,9 @@ class PyPIC_GPU(PyPIC):
         with open(where + 'm2p/m2p_kernels.cu') as stream:
             source = stream.read()
         m2p_kernels = SourceModule(source)
+        with open(where + 'm2p/m2p_kernels_inclmeshing.cu') as stream:
+            source = stream.read()
+        m2p_kernels_inclmeshing = SourceModule(source)
 
         self._gradient = gradient(mesh, context)
 
@@ -334,6 +337,12 @@ class PyPIC_GPU(PyPIC):
         self._field_to_particles_kernel = (
             m2p_kernels.get_function('field_to_particles_' +
                                      str(mesh.dimension) + 'd'))
+        self._m2p_scalar_inclmeshing_kernel = (
+            m2p_kernels_inclmeshing.get_function(
+                'm2p_rectmesh' + str(mesh.dimension) + 'd_scalar'))
+        self._m2p_vector_inclmeshing_kernel = (
+            m2p_kernels_inclmeshing.get_function(
+                'm2p_rectmesh' + str(mesh.dimension) + 'd_vector'))
 
         # prepare calls to kernels!!!
         self._particles_to_mesh_kernel.prepare(
@@ -360,6 +369,12 @@ class PyPIC_GPU(PyPIC):
         self._join_guard_cells_kernel.prepare(
                 'P'*2**mesh.dimension +
                 'i' + 'i'*mesh.dimension + 'P')
+        self._m2p_scalar_inclmeshing_kernel.prepare(
+                'i' + 'P'*mesh.dimension + 'd'*mesh.dimension*2 +
+                'i'*mesh.dimension + 'P'*2)
+        self._m2p_vector_inclmeshing_kernel.prepare(
+                'i' + 'P'*mesh.dimension + 'd'*mesh.dimension*2 +
+                'i'*mesh.dimension + 'P'*mesh.dimension*2)
 
 
     def particles_to_mesh(self, *mp_coords, **kwargs):
@@ -540,7 +555,6 @@ class PyPIC_GPU(PyPIC):
         Returns asynchronously from the device.
         (You may potentially want to call context.synchronize()!)
         '''
-        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
         particles_quantity = gpuarray.empty(n_macroparticles, dtype=np.float64)
 
@@ -552,12 +566,30 @@ class PyPIC_GPU(PyPIC):
         block = self.kernel_call_config['m2p']['block']
         grid = self.kernel_call_config['m2p']['grid']
 
-        self._mesh_to_particles_kernel(
-            np.int32(n_macroparticles),
-            particles_quantity, mesh_quantity,
-            *(self.mesh.shape_r + mesh_weights + mesh_indices),
-            block=block, grid=grid
-        )
+
+        if "RectMesh" in str(self.mesh.__class__) and \
+                self.mesh.dimension in [2,3]:
+            args = [np.int32(n_macroparticles)]
+            args += list(map(attrgetter('gpudata'), mp_coords))
+            args += list(map(np.float64, self.mesh.origin))
+            args += list(map(np.float64, self.mesh.distances))
+            args += self.mesh.shape_r
+            args += [mesh_quantity.gpudata]
+            args += [particles_quantity.gpudata]
+            self._m2p_scalar_inclmeshing_kernel.prepared_call(
+                grid, block, *args)
+        else:
+            # old method of calculating mesh properties and floor division
+            # separately, which is much slower than above, cf.
+            # itest/PyPIC\ GPU\ Example\ improved_p2m.ipynb
+            mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
+
+            self._mesh_to_particles_kernel.prepared_call(
+                grid, block,
+                np.int32(n_macroparticles),
+                particles_quantity, mesh_quantity,
+                *(self.mesh.shape_r + mesh_weights + mesh_indices)
+            )
         return particles_quantity
 
     def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
@@ -577,28 +609,48 @@ class PyPIC_GPU(PyPIC):
         Return the interpolated fields per particle for each dimension.
         '''
         mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
-        mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
+
         self.kernel_call_config['m2p']['grid'] = (
                 idivup(n_macroparticles, reduce(mul,
                     self.kernel_call_config['m2p']['block'],1))
                  , 1, 1
         )
+        block = self.kernel_call_config['m2p']['block']
+        grid = self.kernel_call_config['m2p']['grid']
+
         # field per particle
         particle_fields = [gpuarray.empty(shape=n_macroparticles,
                                           dtype=np.float64)
                            for _ in mesh_fields]
-        block = self.kernel_call_config['m2p']['block']
-        grid = self.kernel_call_config['m2p']['grid']
-        args = [np.int32(n_macroparticles)] + particle_fields + list(mesh_fields)
-        args += list(self.mesh.shape_r) #strides
-        args += list(mesh_weights)
-        args += list(mesh_indices)
-        # interpolate to particles on gpu.
-        # interpolation only, multiply with charge afterwards
-        self._field_to_particles_kernel(
-            *args, block=block, grid=grid
-        )
+
+        if "RectMesh" in str(self.mesh.__class__) and \
+                self.mesh.dimension in [2,3]:
+            args = [np.int32(n_macroparticles)]
+            args += list(map(attrgetter('gpudata'), mp_coords))
+            args += list(map(np.float64, self.mesh.origin))
+            args += list(map(np.float64, self.mesh.distances))
+            args += self.mesh.shape_r
+            args += list(map(attrgetter('gpudata'), mesh_fields))
+            args += list(map(attrgetter('gpudata'), particle_fields))
+            self._m2p_vector_inclmeshing_kernel.prepared_call(
+                grid, block, *args)
+        else:
+            # old method of calculating mesh properties and floor division
+            # separately, which is much slower than above, cf.
+            # itest/PyPIC\ GPU\ Example\ improved_p2m.ipynb
+            mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
+
+            args = [np.int32(n_macroparticles)]
+            args += particle_fields + list(mesh_fields)
+            args += list(self.mesh.shape_r) #strides
+            args += list(mesh_weights)
+            args += list(mesh_indices)
+            # interpolate to particles on gpu.
+            # interpolation only, multiply with charge afterwards
+            self._field_to_particles_kernel.prepared_call(
+                grid, block, *args
+            )
         return particle_fields
 
     def pic_solve(self, *mp_coords, **kwargs):
