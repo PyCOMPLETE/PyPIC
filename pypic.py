@@ -10,7 +10,7 @@ try:
     from pycuda import driver as cuda
     from pycuda import gpuarray
     from pycuda.compiler import SourceModule
-    from pycuda.tools import DeviceData
+    from pycuda.tools import DeviceMemoryPool
 except ImportError:
     print('pycuda not found. no gpu capabilities will be available')
 
@@ -272,8 +272,11 @@ class PyPIC_GPU(PyPIC):
     '''
 
     def __init__(self, mesh, poissonsolver, context, gradient=make_GPU_gradient,
-                 optimize_meshing_memory=True):
+                 optimize_meshing_memory=True, memory_pool=DeviceMemoryPool()):
         '''Mesh sizes need to be powers of 2 in x (and y if it exists).
+        The argument memory_pool can be used to provide a GPU pool
+        for memory allocation. If it is None (default), then a new
+        DeviceMemoryPool() is used.
         '''
         self.mesh = mesh
         self.optimize_meshing_memory = optimize_meshing_memory
@@ -293,6 +296,7 @@ class PyPIC_GPU(PyPIC):
                         'grid': (idivup(self.mesh.n_nodes, 256), 1, 1)
                         }
                 }
+        self._mempool = memory_pool
         # load kernels
         with open(where + 'p2m/p2m_kernels.cu') as stream:
             source = stream.read()
@@ -403,7 +407,9 @@ class PyPIC_GPU(PyPIC):
         block = self.kernel_call_config['p2m']['block']
         grid = self.kernel_call_config['p2m']['grid']
 
-        mesh_count = gpuarray.zeros(shape=self.mesh.shape, dtype=dtype)
+        mesh_count = gpuarray.zeros(
+            shape=self.mesh.shape, dtype=dtype,
+            allocator=self._mempool.allocate)
 
         if "RectMesh" in str(self.mesh.__class__) and \
                 self.mesh.dimension in [2,3]:
@@ -474,7 +480,8 @@ class PyPIC_GPU(PyPIC):
         charge = kwargs.get("charge", e)
 
         guard_charge_pointers = [
-            gpuarray.empty(self.mesh.n_nodes, dtype=np.float64).gpudata
+            gpuarray.empty(self.mesh.n_nodes, dtype=np.float64,
+                           allocator=self._mempool.allocate).gpudata
             for _ in xrange(2**self.mesh.dimension)
         ]
         block = self.kernel_call_config['sorted_p2m']['block']
@@ -491,7 +498,9 @@ class PyPIC_GPU(PyPIC):
             # guard cells
             guard_charge_pointers
         ))
-        mesh_charges = gpuarray.zeros(self.mesh.shape, dtype=np.float64)
+        mesh_charges = gpuarray.zeros(
+            self.mesh.shape, dtype=np.float64,
+            allocator=self._mempool.allocate)
         self._context.synchronize()
         self._join_guard_cells_kernel.prepared_call(*(
             [grid, block,] +
@@ -556,7 +565,6 @@ class PyPIC_GPU(PyPIC):
         (You may potentially want to call context.synchronize()!)
         '''
         n_macroparticles = len(mp_coords[0])
-        particles_quantity = gpuarray.empty(n_macroparticles, dtype=np.float64)
 
         self.kernel_call_config['m2p']['grid'] = (
                 idivup(n_macroparticles, reduce(mul,
@@ -566,6 +574,9 @@ class PyPIC_GPU(PyPIC):
         block = self.kernel_call_config['m2p']['block']
         grid = self.kernel_call_config['m2p']['grid']
 
+        particles_quantity = gpuarray.empty(
+            n_macroparticles, dtype=np.float64,
+            allocator=self._mempool.allocate)
 
         if "RectMesh" in str(self.mesh.__class__) and \
                 self.mesh.dimension in [2,3]:
@@ -621,7 +632,8 @@ class PyPIC_GPU(PyPIC):
 
         # field per particle
         particle_fields = [gpuarray.empty(shape=n_macroparticles,
-                                          dtype=np.float64)
+                                          dtype=np.float64,
+                                          allocator=self._mempool.allocate)
                            for _ in mesh_fields]
 
         if "RectMesh" in str(self.mesh.__class__) and \
