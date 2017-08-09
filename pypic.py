@@ -395,8 +395,14 @@ class PyPIC_GPU(PyPIC):
         Return the charge distribution on the mesh (which is
         mesh_charges = rho*volume).
         '''
-        charge = kwargs.get("charge", e)
         dtype = kwargs.get("dtype", np.float32)
+        charge = kwargs.get("charge", e)
+        try:
+            charge = charge.get()
+        except AttributeError:
+            pass
+        # ensure returning a dtype np.float64 in particles_to_mesh:
+        charge = float(charge)
 
         n_macroparticles = len(mp_coords[0])
         self.kernel_call_config['p2m']['grid'] = (
@@ -423,7 +429,7 @@ class PyPIC_GPU(PyPIC):
                 self._p2m_inclmeshing_32atomics_kernel.prepared_call(
                     grid, block, *args)
             elif dtype == np.float64:
-                self._p2m_inclmeshing_32atomics_kernel.prepared_call(
+                self._p2m_inclmeshing_64atomics_kernel.prepared_call(
                     grid, block, *args)
             else:
                 raise ValueError("PyPIC: particles_to_mesh() got unknown dtype "
@@ -453,7 +459,8 @@ class PyPIC_GPU(PyPIC):
                                  "argument, expected either np.float32 or "
                                  "np.float64!")
         self._context.synchronize()
-        mesh_charges = mesh_count*charge
+        mesh_charges = mesh_count * charge
+        # because charge is double precision, mesh_charges will be as well!
         return mesh_charges
 
     def sorted_particles_to_mesh(self, *mp_coords, **kwargs):
