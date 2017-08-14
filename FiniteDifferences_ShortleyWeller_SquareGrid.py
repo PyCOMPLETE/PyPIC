@@ -260,7 +260,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
     #@profile    
 	def solve(self, rho = None, flag_verbose = False):
 
-		if rho == None:
+		if rho is None:
 			rho = self.rho
 		self._solve_core(self, rho)
 
