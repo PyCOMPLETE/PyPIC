@@ -1,14 +1,14 @@
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import FFT_OpenBoundary as PIC_FFT
+from . import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+from . import FiniteDifferences_Staircase_SquareGrid as PIC_FD
+from . import FFT_OpenBoundary as PIC_FFT
 try:
     from CyFPPS import PyFPPS as PIC_FPPS
 except ImportError:
-    print "Not possible to import PyFPPS, replaced with FFT_Open"
+    print("Not possible to import PyFPPS, replaced with FFT_Open")
     PIC_FPPS = None
-from MultiGrid import AddInternalGrid
+from .MultiGrid import AddInternalGrid
 
-import geom_impact_ellip as ell
+from . import geom_impact_ellip as ell
 from scipy import rand
 import numpy as np
 
@@ -80,7 +80,7 @@ Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
 Ex_FFTSq, Ey_FFTSq = picFFTSq.gather(x_probes, y_probes)
 if PIC_FPPS: Ex_FPPS,Ey_FPPS = picFPPS.gather(x_probes,y_probes)
 Ex_dualgrid, Ey_dualgrid = pic_dualgrid.gather(x_probes, y_probes)
-E_r_th = map(lambda x: -np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x), x_probes)
+E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) for x in x_probes]
 
 
 import pylab as pl

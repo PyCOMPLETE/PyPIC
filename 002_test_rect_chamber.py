@@ -2,11 +2,11 @@ import sys, os
 BIN=os.path.expanduser('../')
 sys.path.append(BIN)
 
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
-import geom_impact_ellip as ell
-import geom_impact_poly as poly
+from . import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+from . import FiniteDifferences_Staircase_SquareGrid as PIC_FD
+from . import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
+from . import geom_impact_ellip as ell
+from . import geom_impact_poly as poly
 from scipy import rand
 import numpy as np
 

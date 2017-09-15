@@ -8,7 +8,7 @@ def mystyle(fontsz=16):
 	font = {#'family' : 'normal',
 			#'weight' : 'bold',
 			'size'   : fontsz}
-	print fontsz
+	print(fontsz)
 	rcdefaults()
 	rc('font', **font)
 	

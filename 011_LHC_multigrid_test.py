@@ -11,7 +11,7 @@ from PyPIC.MultiGrid import AddTelescopicGrids
 from scipy.constants import e, epsilon_0,c
 import numpy as np
 import pylab as pl
-import mystyle as ms
+from . import mystyle as ms
 
 qe = e
 eps0 = epsilon_0
@@ -79,22 +79,22 @@ pic_multigrid.scatter(bunch.x, bunch.y, bunch.particlenumber_per_mp+bunch.y*0., 
 #pic solve timing
 import time
 N_rep_test_single = 1000
-print 'Solving PIC single %d times'%N_rep_test_single
+print('Solving PIC single %d times'%N_rep_test_single)
 t_start = time.mktime(time.localtime())
-for _ in xrange(N_rep_test_single):
+for _ in range(N_rep_test_single):
     pic_singlegrid.solve()
 t_stop = time.mktime(time.localtime())
 t_sw_single = (t_stop-t_start)/N_rep_test_single   
-print 'solving time singlegrid ', t_sw_single
+print('solving time singlegrid ', t_sw_single)
 
 N_rep_test_multi = 10000                                              
-print 'Solving PIC multi %d times'%N_rep_test_multi
+print('Solving PIC multi %d times'%N_rep_test_multi)
 t_start = time.mktime(time.localtime())
-for _ in xrange(N_rep_test_multi):
+for _ in range(N_rep_test_multi):
     pic_multigrid.solve()
 t_stop = time.mktime(time.localtime())
 t_sw_multi = (t_stop-t_start)/N_rep_test_multi
-print 'solving time multigrid ', t_sw_multi
+print('solving time multigrid ', t_sw_multi)
 
 
 # build probes for single circle
@@ -118,7 +118,7 @@ pl.figure(1, figsize=(18,6)).patch.set_facecolor('w')
 pl.subplot(1,3,1)
 #~ pl.plot(pic_singlegrid.xn, pic_singlegrid.yn,'.y', label = 'Singlegrid')
 #~ pl.plot(pic_singlegrid_ext.xn, pic_singlegrid_ext.yn,'.m', label = 'Singlegrid telescope')
-for ii in xrange(pic_multigrid.n_grids):
+for ii in range(pic_multigrid.n_grids):
     pl.plot(pic_multigrid.pic_list[ii].pic_internal.chamb.Vx, pic_multigrid.pic_list[ii].pic_internal.chamb.Vy, '.-', label = 'Internal grid %d'%ii)
 pl.plot(bunch.x, bunch.y, '.k')
 pl.plot(Vx, Vy, 'k--', label = 'Chamber')

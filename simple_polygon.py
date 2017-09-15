@@ -48,7 +48,7 @@ class SimplePolygon(object):
         y_mp_chk=y_mp
         N_pts=len(x_mp_chk)
         flag_inside_chk=array(N_pts*[True])
-        for ii in xrange(self.N_edg):
+        for ii in range(self.N_edg):
             flag_inside_chk[flag_inside_chk]=((y_mp_chk[flag_inside_chk]-self.Vy[ii])*(self.Vx[ii+1]-self.Vx[ii])\
                                             -(x_mp_chk[flag_inside_chk]-self.Vx[ii])*(self.Vy[ii+1]-self.Vy[ii]))>0
         flag_outside=~flag_inside_chk

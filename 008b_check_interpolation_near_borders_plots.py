@@ -1,9 +1,9 @@
 
 Dh_mm=.5
-import myloadmat_to_obj as mlo
+from . import myloadmat_to_obj as mlo
 import numpy as np
 import pylab as pl
-import mystyle as ms
+from . import mystyle as ms
 
 linew = 2.
 mksz = 10
@@ -24,7 +24,7 @@ err_rel_list_old = []
 erry_rel_list_old = []
 erry_rel_list = []
 
-for ii in xrange(N_points): 
+for ii in range(N_points): 
 
 	Ex_ref = ob_ref.Ex[ii,:]
 	Ey_ref = ob_ref.Ey[ii,:]

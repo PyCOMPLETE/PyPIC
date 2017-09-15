@@ -51,8 +51,8 @@
 #----------------------------------------------------------------------
 
 import numpy as np
-import rhocompute as rhocom
-import int_field_for as iff
+from . import rhocompute as rhocom
+from . import int_field_for as iff
 #~ from abc import abstractmethod, ABCMeta
 
 na = lambda x:np.array([x])
@@ -66,7 +66,7 @@ class PyPIC_Scatter_Gather(object):
     def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
                 x_min=None, x_max=None, y_min=None, y_max=None, *args, **kwargs):
 
-        print 'PyPIC Version 2.2.6'
+        print('PyPIC Version 2.2.6')
         
         if xg!=None and yg!=None:
             assert(x_aper==None and y_aper==None and dx==None and dy==None)

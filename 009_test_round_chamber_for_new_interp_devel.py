@@ -1,7 +1,7 @@
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+from . import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 #~ import FiniteDifferences_Staircase_SquareGrid as PIC_FDSW
-import FFT_OpenBoundary_SquareGrid as PIC_FFT
-import geom_impact_ellip as ell
+from . import FFT_OpenBoundary_SquareGrid as PIC_FFT
+from . import geom_impact_ellip as ell
 from scipy import rand
 import numpy as np
 
@@ -43,7 +43,7 @@ y_probes = 0.*x_probes
 #pic gather
 Ex_FDSW, Ey_FDSW = picFDSW.gather(x_probes, y_probes)
 
-E_r_th = map(lambda x: -np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x), x_probes)
+E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) for x in x_probes]
 
 
 import pylab as pl

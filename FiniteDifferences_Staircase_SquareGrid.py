@@ -54,8 +54,8 @@ import numpy as np
 import scipy.sparse as scsp
 from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg as ssl
-from vectsum import vectsum
-from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from .vectsum import vectsum
+from .PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 
 na = lambda x:np.array([x])
@@ -67,8 +67,8 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self, chamb, Dh, sparse_solver = 'scipy_slu', remove_external_nodes_from_mat=True, include_solver = True):
         
-        print 'Start PIC init.:'
-        print 'Finite Differences, Square Grid'
+        print('Start PIC init.:')
+        print('Finite Differences, Square Grid')
 
 
         self.Dh = Dh
@@ -110,7 +110,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
             # Build A matrix
             for u in range(0,Nxg*Nyg):
                 if np.mod(u, Nxg*Nyg/20)==0:
-                    print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+                    print(('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%"""))
                 if flag_inside_n[u]:
                     A[u,u] = -(4./(Dh*Dh))
                     A[u,u-1]=1./(Dh*Dh);     #phi(i-1,j)nx
@@ -136,7 +136,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
                 diagonal = A.diagonal()
                 N_full = len(diagonal)
                 Msel = scsp.lil_matrix((N_full, N_full))
-                for ii in xrange(N_full):
+                for ii in range(N_full):
                     Msel[ii, ii] =1.
             Msel = Msel.tocsc()
             Asel = Msel.T*A*Msel
@@ -144,16 +144,16 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
             
 
             if sparse_solver == 'scipy_slu':
-                print "Using scipy superlu solver..."
+                print("Using scipy superlu solver...")
                 luobj = ssl.splu(Asel.tocsc())
             elif sparse_solver == 'PyKLU':
-                print "Using klu solver..."
+                print("Using klu solver...")
                 try:
                     import PyKLU.klu as klu
                     luobj = klu.Klu(Asel.tocsc())
-                except StandardError, e: 
-                    print "Got exception: ", e
-                    print "Falling back on scipy superlu solver:"
+                except Exception as e: 
+                    print("Got exception: ", e)
+                    print("Falling back on scipy superlu solver:")
                     luobj = ssl.splu(Asel.tocsc())
             else:
                 raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_slu" or "PyKLU"\n')
@@ -174,7 +174,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
             self.Msel_T = (Msel.T).tocsc()
             self.flag_border_n = flag_border_n
             
-            print 'Done PIC init.'
+            print('Done PIC init.')
             
         else:
             self.solve = self._solve_for_states          
@@ -218,7 +218,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
         if len(pic_s_external) != len(states):
             raise ValueError('Found len(pic_s_external) != len(states)!!!!')
         
-        for ii in xrange(len(states)):
+        for ii in range(len(states)):
             state = states[ii]
             pic_external = pic_s_external[ii]
             self._solve_core(state, state.rho, pic_external)

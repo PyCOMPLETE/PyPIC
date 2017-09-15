@@ -1,10 +1,10 @@
 import pylab as pl
 import numpy as np
 from scipy import rand
-import geom_impact_poly as poly
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FFT_OpenBoundary_SquareGrid as PIC_FFT
-import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
+from . import geom_impact_poly as poly
+from . import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+from . import FFT_OpenBoundary_SquareGrid as PIC_FFT
+from . import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 
 na = np.array
 Dh =1e-1
@@ -70,26 +70,26 @@ N_rep = 1000
 
 import time
 t_start_sw = time.mktime(time.localtime())
-for _ in xrange(N_rep):
+for _ in range(N_rep):
 	picFDSW.solve()
 t_stop_sw = time.mktime(time.localtime())
 t_sw = t_stop_sw-t_start_sw
-print 't_sw', t_sw
+print('t_sw', t_sw)
 
 
 t_start_fftpec = time.mktime(time.localtime())
-for _ in xrange(N_rep):
+for _ in range(N_rep):
 	picFFTPEC.solve()
 t_stop_fftpec = time.mktime(time.localtime())
 t_fftpec = t_stop_fftpec-t_start_fftpec
-print 't_fftpec', t_fftpec
+print('t_fftpec', t_fftpec)
 
 
 t_start_fftopen = time.mktime(time.localtime())
-for _ in xrange(N_rep):
+for _ in range(N_rep):
 	picFFT.solve()
 t_stop_fftopen = time.mktime(time.localtime())
 t_fftopen = t_stop_fftopen-t_start_fftopen
-print 't_fftopen', t_fftopen
+print('t_fftopen', t_fftopen)
 
 

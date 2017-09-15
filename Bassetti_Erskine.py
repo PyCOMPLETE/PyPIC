@@ -51,9 +51,9 @@
 #----------------------------------------------------------------------
 
 import numpy as np
-from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from .PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
-from errffor import errf
+from .errffor import errf
 
 
 qe = e
@@ -68,8 +68,8 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
         self.allow_scatter_and_solve = allow_scatter_and_solve
         
         if self.verbose:
-            print 'Start PIC init.:'
-            print 'Bassetti-Erskine, Square Grid'
+            print('Start PIC init.:')
+            print('Bassetti-Erskine, Square Grid')
 
         self.Dh = Dh
         super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, self.Dh, self.Dh, verbose=self.verbose)
@@ -83,7 +83,7 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
         for ii in range(len(xx)):
 
             if np.mod(ii, len(xx)/20)==0 and self.verbose:
-                print ('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%""")
+                print(('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%"""))
 
             for jj in range(len(yy)):
                 x=xx[ii];
