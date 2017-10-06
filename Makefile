@@ -3,12 +3,9 @@
 
 # On Arch Linux, the default python version is python3
 # Therefore, the command f2py2 has to be used for python2 programs such as PyECLOUD.
-# Ubuntu and Red Hat Linux use the other nomenclature where the default python version
+# Ubuntu and Red Hat Linux use the standard convention where the default python version
 # is python2.
-
-# pacman is the package manager of Arch Linux. There is usually no such command on other OS.
-# Better heuristics may exist however.
-ARCH_LINUX := $(shell command -v pacman 2>/dev/null)
+ARCH_LINUX := $(shell grep "Arch Linux" /etc/os-release 2>/dev/null)
 
 ifdef ARCH_LINUX
 		F2PY_py2 = f2py2
