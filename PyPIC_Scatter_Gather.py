@@ -68,9 +68,9 @@ class PyPIC_Scatter_Gather(object):
 
         print 'PyPIC Version 2.2.6'
         
-        if xg!=None and yg!=None:
-            assert(x_aper==None and y_aper==None and dx==None and dy==None)
-            assert(x_min==None and x_max==None and y_min==None and y_max==None)
+        if xg is not None and yg is not None:
+            assert(x_aper is None and y_aper is None and dx is None and dy is None)
+            assert(x_min is None and x_max is None and y_min is None and y_max is None)
 
             Nxg=len(xg);
             bias_x=min(xg);
@@ -81,11 +81,11 @@ class PyPIC_Scatter_Gather(object):
             dx = xg[1]-xg[0]
             dy = yg[1]-yg[0]
 
-        elif dx!=None and dy!=None:
-            assert(xg==None and yg==None)
+        elif dx is not None and dy is not None:
+            assert(xg is None and yg is None)
             # box given
-            if x_min!=None and x_max!=None and y_min!=None and y_max!=None:
-                assert(x_aper==None and y_aper==None)
+            if x_min is not None and x_max is not None and y_min is not None and y_max is not None:
+                assert(x_aper is None and y_aper is None)
 
                 x_aper = (x_max-x_min)/2.
                 x_center = (x_max+x_min)/2.
@@ -93,8 +93,8 @@ class PyPIC_Scatter_Gather(object):
                 y_aper = (y_max-y_min)/2.
                 y_center = (y_max+y_min)/2.
             # aperture given
-            elif x_aper!=None and y_aper!=None:
-                assert(x_min==None and x_max==None and y_min==None and y_max==None)
+            elif x_aper is not None and y_aper is not None:
+                assert(x_min is None and x_max is None and y_min is None and y_max is None)
 
                 x_center = 0.
                 y_center = 0.
