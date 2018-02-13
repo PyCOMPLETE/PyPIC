@@ -133,17 +133,20 @@ class PyPIC_Scatter_Gather(object):
 
                         
     #@profile
-    def scatter(self, x_mp, y_mp, nel_mp, charge = -qe):
+    def scatter(self, x_mp, y_mp, nel_mp, charge = -qe, flag_add=False):
         
         if not (len(x_mp)==len(y_mp)==len(nel_mp)):
             raise ValueError('x_mp, y_mp, nel_mp should have the same length!!!')
         
         if len(x_mp)>0:
             rho=rhocom.compute_sc_rho(x_mp,y_mp,nel_mp,self.bias_x,self.bias_y,self.dx,self.dy,self.Nxg,self.Nyg)
-
-            self.rho=charge*rho/(self.dx*self.dy);
         else:
-            self.rho=self.rho*0.
+            rho=self.rho*0.
+
+        if flag_add:
+            self.rho+=charge*rho/(self.dx*self.dy);
+        else:
+            self.rho=charge*rho/(self.dx*self.dy);
 
          
     def gather(self, x_mp, y_mp):
