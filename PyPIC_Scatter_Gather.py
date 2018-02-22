@@ -203,8 +203,8 @@ class PyPIC_Scatter_Gather(object):
         pass
         
     #@profile
-    def scatter_and_solve(self, x_mp, y_mp, nel_mp, charge = -qe):
-        self.scatter(x_mp, y_mp, nel_mp, charge)
+    def scatter_and_solve(self, x_mp, y_mp, nel_mp, charge = -qe, flag_add=False):
+        self.scatter(x_mp, y_mp, nel_mp, charge, flag_add)
         self.solve()
 
 

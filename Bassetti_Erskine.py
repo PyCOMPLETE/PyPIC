@@ -105,7 +105,7 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
         if not self.allow_scatter_and_solve:
             raise ValueError('Bassetti_Erskine: nothing to solve!!!!')
         
-    def scatter(self,  x_mp, y_mp, nel_mp, charge = -qe):
+    def scatter(self,  x_mp, y_mp, nel_mp, charge = -qe, flag_add=False):
         if not self.allow_scatter_and_solve:
             raise ValueError('Bassetti_Erskine: what do you want to scatter???!!!!')
         
