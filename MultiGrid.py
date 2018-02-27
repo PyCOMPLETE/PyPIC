@@ -42,9 +42,9 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
 		self.N_nodes_discard = N_nodes_discard
 		self.D_discard = N_nodes_discard*Dh_internal	
 
-	def scatter(self, x_mp, y_mp, nel_mp, charge = -qe):
-		self.pic_external.scatter(x_mp, y_mp, nel_mp, charge)
-		self.pic_internal.scatter(x_mp, y_mp, nel_mp, charge)
+	def scatter(self, x_mp, y_mp, nel_mp, charge = -qe, flag_add=False):
+		self.pic_external.scatter(x_mp, y_mp, nel_mp, charge, flag_add)
+		self.pic_internal.scatter(x_mp, y_mp, nel_mp, charge, flag_add)
 
 		 
 	def gather(self, x_mp, y_mp):
