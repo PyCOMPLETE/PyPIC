@@ -134,6 +134,23 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
 		self.pic_external.solve_states(states_external)
 		self.pic_internal.solve_states(states_internal, pic_s_external=states_external)
 	
+        @property
+	def rho(self):
+		return self.pic_internal.rho	
+		
+	@property
+	def phi(self):
+		return self.pic_internal.phi
+		
+	@property
+	def efx(self):
+		return self.pic_internal.efx
+		
+	@property
+	def efy(self):
+		return self.pic_internal.efy
+		
+	
 		
 class AddMultiGrids(PyPIC_Scatter_Gather):
 	def __init__(self, pic_main, grids, sparse_solver='PyKLU', include_solver = True):
