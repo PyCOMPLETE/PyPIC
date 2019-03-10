@@ -1,7 +1,10 @@
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-#~ import FiniteDifferences_Staircase_SquareGrid as PIC_FDSW
-import FFT_OpenBoundary_SquareGrid as PIC_FFT
-import geom_impact_ellip as ell
+import sys
+sys.path.append('..')
+
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
+import PyPIC.geom_impact_ellip as ell
+
 from scipy import rand
 import numpy as np
 

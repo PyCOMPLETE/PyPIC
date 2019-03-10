@@ -3,6 +3,7 @@ BIN=os.path.expanduser('../')
 sys.path.append(BIN)
 BIN=os.path.expanduser('../PyHEADTAIL/testing/script-tests/')
 sys.path.append(BIN)
+
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.geom_impact_ellip as ell
