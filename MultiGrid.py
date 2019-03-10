@@ -134,7 +134,7 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
         self.pic_external.solve_states(states_external)
         self.pic_internal.solve_states(states_internal, pic_s_external=states_external)
     
-        @property
+    @property
     def rho(self):
         return self.pic_internal.rho	
         
