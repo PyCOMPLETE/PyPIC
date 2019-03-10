@@ -1,0 +1,4 @@
+mkdir ../python3
+cp -r ../PyPIC ../python3/PyPIC
+2to3 --output-dir=../python3/PyPIC -W -n ../PyPIC
+rm -rf ../python3/PyPIC/.git
