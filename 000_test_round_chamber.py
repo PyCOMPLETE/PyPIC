@@ -1,3 +1,6 @@
+import sys
+sys.path.append('..')
+
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.FFT_OpenBoundary as PIC_FFT
@@ -6,9 +9,9 @@ try:
 except ImportError:
     print "Not possible to import PyFPPS, replaced with FFT_Open"
     PIC_FPPS = None
-from MultiGrid import AddInternalGrid
+from PyPIC.MultiGrid import AddInternalGrid
 
-import geom_impact_ellip as ell
+import PyPIC.geom_impact_ellip as ell
 from scipy import rand
 import numpy as np
 
