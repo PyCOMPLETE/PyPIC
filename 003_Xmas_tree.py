@@ -1,10 +1,13 @@
+import sys
+sys.path.append('..')
+
 import pylab as pl
 import numpy as np
 from scipy import rand
-import geom_impact_poly as poly
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FFT_OpenBoundary_SquareGrid as PIC_FFT
-import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
+import PyPIC.geom_impact_poly as poly
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
+import PyPIC.FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 try:
     from CyFPPS import PyFPPS as PIC_FPPS
 except ImportError:

@@ -1,7 +1,11 @@
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import FFT_OpenBoundary_SquareGrid as PIC_FFT
-import geom_impact_ellip as ell
+import sys
+sys.path.append('..')
+
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
+import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
+import PyPIC.geom_impact_ellip as ell
+
 from scipy import rand
 import numpy as np
 
@@ -52,7 +56,7 @@ pl.close('all')
 #~ pl.plot(x_probes, Ex_FDSW, label = 'FD ShorleyWeller')
 pl.plot(x_probes, Ex_FFT, label = 'FFT open')
 pl.plot(x_probes, E_r_th, label = 'Analytic')
-pl.plot(picFFT.xg, picFFT.efx[:, picFFT.Nyg/2])
+pl.plot(picFFT.xg, picFFT.efx[:, picFFT.Nyg//2])
 pl.legend()
 pl.ylabel('Ex on the x axis [V/m]')
 pl.xlabel('x [m]')
