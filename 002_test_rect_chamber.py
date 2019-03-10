@@ -26,9 +26,9 @@ eps0 = epsilon_0
 na = np.array
 
 chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper]),
-									   'Vy':na([y_aper, y_aper, -y_aper, -y_aper]),
-									   'x_sem_ellip_insc':0.99*x_aper,
-									   'y_sem_ellip_insc':0.99*y_aper})
+                                       'Vy':na([y_aper, y_aper, -y_aper, -y_aper]),
+                                       'x_sem_ellip_insc':0.99*x_aper,
+                                       'y_sem_ellip_insc':0.99*y_aper})
 
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')

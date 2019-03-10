@@ -6,9 +6,9 @@
 #                                                                      
 #     
 #     This file is part of the code:
-#                                                                      		    
+#                                                                      
 # 
-#		           PyPIC Version 2.2.7                     
+#                  PyPIC Version 2.2.7                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 

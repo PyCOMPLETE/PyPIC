@@ -6,9 +6,9 @@
 #                                                                      
 #     
 #     This file is part of the code:
-#                                                                      		    
+#                                                                      
 # 
-#		           PyPIC Version 2.2.7                     
+#                  PyPIC Version 2.2.7                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -81,7 +81,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 
         else:
             raise ValueError('Dh or dx and dy must be specified!!!')
-		
+        
         super(FFT_OpenBoundary, self).__init__(x_aper, y_aper, dx, dy)
 
 
@@ -96,7 +96,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         # Antiderivative
         tmpfgreen = -1 / 2 * (-3 * x * y + x * y * np.log(r2)
                     + x * x * np.arctan(y / x) + y * y * np.arctan(x / y)) # * 2 / dx / dy
-				   
+                   
         fgreen = np.zeros((2 * ny, 2 * nx))
         # Integration and circular Green's function
         fgreen[:ny, :nx] = tmpfgreen[1:, 1:] + tmpfgreen[:-1, :-1] - tmpfgreen[1:, :-1] - tmpfgreen[:-1, 1:]
@@ -106,7 +106,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 
         self.fgreen = fgreen
         self.fgreentr = np.fft.fft2(fgreen).copy()
-		
+        
         if fftlib == 'pyfftw':
             try:
                 import pyfftw
@@ -139,7 +139,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 
                 self.tmpfft = (self.fgreen*(1.+1j))*0.
                 self.tmpifft = (self.fgreen*(1.+1j))*0.
-				
+                
             except ImportError as err:
                 print 'Failed to import pyfftw'
                 print 'Got exception: ', err
@@ -160,7 +160,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
                 
         elif fftlib != 'pyfftw':
             raise ValueError('fftlib not recognized!!!!')
-			
+            
 
         self.rho = np.zeros((self.Nxg,self.Nyg))
         self.phi = np.zeros((self.Nxg,self.Nyg))
@@ -211,7 +211,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         
     #@profile
     def solve_states(self, states):
-    	
+        
         states = np.atleast_1d(states)
 
         if len(states) > 2:

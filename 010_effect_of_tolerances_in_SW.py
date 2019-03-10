@@ -13,17 +13,17 @@ from scipy.constants import e, epsilon_0
 from PyPIC.MultiGrid import AddInternalGrid
 
 def analytic_solution(x_probes, y_probes, x_part, y_part, nel_part, charge):
-	Ex_probes = []
-	Ey_probes = []
-	
-	for x_probe, y_probe in zip(x_probes, y_probes):
-		r_probe = np.sqrt(x_probe**2 + y_probe**2)
-		q_inside = np.sum(nel_part[x_part**2+ y_part**2 < r_probe**2])*charge
-		Er_probe = q_inside/(epsilon_0*2*np.pi*r_probe)
-		Ex_probes.append(Er_probe  * x_probe/r_probe)
-		Ey_probes.append(Er_probe  * y_probe/r_probe)
-	
-	return Ex_probes, Ey_probes
+    Ex_probes = []
+    Ey_probes = []
+    
+    for x_probe, y_probe in zip(x_probes, y_probes):
+        r_probe = np.sqrt(x_probe**2 + y_probe**2)
+        q_inside = np.sum(nel_part[x_part**2+ y_part**2 < r_probe**2])*charge
+        Er_probe = q_inside/(epsilon_0*2*np.pi*r_probe)
+        Ex_probes.append(Er_probe  * x_probe/r_probe)
+        Ey_probes.append(Er_probe  * y_probe/r_probe)
+    
+    return Ex_probes, Ey_probes
 
 qe = e
 eps0 = epsilon_0
@@ -46,7 +46,7 @@ chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
 
 # build main pic
 pic_SW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, 
-		Dh = Dh_main, tol_stem = tol_stem, tol_der = tol_der)
+        Dh = Dh_main, tol_stem = tol_stem, tol_der = tol_der)
 
 
 #~ # generate beam
@@ -100,4 +100,4 @@ pl.xlabel('theta [deg]')
 pl.show()
 
 
-	
+    
