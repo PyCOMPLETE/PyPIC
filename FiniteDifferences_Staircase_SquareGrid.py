@@ -191,7 +191,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
     #@profile    
     def solve(self, rho = None, flag_verbose = False, pic_external = None):
 
-        if rho == None:
+        if rho is None:
             rho = self.rho
             
         self._solve_core(self, rho, pic_external) #change 2
