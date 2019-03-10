@@ -1,9 +1,13 @@
+import sys
+sys.path.append('..')
 
-Dh_mm=.5
-import myloadmat_to_obj as mlo
 import numpy as np
 import pylab as pl
-import mystyle as ms
+
+import PyPIC.myloadmat_to_obj as mlo
+import PyPIC.mystyle as ms
+
+Dh_mm = .5
 
 linew = 2.
 mksz = 10
