@@ -54,7 +54,6 @@ import numpy as np
 import scipy.sparse as scsp
 from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg as ssl
-from vectsum import vectsum
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 

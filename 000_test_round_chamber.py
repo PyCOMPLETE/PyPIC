@@ -1,6 +1,6 @@
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import FFT_OpenBoundary as PIC_FFT
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
+import PyPIC.FFT_OpenBoundary as PIC_FFT
 try:
     from CyFPPS import PyFPPS as PIC_FPPS
 except ImportError:
