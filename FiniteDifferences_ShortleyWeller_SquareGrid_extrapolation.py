@@ -107,7 +107,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
 
 		# Build A Dx Dy matrices 
 		for u in range(0,Nxg*Nyg):
-			if np.mod(u, Nxg*Nyg/20)==0:
+			if np.mod(u, Nxg*Nyg//20)==0:
 				print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
 			if flag_inside_n[u]:
 				

@@ -82,7 +82,7 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
         
         for ii in range(len(xx)):
 
-            if np.mod(ii, len(xx)/20)==0 and self.verbose:
+            if np.mod(ii, len(xx)//20)==0 and self.verbose:
                 print ('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%""")
 
             for jj in range(len(yy)):
