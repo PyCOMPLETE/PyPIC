@@ -71,11 +71,11 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         print 'FFT, Open Boundary'
 
 
-        if dx!=None and dy!=None:
-            assert(Dh==None)
+        if dx is not None and dy is not None:
+            assert(Dh is None)
 
         elif Dh!=None:
-            assert(dx==None and dy==None)
+            assert(dx is None and dy is None)
             dx = Dh
             dy = Dh
 
@@ -181,7 +181,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
 
     #@profile    
     def solve(self, rho = None, flag_verbose = False):
-        if rho == None:
+        if rho is None:
             rho = self.rho
 
         self._solve_core(rho)
