@@ -93,7 +93,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         x, y = np.meshgrid(mx, my)
         r2 = x ** 2 + y ** 2
         # Antiderivative
-        tmpfgreen = -1 / 2 * (-3 * x * y + x * y * np.log(r2)
+        tmpfgreen = -(-3 * x * y + x * y * np.log(r2)
                     + x * x * np.arctan(y / x) + y * y * np.arctan(x / y)) # * 2 / dx / dy
                    
         fgreen = np.zeros((2 * ny, 2 * nx))
