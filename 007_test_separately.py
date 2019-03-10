@@ -59,7 +59,7 @@ tmprho = 0.*self.fgreen
 tmprho[:self.ny, :self.nx] = self.rho.T
 
 pl.figure(102)
-pl.semilogy(np.abs(self.fft2(tmprho).flatten()))
+# pl.semilogy(np.abs(self.fft2(tmprho).flatten()))
 pl.semilogy(np.abs(np.fft.fft2(tmprho).flatten()))
 
 
@@ -70,7 +70,7 @@ pl.figure(104)
 pl.semilogy(np.abs(self.fgreen.flatten()))
 
 
-fftphi = self.fft2(tmprho) * self.fgreentr
+fftphi = np.fft.fft2(tmprho) * self.fgreentr
 
 pl.figure(100)
 pl.semilogy(np.abs(fftphi.flatten()))
