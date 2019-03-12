@@ -11,7 +11,8 @@ from PyPIC.MultiGrid import AddTelescopicGrids
 from scipy.constants import e, epsilon_0,c
 import numpy as np
 import pylab as pl
-import mystyle as ms
+
+import PyPIC.mystyle as ms
 
 qe = e
 eps0 = epsilon_0

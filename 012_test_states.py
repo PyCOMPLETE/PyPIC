@@ -1,7 +1,7 @@
 import numpy as np
 import pylab as pl
 from scipy.constants import e as qe
-import mystyle as ms
+import PyPIC.mystyle as ms
 
 # build chamber
 x_aper = 2e-2; y_aper=1e-2
