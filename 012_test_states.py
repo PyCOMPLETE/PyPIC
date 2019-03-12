@@ -1,3 +1,7 @@
+import sys
+sys.path.append('../')
+
+
 import numpy as np
 import pylab as pl
 from scipy.constants import e as qe
@@ -5,7 +9,7 @@ import PyPIC.mystyle as ms
 
 # build chamber
 x_aper = 2e-2; y_aper=1e-2
-import geom_impact_ellip as ell
+import PyPIC.geom_impact_ellip as ell
 chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
 
 #build particle distribution
@@ -27,12 +31,12 @@ pic_list = []
 
 # Finite Difference Shortley-Weller
 Dh=1e-3
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 pic_list.append(PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU'))
 
 # Finite Difference Staircase
 Dh=1e-3
-import FiniteDifferences_Staircase_SquareGrid as PIC_FDSC
+import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FDSC
 pic_list.append(PIC_FDSC.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU'))
 
 #  Multi grid 
@@ -41,7 +45,7 @@ Sy_target = 5*sigmay
 Dh_target = 0.1*min([sigmax, sigmay])
 Dh_single = .5e-3
 pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single, sparse_solver = 'PyKLU')
-from MultiGrid import AddTelescopicGrids
+from PyPIC.MultiGrid import AddTelescopicGrids
 pic_list.append(AddTelescopicGrids(pic_main = pic_singlegrid, f_telescope = 0.3, 
     target_grid = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target}, 
     N_nodes_discard = 3., N_min_Dh_main = 10, sparse_solver='PyKLU'))
