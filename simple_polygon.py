@@ -7,9 +7,9 @@ class SimplePolygon(object):
     def __init__(self, filename_chm):
         
         if type(filename_chm)==str:
-			dict_chm=sio.loadmat(filename_chm)
+            dict_chm=sio.loadmat(filename_chm)
         else:
-			dict_chm=filename_chm
+            dict_chm=filename_chm
 
         Vx=squeeze(dict_chm['Vx'])
         Vy=squeeze(dict_chm['Vy'])

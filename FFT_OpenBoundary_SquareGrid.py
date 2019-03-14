@@ -6,9 +6,9 @@
 #                                                                      
 #     
 #     This file is part of the code:
-#                                                                      		    
+#                                                                      
 # 
-#		           PyPIC Version 2.2.7                     
+#                  PyPIC Version 2.3.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -54,6 +54,6 @@ from FFT_OpenBoundary import FFT_OpenBoundary
 
 
 def FFT_OpenBoundary_SquareGrid(x_aper, y_aper, Dh, fftlib = 'pyfftw'):
-	return FFT_OpenBoundary(x_aper, y_aper, Dh, fftlib = fftlib)
+    return FFT_OpenBoundary(x_aper, y_aper, Dh, fftlib = fftlib)
 
 

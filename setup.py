@@ -13,9 +13,9 @@ cy_ext = [
         sources=[ # the Cython source and additional C++ source files generate and compile C++ code
             'FPPS/CyFPPS.pyx', 'FPPS/FPPSWrapper.cc',
             'FPPS/ChangeCoord.cc', 'FPPS/ElectricFieldSolver.cc', 'FPPS/Mesh.cc',
-	    'FPPS/ChangeCoord_Frac.cc', 'FPPS/FastPolarPoissonSolver.cc',  'FPPS/NonLinearMesh.cc',
-	    'FPPS/ChangeCoord_Tanh.cc', 'FPPS/PolarBeamRepresentation.cc',
-	    'FPPS/ChargeDistribution.cc', 'FPPS/FunctionsFPPS.cc'],
+        'FPPS/ChangeCoord_Frac.cc', 'FPPS/FastPolarPoissonSolver.cc',  'FPPS/NonLinearMesh.cc',
+        'FPPS/ChangeCoord_Tanh.cc', 'FPPS/PolarBeamRepresentation.cc',
+        'FPPS/ChargeDistribution.cc', 'FPPS/FunctionsFPPS.cc'],
         language="c++", include_dirs=[np.get_include()], libraries=['fftw3', 'm'])
 ]
 

@@ -11,7 +11,8 @@ from PyPIC.MultiGrid import AddTelescopicGrids
 from scipy.constants import e, epsilon_0,c
 import numpy as np
 import pylab as pl
-import mystyle as ms
+
+import PyPIC.mystyle as ms
 
 qe = e
 eps0 = epsilon_0
@@ -59,8 +60,8 @@ Vx, Vy = chamber.points_on_boundary(N_points=200)
 
 # build Bassetti Erskine 
 pic_BE = PIC_BE.Interpolated_Bassetti_Erskine(x_aper=x_aper, y_aper=y_aper, Dh=Dh_BE, sigmax=bunch.sigma_x(), sigmay=bunch.sigma_y(), 
-		n_imag_ellip=20, tot_charge=bunch.intensity*bunch.charge)
-		
+        n_imag_ellip=20, tot_charge=bunch.intensity*bunch.charge)
+        
 # build single grid pic
 pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single, sparse_solver = sparse_solver)
 
@@ -160,17 +161,17 @@ r_max = 15e-3
 RMSE_singlegrid = []
 RMSE_multigrid = []
 for r_probes in np.logspace(np.log10(r_min), np.log10(r_max), 100):
-	theta=np.linspace(0., 2*np.pi, 100)
-	x_probes = r_probes*np.cos(theta)
-	y_probes = r_probes*np.sin(theta)
-	r_probes_val.append(r_probes)
-	# pic gather
-	Ex_BE, Ey_BE = pic_BE.gather(x_probes, y_probes)
-	Ex_singlegrid, Ey_singlegrid = pic_singlegrid.gather(x_probes, y_probes)
-	Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
-	# RMS	
-	RMSE_singlegrid.append(np.sqrt(np.sum((Ex_singlegrid-Ex_BE)**2+(Ey_singlegrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
-	RMSE_multigrid.append(np.sqrt(np.sum((Ex_multigrid-Ex_BE)**2+(Ey_multigrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
+    theta=np.linspace(0., 2*np.pi, 100)
+    x_probes = r_probes*np.cos(theta)
+    y_probes = r_probes*np.sin(theta)
+    r_probes_val.append(r_probes)
+    # pic gather
+    Ex_BE, Ey_BE = pic_BE.gather(x_probes, y_probes)
+    Ex_singlegrid, Ey_singlegrid = pic_singlegrid.gather(x_probes, y_probes)
+    Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
+    # RMS	
+    RMSE_singlegrid.append(np.sqrt(np.sum((Ex_singlegrid-Ex_BE)**2+(Ey_singlegrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
+    RMSE_multigrid.append(np.sqrt(np.sum((Ex_multigrid-Ex_BE)**2+(Ey_multigrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
 pl.figure(2).patch.set_facecolor('w')
 pl.loglog(r_probes_val, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
 pl.loglog(r_probes_val, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
@@ -191,16 +192,16 @@ n_sigma_probes = np.logspace(np.log10(n_sigma_min), np.log10(n_sigma_max), n_pro
 RMSE_singlegrid = []
 RMSE_multigrid = []
 for n_sigma_probe in n_sigma_probes:
-	theta=np.linspace(0., 2*np.pi, 100)
-	x_probes = n_sigma_probe*bunch.sigma_x()*np.cos(theta)
-	y_probes = n_sigma_probe*bunch.sigma_y()*np.sin(theta)
-	# pic gather
-	Ex_BE, Ey_BE = pic_BE.gather(x_probes, y_probes)
-	Ex_singlegrid, Ey_singlegrid = pic_singlegrid.gather(x_probes, y_probes)
-	Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
-	# RMS	
-	RMSE_singlegrid.append(np.sqrt(np.sum((Ex_singlegrid-Ex_BE)**2+(Ey_singlegrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
-	RMSE_multigrid.append(np.sqrt(np.sum((Ex_multigrid-Ex_BE)**2+(Ey_multigrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
+    theta=np.linspace(0., 2*np.pi, 100)
+    x_probes = n_sigma_probe*bunch.sigma_x()*np.cos(theta)
+    y_probes = n_sigma_probe*bunch.sigma_y()*np.sin(theta)
+    # pic gather
+    Ex_BE, Ey_BE = pic_BE.gather(x_probes, y_probes)
+    Ex_singlegrid, Ey_singlegrid = pic_singlegrid.gather(x_probes, y_probes)
+    Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
+    # RMS	
+    RMSE_singlegrid.append(np.sqrt(np.sum((Ex_singlegrid-Ex_BE)**2+(Ey_singlegrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
+    RMSE_multigrid.append(np.sqrt(np.sum((Ex_multigrid-Ex_BE)**2+(Ey_multigrid-Ey_BE)**2))/np.sqrt(np.sum((Ex_BE)**2+(Ey_BE)**2)))
 pl.figure(3).patch.set_facecolor('w')
 pl.loglog(n_sigma_probes, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
 pl.loglog(n_sigma_probes, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
@@ -238,12 +239,12 @@ Ey_multigrid_matrix=np.reshape(Ey_multigrid_n,(len(y_grid_probes),len(x_grid_pro
 pl.figure(4, figsize=(12, 6)).patch.set_facecolor('w')
 sp1 = pl.subplot(121)
 pl.pcolormesh(x_grid_probes, y_grid_probes, 
-	np.log10(np.sqrt((((Ex_singlegrid_matrix-Ex_BE_matrix)**2+(Ey_singlegrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
-	vmax=0., vmin=-7.0)
+    np.log10(np.sqrt((((Ex_singlegrid_matrix-Ex_BE_matrix)**2+(Ey_singlegrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
+    vmax=0., vmin=-7.0)
 pl.title('RMS error Singlegrid - BE')
 pl.xlabel('x [m]')
 pl.ylabel('y [m]')
-cb=pl.colorbar(); pl.axis('equal')
+cb=pl.colorbar(); sp1.set_aspect('equal')
 cb.formatter.set_powerlimits((0, 0))
 cb.update_ticks()
 cb.set_label('RMS error')
@@ -252,12 +253,12 @@ sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 
 sp2 = pl.subplot(122, sharex = sp1, sharey = sp1)
 pl.pcolormesh(x_grid_probes, y_grid_probes, 
-	np.log10(np.sqrt((((Ex_multigrid_matrix-Ex_BE_matrix)**2+(Ey_multigrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
-	vmax=0., vmin=-7.0)
+    np.log10(np.sqrt((((Ex_multigrid_matrix-Ex_BE_matrix)**2+(Ey_multigrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
+    vmax=0., vmin=-7.0)
 pl.title('RMS error Multigrid - BE')
 pl.xlabel('x [m]')
 pl.ylabel('y [m]')
-cb=pl.colorbar(); pl.axis('equal')
+cb=pl.colorbar(); sp2.set_aspect('equal')
 cb.formatter.set_powerlimits((0, 0))
 cb.update_ticks()
 cb.set_label('RMS error')

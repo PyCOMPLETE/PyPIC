@@ -1,10 +1,13 @@
+import sys
+sys.path.append('..')
+
 import pylab as pl
 import numpy as np
 from scipy import rand
-import geom_impact_poly as poly
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FFT_OpenBoundary_SquareGrid as PIC_FFT
-import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
+import PyPIC.geom_impact_poly as poly
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
+import PyPIC.FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 try:
     from CyFPPS import PyFPPS as PIC_FPPS
 except ImportError:
@@ -16,17 +19,17 @@ Dh =1e-1
 N_part_gen = 100000
 
 tree = [[0,0],
-		[1.,0],
-		[1., 1,],
-		[5.,1.],
-		[2.,4.],
-		[4,4],
-		[2,7],
-		[3,7],
-		[1,9],
-		[2,9],
-		[0,11]]
-		
+        [1.,0],
+        [1., 1,],
+        [5.,1.],
+        [2.,4.],
+        [4,4],
+        [2,7],
+        [3,7],
+        [1,9],
+        [2,9],
+        [0,11]]
+        
 tree=np.array(tree)
 x_tree = tree[:,0]
 y_tree = tree[:,1]
@@ -40,7 +43,7 @@ x_tree = np.array([0.]+ list(x_tree)+[0.])
 y_tree = np.array([-y_aper]+ list(y_tree)+[y_aper])
 
 
-		
+        
 
 
 x_part = x_aper*(2.*rand(N_part_gen)-1.)
@@ -55,14 +58,14 @@ y_part = y_part[mask_keep]
 nel_part = 0*x_part+1.
 
 
-		
+        
 
 
 chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper]),
-									   'Vy':na([y_aper, y_aper, -y_aper, -y_aper]),
-									   'x_sem_ellip_insc':0.99*x_aper,
-									   'y_sem_ellip_insc':0.99*y_aper})
-									   
+                                       'Vy':na([y_aper, y_aper, -y_aper, -y_aper]),
+                                       'x_sem_ellip_insc':0.99*x_aper,
+                                       'y_sem_ellip_insc':0.99*y_aper})
+                                       
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
 picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
 picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)

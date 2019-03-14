@@ -6,9 +6,9 @@
 #                                                                      
 #     
 #     This file is part of the code:
-#                                                                      		    
+#                                                                      
 # 
-#		           PyPIC Version 2.2.7                     
+#                  PyPIC Version 2.3.0                     
 #                  
 #                                                                       
 #     Author and contact:   Giovanni IADAROLA 
@@ -54,7 +54,6 @@ import numpy as np
 import scipy.sparse as scsp
 from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg as ssl
-from vectsum import vectsum
 from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 
@@ -109,7 +108,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
 
             # Build A matrix
             for u in range(0,Nxg*Nyg):
-                if np.mod(u, Nxg*Nyg/20)==0:
+                if np.mod(u, Nxg*Nyg//20)==0:
                     print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
                 if flag_inside_n[u]:
                     A[u,u] = -(4./(Dh*Dh))
@@ -191,7 +190,7 @@ class FiniteDifferences_Staircase_SquareGrid(PyPIC_Scatter_Gather):
     #@profile    
     def solve(self, rho = None, flag_verbose = False, pic_external = None):
 
-        if rho == None:
+        if rho is None:
             rho = self.rho
             
         self._solve_core(self, rho, pic_external) #change 2

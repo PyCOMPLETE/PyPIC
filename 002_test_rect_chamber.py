@@ -2,11 +2,11 @@ import sys, os
 BIN=os.path.expanduser('../')
 sys.path.append(BIN)
 
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
-import geom_impact_ellip as ell
-import geom_impact_poly as poly
+import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
+import PyPIC.FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
+import PyPIC.geom_impact_ellip as ell
+import PyPIC.geom_impact_poly as poly
 from scipy import rand
 import numpy as np
 
@@ -26,9 +26,9 @@ eps0 = epsilon_0
 na = np.array
 
 chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper]),
-									   'Vy':na([y_aper, y_aper, -y_aper, -y_aper]),
-									   'x_sem_ellip_insc':0.99*x_aper,
-									   'y_sem_ellip_insc':0.99*y_aper})
+                                       'Vy':na([y_aper, y_aper, -y_aper, -y_aper]),
+                                       'x_sem_ellip_insc':0.99*x_aper,
+                                       'y_sem_ellip_insc':0.99*y_aper})
 
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')
@@ -110,7 +110,7 @@ pl.axis('equal')
 Ny = picFDSW.Nyg
 
 pl.figure(1003)
-pl.plot(picFDSW.phi[:,Ny/2]/picFFTPEC.phi[:,Ny/2])
+pl.plot(picFDSW.phi[:,Ny//2]/picFFTPEC.phi[:,Ny//2])
 
 pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(picFFTPEC.phi)))
 
