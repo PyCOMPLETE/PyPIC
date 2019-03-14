@@ -9,7 +9,7 @@ for filename in files:
         with open(filename) as fid:
             content=fid.read()
         if 'giovanni.iadarola@cern.ch' in content:
-            content=content.replace('PyPIC Version 2.3.0', 'PyPIC Version 2.3.0')
+            content=content.replace('PyPIC Version 2.4.0', 'PyPIC Version 2.4.0')
             with open(filename,'w') as fid:
                 fid.write(content)
 
