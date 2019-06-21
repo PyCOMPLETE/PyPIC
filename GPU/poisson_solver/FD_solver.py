@@ -10,21 +10,25 @@ import scipy.sparse as sps
 import scipy.sparse.linalg as spl
 from scipy.constants import epsilon_0
 
-from poisson_solver import PoissonSolver
+from .poisson_solver import PoissonSolver
 
 try:
     import PyKLU.klu as klu
 except ImportError:
-    print('PyKLU not found')
+    # print ('Info: PyKLU not found')
+    pass
+
 try:
     from pycuda.compiler import SourceModule
     from pycuda import gpuarray
     try:
     	import cusolver_Rf as curf
-    except OSError:
-	print 'cusolver_Rf not found'
+    except (OSError, ImportError):
+        print ('Info: cusolver_Rf not found. '
+               'GPU finite difference solver not available.')
 except ImportError:
-    print('GPU libraries (pycuda, cusolver_RF) not found. GPU functionality ' +
+    print('Info: GPU libraries (pycuda, cusolver_RF) not found in '
+          'FiniteDifferenceSolvers. GPU functionality '
           'not available.')
 
 def invert_permutation(p):
@@ -427,22 +431,22 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         Asel = Msel.T*A*Msel
         Asel=Asel.tocsc()
         if sparse_solver == 'scipy_slu':
-            print "Using scipy superlu solver..."
+            print ("Using scipy superlu solver...")
             self.luobj = spl.splu(Asel.tocsc())
         elif sparse_solver == 'PyKLU':
-            print "Using klu solver..."
+            print ("Using klu solver...")
             try:
                 import PyKLU.klu as klu
                 self.luobj = klu.Klu(Asel.tocsc())
-            except StandardError, e:
-                print "Got exception: ", e
-                print "Falling back on scipy superlu solver:"
+            except StandardError as e:
+                print ("Got exception: " + str(e))
+                print ("Falling back on scipy superlu solver:")
                 self.luobj = spl.splu(Asel.tocsc())
         else:
             raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
         self.Msel = Msel.tocsc()
         self.Msel_T = (Msel.T).tocsc()
-        print 'Done PIC init.'
+        print ('Done PIC init.')
 
     def assemble_laplacian(self):
         ''' assembles the laplacian and returns the resulting matrix in
@@ -535,19 +539,16 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
                 else:
                     x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u-Nyg]), na(yn[u-Nyg]), na(0.), resc_fac=.995, flag_robust=False)
                     hs = np.abs(x_int[0]-xn[u])
-                    #~ print hs
                 if flag_inside_n[u+Nyg]: #phi(i,j+1)
                     hn = Dh
                 else:
                     x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u+Nyg]), na(yn[u+Nyg]), na(0.), resc_fac=.995, flag_robust=False)
                     hn = np.abs(x_int[0]-xn[u])
-                    #~ print hn
 
                 # Build A matrix
                 if hn<Dh/100. or hs<Dh/100. or hw<Dh/100. or he<Dh/100.: # nodes very close to the bounday
                     A[u,u] =1.
                     #list_internal_force_zero.append(u)
-                #print u, xn[u], yn[u]
                 else:
                     A[u,u] = -(2./(he*hw)+2/(hs*hn))
                     A[u,u-1]=2./(hw*(hw+he));     #phi(i-1,j)nx
@@ -619,8 +620,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
 
 
     def handle_border(self, u, flag_inside_n, Nxg, Nyg, xn, yn, chamb, Dh, Dx, Dy):
-        #print u
-
         na = lambda x: np.array([x])
         jjj = np.floor(u/Nyg)
 
@@ -715,7 +714,6 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
 
                 nnn=1
                 while u-nnn>=(jjj)*Nyg:
-                    #print nnn
                     Dy[u-nnn,u+1] = Dy[u,u+1]
                     Dy[u-nnn,u-1+1] = Dy[u,u-1+1]
                     Dy[u-nnn,u+1+1] = Dy[u,u+1+1]
@@ -796,20 +794,17 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
                 else:
                     x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u-Nyg]), na(yn[u-Nyg]), na(0.), resc_fac=.995, flag_robust=False)
                     hs = np.abs(x_int[0]-xn[u])
-                    #~ print hs
 
                 if flag_inside_n[u+Nyg]: #phi(i,j+1)
                     hn = Dh
                 else:
                     x_int,y_int,z_int,Nx_int,Ny_int, i_found_int = chamb.impact_point_and_normal(na(xn[u]), na(yn[u]), na(0.), na(xn[u+Nyg]), na(yn[u+Nyg]), na(0.), resc_fac=.995, flag_robust=False)
                     hn = np.abs(x_int[0]-xn[u])
-                    #~ print hn
 
                 # Build A matrix
                 if hn<Dh/100. or hs<Dh/100. or hw<Dh/100. or he<Dh/100.: # nodes very close to the bounday
                     A[u,u] =1.
                     list_internal_force_zero.append(u)
-                    #print u, xn[u], yn[u]
                 else:
                     A[u,u] = -(2./(he*hw)+2/(hs*hn))
                     A[u,u-1]=2./(hw*(hw+he));     #phi(i-1,j)nx

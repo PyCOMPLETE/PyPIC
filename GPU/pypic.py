@@ -14,15 +14,15 @@ try:
 except ImportError:
     print('pycuda not found. no gpu capabilities will be available')
 
-from gradient.gradient import make_GPU_gradient, numpy_gradient
-from m2p.m2p import mesh_to_particles_CPU_2d, mesh_to_particles_CPU_3d
-from p2m.p2m import particles_to_mesh_CPU_2d, particles_to_mesh_CPU_3d
+from .gradient.gradient import make_GPU_gradient, numpy_gradient
+from .m2p.m2p import mesh_to_particles_CPU_2d, mesh_to_particles_CPU_3d
+from .p2m.p2m import particles_to_mesh_CPU_2d, particles_to_mesh_CPU_3d
 
 # Fortran versions of P2M, M2p
 try:
-    import rhocompute as rhocom
-    import int_field_for as iff
-    import int_field_for_border as iffb
+    from . import rhocompute as rhocom
+    from . import int_field_for as iff
+    from . import int_field_for_border as iffb
 except ImportError:
     print('Shared libraries of Fortran versions of m2p/p2m ' +
           '(rhocompute, int_field_for, int_field_for_border) not found. ' +

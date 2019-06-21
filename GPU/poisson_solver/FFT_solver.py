@@ -12,8 +12,8 @@ import scipy.sparse as sps
 import scipy.sparse.linalg as spl
 from scipy.constants import epsilon_0
 
-from poisson_solver import PoissonSolver
-from FD_solver import compute_new_mesh_properties
+from .poisson_solver import PoissonSolver
+from .FD_solver import compute_new_mesh_properties
 
 try:
     from pycuda import gpuarray
@@ -441,7 +441,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
         if fftlib == 'pyfftw':
             try:
                 import pyfftw
-                print 'Using PyFFTW'
+                print ('Using PyFFTW')
                 #prepare fftw's
                 tmprho = fgreen.copy()
                 fft_first = pyfftw.builders.fft(tmprho[:ny, :].copy(), axis = 1)
@@ -468,13 +468,13 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
                 self.ifft2 = ifft2
 
             except ImportError as err:
-                print 'Failed to import pyfftw'
-                print 'Got exception: ', err
-                print 'Using numpy fft'
+                print ('Failed to import pyfftw')
+                print ('Got exception: ' + str(err))
+                print ('Using numpy fft')
                 self.fft2 = np.fft.fft2
                 self.ifft2 = np.fft.ifft2
         elif fftlib == 'numpy':
-                print 'Using numpy FFT'
+                print ('Using numpy FFT')
                 self.fft2 = np.fft.fft2
                 self.ifft2 = np.fft.ifft2
         else:
@@ -554,9 +554,9 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
                 tmp = np.zeros((m, 2*n + 2))
                 self.fftj = pyfftw.builders.fft(tmp.copy(), axis=1)
             except ImportError as err:
-                print 'Failed to import pyfftw'
-                print 'Got exception: ', err
-                print 'Using numpy fft'
+                print ('Failed to import pyfftw')
+                print ('Got exception: ' + str(err))
+                print ('Using numpy fft')
                 self.ffti = lambda xx: np.fft.fft(xx, axis=0)
                 self.fftj = lambda xx: np.fft.fft(xx, axis=1)
         elif fftlib == 'numpy':
