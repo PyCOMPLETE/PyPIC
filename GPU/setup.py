@@ -7,7 +7,7 @@ from numpy.distutils.core import setup, Extension
 args = sys.argv[1:]
 # Make a `cleanall` rule to get rid of intermediate and library files
 if "cleanall" in args:
-    print "Deleting shared libraries and"
+    print ("Deleting shared libraries.")
     # Just in case the build directory was created by accident,
     # note that shell=True should be OK here because the command is constant.
     subprocess.Popen("rm -rf build", shell=True, executable="/bin/bash")
