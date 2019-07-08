@@ -172,8 +172,8 @@ class PyPIC_Scatter_Gather(object):
 
         if len(x_mp)>0:    
             ## compute beam potential
-            phi_sc_n, _ = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.Dh,
-                                         self.Dh, self.phi, self.phi)
+            phi_sc_n, _ = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.dx,
+                                         self.dy, self.phi, self.phi)
                        
         else:
             phi_sc_n=0.
@@ -187,8 +187,8 @@ class PyPIC_Scatter_Gather(object):
 
         if len(x_mp)>0:    
             ## compute beam distribution
-            rho_sc_n, _ = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.Dh,
-                                         self.Dh, self.rho, self.rho)
+            rho_sc_n, _ = iff.int_field(x_mp,y_mp,self.bias_x,self.bias_y,self.dx,
+                                         self.dy, self.rho, self.rho)
                        
         else:
             rho_sc_n=0.
