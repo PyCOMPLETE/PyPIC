@@ -49,7 +49,7 @@ class Mesh(object):
 
     @property
     def shape_r(self):
-        return tuple(reversed(self.shape))
+        return tuple(self.shape[::-1])
 
     @property
     def dimension(self):
@@ -63,7 +63,7 @@ class Mesh(object):
         '''Return an iterator iterating over all node IDs in
         ascending order.
         '''
-        return xrange(self.n_nodes)
+        return range(self.n_nodes)
 
     # def node_location(self, node_id):
     #     '''Return spatial location of the given node_id in terms of
@@ -164,7 +164,7 @@ class RectMesh3D(Mesh):
         self.mathlib = mathlib
         self.origin = origin
         self.distances = distances
-        self.shape = tuple(reversed(map(np.int32, n_cells_per_direction)))
+        self.shape = tuple(map(np.int32, n_cells_per_direction[::-1]))
 
         self.x0, self.y0, self.z0 = origin
         self.dx, self.dy, self.dz = distances
@@ -310,7 +310,7 @@ class RectMesh2D(Mesh):
         self.mathlib = mathlib
         self.origin = origin
         self.distances = distances
-        self.shape = tuple(reversed(map(np.int32, n_cells_per_direction)))
+        self.shape = tuple(map(np.int32, n_cells_per_direction[::-1]))
 
         self.x0, self.y0 = origin
         self.dx, self.dy = distances
@@ -412,7 +412,7 @@ class UniformMesh1D(Mesh):
         self.mathlib = mathlib
         self.origin = origin
         self.distances = distances
-        self.shape = tuple(reversed(map(np.int32, n_cells_per_direction)))
+        self.shape = tuple(map(np.int32, n_cells_per_direction[::-1]))
 
         self.x0 = origin[0]
         self.dx = distances[0]

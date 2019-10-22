@@ -3,6 +3,7 @@ from scipy.constants import e
 import os
 
 from operator import attrgetter, mul
+from functools import reduce
 
 where = os.path.dirname(os.path.abspath(__file__)) + '/'
 
@@ -489,7 +490,7 @@ class PyPIC_GPU(PyPIC):
         guard_charge_pointers = [
             gpuarray.empty(self.mesh.n_nodes, dtype=np.float64,
                            allocator=self._mempool.allocate).gpudata
-            for _ in xrange(2**self.mesh.dimension)
+            for _ in range(2**self.mesh.dimension)
         ]
         block = self.kernel_call_config['sorted_p2m']['block']
         grid = self.kernel_call_config['sorted_p2m']['grid']

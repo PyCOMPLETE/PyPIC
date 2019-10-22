@@ -12,7 +12,7 @@ def particles_to_mesh_CPU_3d(mesh, n_macroparticles, mesh_indices, weights):
     mesh_density = np.zeros(mesh.n_nodes, dtype=np.float64)
     stridex = mesh.nx
     stridey = mesh.ny
-    for p in xrange(n_macroparticles):
+    for p in range(n_macroparticles):
         ip = mesh_indices[0][p]
         jp = mesh_indices[1][p]
         kp = mesh_indices[2][p]
@@ -37,7 +37,7 @@ def particles_to_mesh_CPU_2d(mesh, n_macroparticles, mesh_indices, weights):
     """
     mesh_density = np.zeros(mesh.n_nodes, dtype=np.float64)
     stridex = mesh.nx
-    for p in xrange(n_macroparticles):
+    for p in range(n_macroparticles):
         ip = mesh_indices[0][p]
         jp = mesh_indices[1][p]
         if     (jp < 0 or jp >= mesh.nx - 1 or
