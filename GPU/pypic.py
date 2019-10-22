@@ -3,6 +3,7 @@ from scipy.constants import e
 import os
 
 from operator import attrgetter, mul
+from functools import reduce
 
 where = os.path.dirname(os.path.abspath(__file__)) + '/'
 

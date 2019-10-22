@@ -23,6 +23,7 @@ except ImportError:
     print('GPU libraries (pycuda, scikits.cuda.fft) not found. GPU functionality ' +
           'not available.')
 
+import ctypes
 
 def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
                      src_height, dst_height):
@@ -37,13 +38,13 @@ def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
     cpy = drv.Memcpy3D()
     cpy.set_src_device(src_ptr)
     cpy.set_dst_device(dst_ptr)
-    cpy.height = np.int64(height)
-    cpy.width_in_bytes = np.int64(width_in_bytes)
-    cpy.depth = np.int64(depth)
-    cpy.src_pitch = src_pitch
-    cpy.dst_pitch = dst_pitch
-    cpy.src_height = np.int64(src_height)
-    cpy.dst_height = np.int64(dst_height)
+    cpy.height = int(height) # np.uint64(height)
+    cpy.width_in_bytes = int(width_in_bytes) # np.int64(width_in_bytes)
+    cpy.depth = int(depth) # np.uint64(depth)
+    cpy.src_pitch = int(src_pitch)
+    cpy.dst_pitch = int(dst_pitch)
+    cpy.src_height = int(src_height) # np.uint64(src_height)
+    cpy.dst_height = int(dst_height) # np.uint64(dst_height)
     return cpy
 
 def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
@@ -60,10 +61,10 @@ def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
     cpy = drv.Memcpy2D()
     cpy.set_src_device(src_ptr)
     cpy.set_dst_device(dst_ptr)
-    cpy.height = np.int64(height)
-    cpy.width_in_bytes = np.int64(width_in_bytes)
-    cpy.src_pitch = src_pitch
-    cpy.dst_pitch = dst_pitch
+    cpy.height = int(height) # np.uint64(height)
+    cpy.width_in_bytes = int(width_in_bytes) # np.uint64(width_in_bytes)
+    cpy.src_pitch = int(src_pitch)
+    cpy.dst_pitch = int(dst_pitch)
     class _copy():
         ''' Proxy class for the memcpy2d object:
         Wrap the call to pass aligned=True which seems to be necessary
@@ -143,7 +144,7 @@ class GPUFFTPoissonSolver(PoissonSolver):
         mesh_arr = [
             -mesh.distances[i]/2 +
             np.arange(mesh.shape_r[i] + 1.) * mesh.distances[i]
-            for i in reversed(xrange(mesh.dimension))
+            for i in range(mesh.dimension)[::-1]
            ]
         # mesh_arr is [mz, my, mx]
         mesh_grids = np.meshgrid(*mesh_arr, indexing='ij')
@@ -356,7 +357,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         else:
             fgreen = np.empty(shape=(mesh.nz, 2*mesh.ny, 2*mesh.nx),
                 dtype=np.complex128)
-            for nn in xrange(mesh.nz):
+            for nn in range(mesh.nz):
                 fgreen[nn,:,:] = fgreen2
             cu_fft.fft(gpuarray.to_gpu(fgreen), self.fgreentr,
                 plan=self.plan_forward)
@@ -366,7 +367,7 @@ class GPUFFTPoissonSolver_2_5D(GPUFFTPoissonSolver):
         of the fgreentr function and loops over all slices
         '''
         cu_fft.fft(self.tmpspace, self.tmpspace, plan=self.plan_forward)
-        for i in xrange(self.mesh.nz):
+        for i in range(self.mesh.nz):
             self.tmpspace[i,:,:] = self.tmpspace[i,:,:] * self.fgreentr
         cu_fft.ifft(self.tmpspace, self.tmpspace,
                     plan=self.plan_backward)
