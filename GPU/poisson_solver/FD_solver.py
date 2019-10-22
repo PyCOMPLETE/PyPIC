@@ -457,7 +457,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         Dh = self.Dh
         flag_inside_n = self.flag_inside_n
         A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
-        for u in xrange(0,Nxg*Nyg):
+        for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
                 print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
@@ -519,7 +519,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         xn = self.xn
         yn = self.yn
         Dh = self.Dh
-        for u in xrange(0,Nxg*Nyg):
+        for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
                 print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
@@ -771,7 +771,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
         list_internal_force_zero = []
 
         # Build A Dx Dy matrices
-        for u in xrange(0,Nxg*Nyg):
+        for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
                     print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
             if flag_inside_n[u]:
@@ -888,13 +888,13 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
             efy = self.Dy*phi
             efx=np.reshape(efx, (self.Nxg, self.Nyg))
             efy=np.reshape(efy, (self.Nxg, self.Nyg))
-            for jj in xrange(self.jj_max_border, self.Nyg):
+            for jj in range(self.jj_max_border, self.Nyg):
                 efx[:, jj]=efx[:, self.jj_max_border-1]
-            for jj in xrange(0, self.jj_min_border+1):
+            for jj in range(0, self.jj_min_border+1):
                 efx[:, jj]=efx[:, self.jj_min_border+1]
-            for ii in xrange(self.ii_max_border, self.Nxg):
+            for ii in range(self.ii_max_border, self.Nxg):
                 efy[ii, :]=efy[self.ii_max_border-1, :]
-            for ii in xrange(0, self.ii_min_border+1):
+            for ii in range(0, self.ii_min_border+1):
                 efy[ii,:]=efy[self.ii_min_border+1,:]
             efx = efx.reshape(self.Nxg, self.Nyg).T.flatten()
             efy = efy.reshape(self.Nxg, self.Nyg).T.flatten()

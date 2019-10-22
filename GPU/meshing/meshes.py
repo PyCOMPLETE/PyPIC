@@ -63,7 +63,7 @@ class Mesh(object):
         '''Return an iterator iterating over all node IDs in
         ascending order.
         '''
-        return xrange(self.n_nodes)
+        return range(self.n_nodes)
 
     # def node_location(self, node_id):
     #     '''Return spatial location of the given node_id in terms of

@@ -27,7 +27,7 @@ err_rel_list_old = []
 erry_rel_list_old = []
 erry_rel_list = []
 
-for ii in xrange(N_points): 
+for ii in range(N_points): 
 
 	Ex_ref = ob_ref.Ex[ii,:]
 	Ey_ref = ob_ref.Ey[ii,:]

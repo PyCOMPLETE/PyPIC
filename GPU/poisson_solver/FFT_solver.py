@@ -23,7 +23,6 @@ except ImportError:
     print('GPU libraries (pycuda, scikits.cuda.fft) not found. GPU functionality ' +
           'not available.')
 
-import ctypes
 
 def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
                      src_height, dst_height):
@@ -38,13 +37,13 @@ def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
     cpy = drv.Memcpy3D()
     cpy.set_src_device(src_ptr)
     cpy.set_dst_device(dst_ptr)
-    cpy.height = int(height) # np.uint64(height)
-    cpy.width_in_bytes = int(width_in_bytes) # np.int64(width_in_bytes)
-    cpy.depth = int(depth) # np.uint64(depth)
+    cpy.height = int(height)
+    cpy.width_in_bytes = int(width_in_bytes)
+    cpy.depth = int(depth)
     cpy.src_pitch = int(src_pitch)
     cpy.dst_pitch = int(dst_pitch)
-    cpy.src_height = int(src_height) # np.uint64(src_height)
-    cpy.dst_height = int(dst_height) # np.uint64(dst_height)
+    cpy.src_height = int(src_height)
+    cpy.dst_height = int(dst_height)
     return cpy
 
 def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
@@ -61,8 +60,8 @@ def get_Memcpy2D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
     cpy = drv.Memcpy2D()
     cpy.set_src_device(src_ptr)
     cpy.set_dst_device(dst_ptr)
-    cpy.height = int(height) # np.uint64(height)
-    cpy.width_in_bytes = int(width_in_bytes) # np.uint64(width_in_bytes)
+    cpy.height = int(height)
+    cpy.width_in_bytes = int(width_in_bytes)
     cpy.src_pitch = int(src_pitch)
     cpy.dst_pitch = int(dst_pitch)
     class _copy():
