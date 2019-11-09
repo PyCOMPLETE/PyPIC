@@ -244,6 +244,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         else:
 
             self.solve = self._solve_for_states
+            self.sparse_solver = None
 
         self.flag_inside_n_mat = np.logical_not(flag_outside_n_mat)
         self.chamb = chamb
