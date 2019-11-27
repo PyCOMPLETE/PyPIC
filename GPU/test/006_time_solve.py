@@ -79,16 +79,16 @@ for _ in range(N_rep):
 	picFDSW.solve()
 t_stop_sw = time.mktime(time.localtime())
 t_sw = t_stop_sw-t_start_sw
-print 't_sw', t_sw
+print('t_sw', t_sw)
 
 
 t_start_fftpec = time.mktime(time.localtime())
-print 'start fft PEC'
+print('start fft PEC')
 for _ in range(N_rep):
 	picFFTPEC.solve()
 t_stop_fftpec = time.mktime(time.localtime())
 t_fftpec = t_stop_fftpec-t_start_fftpec
-print 't_fftpec', t_fftpec
+print('t_fftpec', t_fftpec)
 
 
 t_start_fftopen = time.mktime(time.localtime())
@@ -96,6 +96,6 @@ for _ in range(N_rep):
 	picFFT.solve()
 t_stop_fftopen = time.mktime(time.localtime())
 t_fftopen = t_stop_fftopen-t_start_fftopen
-print 't_fftopen', t_fftopen
+print('t_fftopen', t_fftopen)
 
 

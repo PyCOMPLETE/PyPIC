@@ -82,7 +82,7 @@ for _ in range(N_rep):
 	
 t_stop_npfft = time.mktime(time.localtime())
 t_npfft = t_stop_npfft-t_start_npfft
-print 't_npfft', t_npfft
+print('t_npfft', t_npfft)
 
 
 
@@ -98,6 +98,6 @@ for _ in range(N_rep):
 	itransfw = ifftobj(transfw)
 t_stop_npfftw = time.mktime(time.localtime())
 t_npfftw = t_stop_npfftw-t_start_npfftw
-print 't_npfftw', t_npfftw
+print('t_npfftw', t_npfftw)
 
 

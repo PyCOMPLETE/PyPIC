@@ -16,10 +16,10 @@ sys.path.append('../')
 import imp
 from scipy.constants import e, epsilon_0
 import numpy as np
-from pypic import PyPIC_Fortran_M2P_P2M
-from meshing import RectMesh2D
-from poisson_solver import FD_solver as FD
-from poisson_solver import FFT_solver as FFT
+from .pypic import PyPIC_Fortran_M2P_P2M
+from .meshing import RectMesh2D
+from .poisson_solver import FD_solver as FD
+from .poisson_solver import FFT_solver as FFT
 
 
 
@@ -98,7 +98,7 @@ class _Proxy_v103(object):
     def gather(self, x_mp, y_mp):
         if len(x_mp) > 0:
             mesh_e_fields = [self.efx.T, self.efy.T]
-            mesh_e_fields_and_mp_coords = zip(list(mesh_e_fields),[x_mp, y_mp])
+            mesh_e_fields_and_mp_coords = list(zip(list(mesh_e_fields),[x_mp, y_mp]))
             E = self.pypic.field_to_particles(*mesh_e_fields_and_mp_coords)
             Ex_sc_n = E[0]
             Ey_sc_n = E[1]

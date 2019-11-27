@@ -47,7 +47,7 @@ y_probes = 0.*x_probes
 #~ Ex_FDSW, Ey_FDSW = picFDSW.gather(x_probes, y_probes)
 Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
 
-E_r_th = map(lambda x: np.sum(rho_mat[:][XX[:]**2+YY[:]**2<x**2])/eps0/(2*np.pi*x)*Dh*Dh, x_probes)
+E_r_th = [np.sum(rho_mat[:][XX[:]**2+YY[:]**2<x**2])/eps0/(2*np.pi*x)*Dh*Dh for x in x_probes]
 
 
 import pylab as pl

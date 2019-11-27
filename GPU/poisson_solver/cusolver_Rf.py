@@ -178,8 +178,8 @@ def cusolverRfGetMatrixFormat(handle, format, diag):
     diag = ctypes.c_int(40)
     cusolver_check_status(_libcusolver.cusolverRfGetMatrixFormat(
         handle, ctypes.byref(format), ctypes.byref(diag)))
-    print("format: " + CUSOLVERRF_MATRIXFORMAT_T[int(format.value)])
-    print("diag: " + CUSOLVERRF_UNITDIAGONAL_T [int(diag.value)])
+    print(("format: " + CUSOLVERRF_MATRIXFORMAT_T[int(format.value)]))
+    print(("diag: " + CUSOLVERRF_UNITDIAGONAL_T [int(diag.value)]))
 
 
 _libcusolver.cusolverRfAnalyze.restype = int
@@ -280,8 +280,8 @@ def cusolverRfGetAlgs(handle, fact_alg, solve_alg):
     solve_alg = ctypes.c_int()
     cusolver_check_status(_libcusolver.cusolverRfGetAlgs(
         handle, ctypes.byref(fact_alg), ctypes.byref(solve_alg)))
-    print("fact alg: " + CUSOLVERRF_FACTORIZATION_ALG_T[int(fact_alg.value)])
-    print("solve alg: " + CUSOLVERRF_TRIANGULAR_SOLVE_T[int(solve_alg.value)])
+    print(("fact alg: " + CUSOLVERRF_FACTORIZATION_ALG_T[int(fact_alg.value)]))
+    print(("solve alg: " + CUSOLVERRF_TRIANGULAR_SOLVE_T[int(solve_alg.value)]))
 
 
 

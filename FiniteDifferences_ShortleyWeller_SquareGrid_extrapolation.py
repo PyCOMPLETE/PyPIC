@@ -54,7 +54,7 @@ import numpy as np
 import scipy.sparse as scsp
 from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg as ssl
-from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from .PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 
 na = lambda x:np.array([x])
@@ -68,9 +68,9 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         
         raise ValueError('This module has been discontinued') # All the state stuff has not been implemented
         
-        print 'Start PIC init.:'
-        print 'Finite Differences, Shortley-Weller, Square Grid'
-        print 'Using Shortley-Weller boundary approx.'
+        print('Start PIC init.:')
+        print('Finite Differences, Shortley-Weller, Square Grid')
+        print('Using Shortley-Weller boundary approx.')
 
         self.Dh = Dh
         super(FiniteDifferences_ShortleyWeller_SquareGrid, self).__init__(chamb.x_aper, chamb.y_aper, self.Dh, self.Dh)
@@ -107,7 +107,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         # Build A Dx Dy matrices 
         for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
-                print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+                print(('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%"""))
             if flag_inside_n[u]:
                 
                 #Compute Shortley-Weller coefficients
@@ -213,8 +213,8 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         ii_max_border = np.max((np.where(sumcurr>0))[0])
         ii_min_border = np.min((np.where(sumcurr>0))[0])
             
-        print 'Internal nodes with 0 potential'
-        print list_internal_force_zero
+        print('Internal nodes with 0 potential')
+        print(list_internal_force_zero)
 
         A=A.tocsr() #convert to csr format
         
@@ -235,16 +235,16 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         
 
         if sparse_solver == 'scipy_slu':
-            print "Using scipy superlu solver..."
+            print("Using scipy superlu solver...")
             luobj = ssl.splu(Asel.tocsc())
         elif sparse_solver == 'PyKLU':
-            print "Using klu solver..."
+            print("Using klu solver...")
             try:
                 import PyKLU.klu as klu
                 luobj = klu.Klu(Asel.tocsc())
-            except StandardError, e: 
-                print "Got exception: ", e
-                print "Falling back on scipy superlu solver:"
+            except Exception as e: 
+                print("Got exception: ", e)
+                print("Falling back on scipy superlu solver:")
                 luobj = ssl.splu(Asel.tocsc())
         else:
             raise ValueError('Solver not recognized!!!!\nsparse_solver must be "scipy_klu" or "PyKLU"\n')
@@ -281,7 +281,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         self.Msel_T = (Msel.T).tocsc()
 
         self.chamb = chamb
-        print 'Done PIC init.'
+        print('Done PIC init.')
                         
 
     #@profile    
@@ -294,7 +294,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         b[(self.flag_force_zero)]=0; #boundary condition
         
         if flag_verbose:
-            print 'Start Linear System Solution.'
+            print('Start Linear System Solution.')
         b_sel = self.Msel_T*b
         phi_sel = self.luobj.solve(b_sel)
         phi = self.Msel*phi_sel
@@ -302,7 +302,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         U_sc_eV_stp = -0.5*eps0*np.sum(b*phi)*self.Dh*self.Dh/qe
         
         if flag_verbose:
-            print 'Start field computation.'
+            print('Start field computation.')
         
         efx = self.Dx*phi
         efy = self.Dy*phi
@@ -310,16 +310,16 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(PyPIC_Scatter_Gather):
         efx=np.reshape(efx,(self.Nxg,self.Nyg))
         efy=np.reshape(efy,(self.Nxg,self.Nyg))
         
-        for jj in xrange(self.jj_max_border, self.Nyg):
+        for jj in range(self.jj_max_border, self.Nyg):
             efx[:, jj]=efx[:, self.jj_max_border-1] 
             
-        for jj in xrange(0, self.jj_min_border+1):
+        for jj in range(0, self.jj_min_border+1):
             efx[:, jj]=efx[:, self.jj_min_border+1] 
             
-        for ii in xrange(self.ii_max_border, self.Nxg):
+        for ii in range(self.ii_max_border, self.Nxg):
             efy[ii, :]=efy[self.ii_max_border-1, :] 
             
-        for ii in xrange(0, self.ii_min_border+1):
+        for ii in range(0, self.ii_min_border+1):
             efy[ii,:]=efy[self.ii_min_border+1,:] 
            
         self.rho = rho

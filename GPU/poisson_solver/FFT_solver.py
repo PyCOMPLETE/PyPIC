@@ -5,7 +5,7 @@ Implementation/Logic 2d: Giovanni Idadarola
 New interface/3d/GPU: Stefan Hegglin, Adrian Oeftiger
 '''
 
-from __future__ import division
+
 
 import numpy as np
 import scipy.sparse as sps
@@ -20,8 +20,8 @@ try:
     import pycuda.driver as drv
     import skcuda.fft as cu_fft
 except ImportError:
-    print('GPU libraries (pycuda, scikits.cuda.fft) not found. GPU functionality ' +
-          'not available.')
+    print(('GPU libraries (pycuda, scikits.cuda.fft) not found. GPU functionality ' +
+          'not available.'))
 
 
 def get_Memcpy3D_d2d(src, dst, src_pitch, dst_pitch, dim_args, itemsize,
@@ -469,7 +469,7 @@ class FFT_OpenBoundary_SquareGrid(PoissonSolver):
 
             except ImportError as err:
                 print ('Failed to import pyfftw')
-                print ('Got exception: ' + str(err))
+                print(('Got exception: ' + str(err)))
                 print ('Using numpy fft')
                 self.fft2 = np.fft.fft2
                 self.ifft2 = np.fft.ifft2
@@ -555,7 +555,7 @@ class FFT_PEC_Boundary_SquareGrid(PoissonSolver):
                 self.fftj = pyfftw.builders.fft(tmp.copy(), axis=1)
             except ImportError as err:
                 print ('Failed to import pyfftw')
-                print ('Got exception: ' + str(err))
+                print(('Got exception: ' + str(err)))
                 print ('Using numpy fft')
                 self.ffti = lambda xx: np.fft.fft(xx, axis=0)
                 self.fftj = lambda xx: np.fft.fft(xx, axis=1)

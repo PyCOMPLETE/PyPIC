@@ -25,9 +25,9 @@ try:
     from . import int_field_for as iff
     from . import int_field_for_border as iffb
 except ImportError:
-    print('Shared libraries of Fortran versions of m2p/p2m ' +
+    print(('Shared libraries of Fortran versions of m2p/p2m ' +
           '(rhocompute, int_field_for, int_field_for_border) not found. ' +
-          'Limited functionality')
+          'Limited functionality'))
 
 
 def idivup(a, b):
@@ -154,7 +154,7 @@ class PyPIC(object):
 
         Return the interpolated fields per particle for each dimension.
         '''
-        mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
+        mesh_fields, mp_coords = list(zip(*mesh_fields_and_mp_coords))
         mesh_indices, mesh_weights = self.get_meshing(kwargs, *mp_coords)
         n_macroparticles = len(mp_coords[0])
 
@@ -199,7 +199,7 @@ class PyPIC(object):
         # semantics (dimensional independence)
         for i, field in enumerate(mesh_e_fields):
             mesh_e_fields[i] = field.flatten()
-        mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
+        mesh_fields_and_mp_coords = list(zip(list(mesh_e_fields), list(mp_coords)))
 
         # get fields at particle locations:
         fields = self.field_to_particles(*mesh_fields_and_mp_coords, **kwargs)
@@ -227,7 +227,7 @@ class PyPIC_Fortran_M2P_P2M(PyPIC):
 
 
     def field_to_particles(self, *mesh_fields_and_mp_coords, **kwargs):
-        [ex, ey], [x, y] = zip(*mesh_fields_and_mp_coords)
+        [ex, ey], [x, y] = list(zip(*mesh_fields_and_mp_coords))
         ex = ex.reshape((self.mesh.ny, self.mesh.nx)).T
         ey = ey.reshape((self.mesh.ny, self.mesh.nx)).T
         if hasattr(self.poissonsolver, 'flag_inside_n_mat'):
@@ -497,7 +497,7 @@ class PyPIC_GPU(PyPIC):
         self._sorted_particles_to_guard_mesh_kernel.prepared_call(*(
             [grid, block,] +
             # particles
-            map(attrgetter('gpudata'), mp_coords) +
+            list(map(attrgetter('gpudata'), mp_coords)) +
             # mesh
             list(self.mesh.origin) +
             list(self.mesh.distances) +
@@ -627,7 +627,7 @@ class PyPIC_GPU(PyPIC):
 
         Return the interpolated fields per particle for each dimension.
         '''
-        mesh_fields, mp_coords = zip(*mesh_fields_and_mp_coords)
+        mesh_fields, mp_coords = list(zip(*mesh_fields_and_mp_coords))
         n_macroparticles = len(mp_coords[0])
 
         self.kernel_call_config['m2p']['grid'] = (
@@ -725,7 +725,7 @@ class PyPIC_GPU(PyPIC):
         self._context.synchronize()
         if state: state.mesh_e_fields = mesh_e_fields
 
-        mesh_fields_and_mp_coords = zip(list(mesh_e_fields), list(mp_coords))
+        mesh_fields_and_mp_coords = list(zip(list(mesh_e_fields), list(mp_coords)))
         fields = self.field_to_particles(*mesh_fields_and_mp_coords, **kwargs)
         self._context.synchronize()
         return fields

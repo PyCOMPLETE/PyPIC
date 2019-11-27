@@ -1,4 +1,4 @@
-from __future__ import division
+
 import numpy as np
 
 from abc import ABCMeta, abstractmethod
@@ -17,7 +17,7 @@ def idivup(a, b):
 
 
 
-class Mesh(object):
+class Mesh(object, metaclass=ABCMeta):
     '''Meshes are used for discretising a beam by distributing
     particles onto the mesh nodes. Each mesh node has a unique
     node ID, they are assigned from 0 upwards in steps of 1.
@@ -25,7 +25,6 @@ class Mesh(object):
     electric fields etc. may be defined on a Mesh instance's nodes.
     Dimension sizes are given by the shape attribute.
     '''
-    __metaclass__ = ABCMeta
 
     '''Shape of the mesh.'''
     shape = ()
@@ -63,7 +62,7 @@ class Mesh(object):
         '''Return an iterator iterating over all node IDs in
         ascending order.
         '''
-        return range(self.n_nodes)
+        return list(range(self.n_nodes))
 
     # def node_location(self, node_id):
     #     '''Return spatial location of the given node_id in terms of
