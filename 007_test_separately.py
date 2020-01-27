@@ -45,7 +45,7 @@ y_probes = 0.*x_probes
 #pic gather
 Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
 
-E_r_th = map(lambda x: -np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x), x_probes)
+E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) for x in x_probes]
 
 
 import pylab as pl
@@ -79,8 +79,8 @@ fftphi = np.fft.fft2(tmprho) * self.fgreentr
 pl.figure(100)
 pl.semilogy(np.abs(fftphi.flatten()))
 
-print 'type(fftphi[0,0])', type(fftphi[0,0])
-print 'type(self.fgreentr[0,0])',type(self.fgreentr[0,0])
+print('type(fftphi[0,0])', type(fftphi[0,0]))
+print('type(self.fgreentr[0,0])',type(self.fgreentr[0,0]))
 tmpphi = np.fft.ifft2(fftphi)
 pl.figure(101)
 pl.semilogy(np.abs(tmpphi.flatten()))

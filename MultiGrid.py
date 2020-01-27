@@ -1,8 +1,8 @@
 import numpy as np
-import FiniteDifferences_Staircase_SquareGrid as PIC_FD
-import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-import simple_polygon as spoly
-from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from . import FiniteDifferences_Staircase_SquareGrid as PIC_FD
+from . import FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
+from . import simple_polygon as spoly
+from .PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 
 qe = e
@@ -129,8 +129,8 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
                             
     def solve_states(self, states):
         states = np.atleast_1d(states)
-        states_external = map(lambda state: state.pic_external, states)
-        states_internal = map(lambda state: state.pic_internal, states)
+        states_external = [state.pic_external for state in states]
+        states_internal = [state.pic_internal for state in states]
         self.pic_external.solve_states(states_external)
         self.pic_internal.solve_states(states_internal, pic_s_external=states_external)
     
@@ -158,8 +158,8 @@ class AddMultiGrids(PyPIC_Scatter_Gather):
 
         n_grids = len(grids)
         pic_list = [pic_main]
-        for ii in xrange(n_grids):
-            print 'GRID %d/%d'%(ii,n_grids)
+        for ii in range(n_grids):
+            print('GRID %d/%d'%(ii,n_grids))
             
             x_min_internal = grids[ii]['x_min_internal']
             x_max_internal = grids[ii]['x_max_internal']
@@ -250,7 +250,7 @@ class AddTelescopicGrids(AddMultiGrids):
         else:
             n_grids = int(np.ceil(np.log(S_target/(N_min_Dh_main*Dh_main))/np.log(f_telescope)))+1
         
-        print '%d grids needed'%n_grids
+        print('%d grids needed'%n_grids)
         
         if n_grids == 1:
             f_exact = None #it's not used
@@ -263,7 +263,7 @@ class AddTelescopicGrids(AddMultiGrids):
 
 
 
-        for i_grid in xrange(1,n_grids):
+        for i_grid in range(1,n_grids):
             Sx_list.append(Sx_list[-1]/f_exact)
             Sy_list.append(Sy_list[-1]/f_exact)
             Dh_list.append(Dh_list[-1]/f_exact)
@@ -276,7 +276,7 @@ class AddTelescopicGrids(AddMultiGrids):
 
 
         grids = []
-        for i_grid in xrange(n_grids):
+        for i_grid in range(n_grids):
             x_min_int_curr = -Sx_list[i_grid]/2 + x_center_target
             x_max_int_curr = Sx_list[i_grid]/2 + x_center_target
             y_min_int_curr = -Sy_list[i_grid]/2 + y_center_target

@@ -212,12 +212,12 @@ class polyg_cham_geom_object(object):
             self.N_mp_corrected = self.N_mp_corrected + N_errors
             
             if self.flag_verbose_stdout:
-                print """Reporting backtrack error of kind 1: no impact found"""
-                print """x_in, y_in, x_out, y_out"""
+                print("""Reporting backtrack error of kind 1: no impact found""")
+                print("""x_in, y_in, x_out, y_out""")
                 for i_err in range(N_errors):
                     lcurr = '%.10e,%.10e,%.10e,%.10e'%(x_in_error[i_err], y_in_error[i_err], x_out_error[i_err], y_out_error[i_err])
-                    print lcurr
-                print """End reporting backtrack error of kind 1"""
+                    print(lcurr)
+                print("""End reporting backtrack error of kind 1""")
   
             if self.flag_verbose_file:
                 with open('bcktr_errors.txt','a') as fbckt:
@@ -241,12 +241,12 @@ class polyg_cham_geom_object(object):
 				N_errors = len(x_in_error)
 					
 				if self.flag_verbose_stdout:
-					print """Reporting backtrack error of kind 2: outside after backtracking"""
-					print """x_in, y_in, x_out, y_out"""
+					print("""Reporting backtrack error of kind 2: outside after backtracking""")
+					print("""x_in, y_in, x_out, y_out""")
 					for i_err in range(N_errors):
 						lcurr = '%.10e,%.10e,%.10e,%.10e'%(x_in_error[i_err], y_in_error[i_err], x_out_error[i_err], y_out_error[i_err])
-						print lcurr
-					print """End reporting backtrack error of kind 2"""
+						print(lcurr)
+					print("""End reporting backtrack error of kind 2""")
 	  
 				if self.flag_verbose_file:
 					with open('bcktr_errors.txt','a') as fbckt:
@@ -265,8 +265,8 @@ class polyg_cham_geom_object(object):
 				#~ pl.plot(x_int[flag_impact], y_int[flag_impact],'.r')
 				#~ pl.show()
 				if self.flag_verbose_stdout:     
-					print """Reporting backtrack error of kind 3: outside after correction"""
-					print """x_in, y_in, x_out, y_out"""
+					print("""Reporting backtrack error of kind 3: outside after correction""")
+					print("""x_in, y_in, x_out, y_out""")
 				x_in_error = x_in[flag_impact]
 				y_in_error = y_in[flag_impact]
 				x_out_error = x_out[flag_impact]
@@ -274,12 +274,12 @@ class polyg_cham_geom_object(object):
 				N_errors = len(x_in_error)
 
 				if self.flag_verbose_stdout:
-					print """Reporting backtrack error of kind 3: outside after correction"""
-					print """x_in, y_in, x_out, y_out"""
+					print("""Reporting backtrack error of kind 3: outside after correction""")
+					print("""x_in, y_in, x_out, y_out""")
 					for i_err in range(N_errors):
 						lcurr = '%.10e,%.10e,%.10e,%.10e'%(x_in_error[i_err], y_in_error[i_err], x_out_error[i_err], y_out_error[i_err])
-						print lcurr
-					print """End reporting backtrack error of kind 3"""
+						print(lcurr)
+					print("""End reporting backtrack error of kind 3""")
 	  
 				if self.flag_verbose_file:
 					with open('bcktr_errors.txt','a') as fbckt:

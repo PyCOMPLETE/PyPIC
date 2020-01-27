@@ -64,8 +64,8 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
     def __init__(self, x_aper, y_aper, Dh, sigmax, sigmay, 
 		n_imag_ellip=0, tot_charge=1.):
         
-		print 'Start PIC init.:'
-		print 'Bassetti-Erskine, Square Grid'
+		print('Start PIC init.:')
+		print('Bassetti-Erskine, Square Grid')
 
 
 		super(Interpolated_Bassetti_Erskine, self).__init__(x_aper, y_aper, Dh)
@@ -79,7 +79,7 @@ class Interpolated_Bassetti_Erskine(PyPIC_Scatter_Gather):
 		for ii in range(len(xx)):
 
 			if np.mod(ii, len(xx)/20)==0:
-				print ('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%""")
+				print(('Bassetti Erskine evaluation %.0f'%(float(ii)/ float(len(xx))*100)+"""%"""))
 
 			for jj in range(len(yy)):
 				x=xx[ii];

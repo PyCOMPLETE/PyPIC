@@ -76,13 +76,13 @@ N_rep = 1000
 
 
 t_start_npfft = time.mktime(time.localtime())
-for _ in xrange(N_rep):
+for _ in range(N_rep):
     transf = np.fft.fft2(data)
     itransf = np.real(np.fft.ifft2(transf*data))
     
 t_stop_npfft = time.mktime(time.localtime())
 t_npfft = t_stop_npfft-t_start_npfft
-print 't_npfft', t_npfft
+print('t_npfft', t_npfft)
 
 
 
@@ -93,11 +93,11 @@ temptransf = fftobj(data)
 ifftobj = pyfftw.builders.ifft2(temptransf)
 
 t_start_npfftw = time.mktime(time.localtime())
-for _ in xrange(N_rep):
+for _ in range(N_rep):
     transfw = fftobj(data)
     itransfw = ifftobj(transfw)
 t_stop_npfftw = time.mktime(time.localtime())
 t_npfftw = t_stop_npfftw-t_start_npfftw
-print 't_npfftw', t_npfftw
+print('t_npfftw', t_npfftw)
 
 

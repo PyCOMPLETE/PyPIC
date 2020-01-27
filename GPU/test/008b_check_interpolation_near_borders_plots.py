@@ -3,10 +3,10 @@ BIN=os.path.expanduser('../')
 sys.path.append(BIN)
 from backwards_compatibility_1_03 import *
 Dh_mm=.5
-import myloadmat_to_obj as mlo
+from . import myloadmat_to_obj as mlo
 import numpy as np
 import pylab as pl
-import mystyle as ms
+from . import mystyle as ms
 
 linew = 2.
 mksz = 10

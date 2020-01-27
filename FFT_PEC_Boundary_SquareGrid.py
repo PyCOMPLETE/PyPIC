@@ -51,7 +51,7 @@
 #----------------------------------------------------------------------
 
 import numpy as np
-from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from .PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 import scipy as sp
 
@@ -69,8 +69,8 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self, x_aper, y_aper, Dh, fftlib='pyfftw'):
         
-        print 'Start PIC init.:'
-        print 'FFT, PEC Boundary, Square Grid'
+        print('Start PIC init.:')
+        print('FFT, PEC Boundary, Square Grid')
 
 
         self.Dh = Dh		
@@ -130,9 +130,9 @@ class FFT_PEC_Boundary_SquareGrid(PyPIC_Scatter_Gather):
                 tmp = np.zeros((m, 2*n + 2))
                 self.fftj = pyfftw.builders.fft(tmp.copy(), axis=1)
             except ImportError as err:
-                print 'Failed to import pyfftw'
-                print 'Got exception: ', err
-                print 'Using numpy fft'
+                print('Failed to import pyfftw')
+                print('Got exception: ', err)
+                print('Using numpy fft')
                 self.ffti = lambda xx: np.fft.fft(xx, axis=0)
                 self.fftj = lambda xx: np.fft.fft(xx, axis=1)
         elif fftlib == 'numpy':

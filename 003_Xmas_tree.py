@@ -11,7 +11,7 @@ import PyPIC.FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 try:
     from CyFPPS import PyFPPS as PIC_FPPS
 except ImportError:
-    print "Not possible to import PyFPPS, replaced with FFT_Open"
+    print("Not possible to import PyFPPS, replaced with FFT_Open")
     PIC_FPPS = None
 
 na = np.array
@@ -142,7 +142,7 @@ if PIC_FPPS:
     E = np.zeros_like(X)
     for i in range(np.shape(X)[0]):
         Ex_FPPS,Ey_FPPS = picFPPS.gather(X[i,:],Y[i,:])
-        print(np.shape(Ex_FPPS))
+        print((np.shape(Ex_FPPS)))
         E[i,:] = Ex_FPPS**2+Ey_FPPS**2
     pl.figure(303)
     pl.pcolor(X,Y,E)

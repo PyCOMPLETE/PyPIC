@@ -3,7 +3,7 @@ Finite Difference Poisson solvers for PyPIC
 @author Stefan Hegglin, Adrian Oeftiger, Giovanni Iadarola
 '''
 
-from __future__ import division
+
 
 import numpy as np
 import scipy.sparse as sps
@@ -22,7 +22,7 @@ try:
     from pycuda.compiler import SourceModule
     from pycuda import gpuarray
     try:
-    	import cusolver_Rf as curf
+    	from . import cusolver_Rf as curf
     except (OSError, ImportError):
         print ('Info: cusolver_Rf not found. '
                'GPU finite difference solver not available.')
@@ -438,8 +438,8 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
             try:
                 import PyKLU.klu as klu
                 self.luobj = klu.Klu(Asel.tocsc())
-            except StandardError as e:
-                print ("Got exception: " + str(e))
+            except Exception as e:
+                print(("Got exception: " + str(e)))
                 print ("Falling back on scipy superlu solver:")
                 self.luobj = spl.splu(Asel.tocsc())
         else:
@@ -459,7 +459,7 @@ class FiniteDifferences_Staircase_SquareGrid(PoissonSolver):
         A=sps.lil_matrix((Nxg*Nyg,Nxg*Nyg));
         for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
-                print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+                print(('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%"""))
             if flag_inside_n[u]:
                 A[u,u] = -(4./(Dh*Dh))
                 A[u,u-1]=1./(Dh*Dh);     #phi(i-1,j)nx
@@ -521,7 +521,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid(FiniteDifferences_Staircase_Sq
         Dh = self.Dh
         for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
-                print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+                print(('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%"""))
             if flag_inside_n[u]:
                 #Compute Shortley-Weller coefficients
                 if flag_inside_n[u-1]: #phi(i-1,j)
@@ -773,7 +773,7 @@ class FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation(FiniteDifference
         # Build A Dx Dy matrices
         for u in range(0,Nxg*Nyg):
             if np.mod(u, Nxg*Nyg//20)==0:
-                    print ('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%""")
+                    print(('Mat. assembly %.0f'%(float(u)/ float(Nxg*Nyg)*100)+"""%"""))
             if flag_inside_n[u]:
 
                 #Compute Shortley-Weller coefficients

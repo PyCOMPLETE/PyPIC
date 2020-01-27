@@ -21,7 +21,7 @@ def mesh_to_particles_CPU_3d(mesh, mesh_quantity, indices, weights):
     outside_idx = check_outside(ip, jp, kp)
     inside_idx = ~outside_idx
     ip, jp, kp = ip[inside_idx], jp[inside_idx], kp[inside_idx]
-    weights = map(lambda w: w[inside_idx], weights)
+    weights = [w[inside_idx] for w in weights]
 
     particles_quantity = np.empty(len(indices[0]), dtype=mesh_quantity.dtype)
     particles_quantity[inside_idx] = (
@@ -51,7 +51,7 @@ def mesh_to_particles_CPU_2d(mesh, mesh_quantity, indices, weights):
     outside_idx = check_outside(ip, jp)
     inside_idx = ~outside_idx
     ip, jp = ip[inside_idx], jp[inside_idx]
-    weights = map(lambda w: w[inside_idx], weights)
+    weights = [w[inside_idx] for w in weights]
 
     particles_quantity = np.empty(len(indices[0]), dtype=mesh_quantity.dtype)
     particles_quantity[inside_idx] = (

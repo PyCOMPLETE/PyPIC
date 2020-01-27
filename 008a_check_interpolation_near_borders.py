@@ -49,7 +49,7 @@ rho_mat=1./(2.*np.pi*sigmax*sigmay)*np.exp(-(XX)**2/(2.*sigmax**2)-(YY)**2/(2.*s
 try:
     pic.solve(rho = rho_mat)
 except ValueError as err:
-    print 'Got ValueError:', err
+    print('Got ValueError:', err)
     
     
 Ex_list = []

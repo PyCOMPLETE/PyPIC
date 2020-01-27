@@ -3,4 +3,4 @@ rm -rf ../python3/PyPIC
 cp -r ../PyPIC ../python3/PyPIC
 rm ../python3/PyPIC/*.so
 2to3 --output-dir=../python3/PyPIC -W -n ../PyPIC
-rm -rf ../python3/PyPIC/.git
+#rm -rf ../python3/PyPIC/.git

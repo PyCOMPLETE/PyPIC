@@ -54,7 +54,7 @@ import numpy as np
 import scipy.sparse as scsp
 from scipy.sparse.linalg import spsolve
 import scipy.sparse.linalg as ssl
-from PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
+from .PyPIC_Scatter_Gather import PyPIC_Scatter_Gather
 from scipy.constants import e, epsilon_0
 
 na = lambda x:np.array([x])
@@ -66,8 +66,8 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
     #@profile
     def __init__(self, x_aper, y_aper, Dh=None, dx=None, dy=None, fftlib = 'pyfftw'):
         
-        print 'Start PIC init.:'
-        print 'FFT, Open Boundary'
+        print('Start PIC init.:')
+        print('FFT, Open Boundary')
 
 
         if dx is not None and dy is not None:
@@ -109,7 +109,7 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         if fftlib == 'pyfftw':
             try:
                 import pyfftw
-                print 'Using PyFFTW'
+                print('Using PyFFTW')
                 #prepare fftw's
 
                 self.tmprho = (fgreen*(1.+1j))*0.
@@ -140,13 +140,13 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
                 self.tmpifft = (self.fgreen*(1.+1j))*0.
                 
             except ImportError as err:
-                print 'Failed to import pyfftw'
-                print 'Got exception: ', err
+                print('Failed to import pyfftw')
+                print('Got exception: ', err)
 
                 fftlib = 'numpy'
 
         if fftlib == 'numpy':
-            print 'Using numpy FFT'
+            print('Using numpy FFT')
 
             self.tmprho = (self.fgreen*(1.+1j))*0.
             self.tmpphi = (self.fgreen*(1.+1j))*0.

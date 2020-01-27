@@ -118,7 +118,7 @@ class ellip_cham_geom_object:
        
         
         if sum(abs(t0.imag))>0:
-            print 'imag detected'
+            print('imag detected')
             raise ValueError('Backtracking: complex t0!!!!')
         
         x_int=t0*x_out+(1-t0)*x_in;
@@ -172,7 +172,7 @@ class ellip_cham_geom_object:
 				
 			flag_impact=(((x_int/a)**2 + (y_int/b)**2)>=1);
 			if sum(flag_impact)>0:   
-				print 'err inside'
+				print('err inside')
 				raise ValueError('Outside after backtracking!!!!')
 			
 			

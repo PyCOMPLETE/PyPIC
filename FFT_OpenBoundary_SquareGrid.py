@@ -50,7 +50,7 @@
 #     all references.                                                  
 #----------------------------------------------------------------------
 
-from FFT_OpenBoundary import FFT_OpenBoundary
+from .FFT_OpenBoundary import FFT_OpenBoundary
 
 
 def FFT_OpenBoundary_SquareGrid(x_aper, y_aper, Dh, fftlib = 'pyfftw'):
