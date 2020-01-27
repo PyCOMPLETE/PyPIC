@@ -1,6 +1,3 @@
-import sys
-sys.path.append('..')
-
 import numpy as np
 from PyPIC.geom_impact_ellip import ellip_cham_geom_object
 
@@ -50,12 +47,11 @@ try:
     pic.solve(rho = rho_mat)
 except ValueError as err:
     print('Got ValueError:', err)
-    
-    
+
 Ex_list = []
 Ey_list = []
-for xmax_test in xmax_test_list: 
-    
+for xmax_test in xmax_test_list:
+
     sc_test = xmax_test/x_aper
     x_test = sc_test*x_aper*np.cos(thp)
     y_test = sc_test*y_aper*np.sin(thp)
@@ -64,7 +60,7 @@ for xmax_test in xmax_test_list:
 
     Ex_list.append(Ex)
     Ey_list.append(Ey)
-    
+
 Ex_list = np.array(Ex_list)
 Ey_list = np.array(Ey_list)
 
