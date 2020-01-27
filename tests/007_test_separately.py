@@ -1,6 +1,3 @@
-import sys
-sys.path.append('..')
-
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT

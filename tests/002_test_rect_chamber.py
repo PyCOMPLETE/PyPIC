@@ -1,7 +1,3 @@
-import sys, os
-BIN=os.path.expanduser('../')
-sys.path.append(BIN)
-
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT

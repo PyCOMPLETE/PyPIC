@@ -1,6 +1,3 @@
-import sys
-sys.path.append('..')
-
 import numpy as np
 import pylab as pl
 
@@ -28,37 +25,37 @@ err_rel_list_old = []
 erry_rel_list_old = []
 erry_rel_list = []
 
-for ii in range(N_points): 
+for ii in range(N_points):
 
     Ex_ref = ob_ref.Ex[ii,:]
     Ey_ref = ob_ref.Ey[ii,:]
-    
+
     Ex_new = ob_new.Ex[ii,:]
     Ey_new = ob_new.Ey[ii,:]
-    
+
     Ex_old= ob_old.Ex[ii,:]
     Ey_old= ob_old.Ey[ii,:]
 
     err_abs =  np.sqrt(np.sum((Ex_ref-Ex_new)**2+(Ey_ref-Ey_new)**2))
     err_rel = err_abs/np.sqrt(np.sum((Ex_ref)**2+(Ey_ref)**2))
-    
+
     err_abs_old =  np.sqrt(np.sum((Ex_ref-Ex_old)**2+(Ey_ref-Ey_old)**2))
     err_rel_old = err_abs_old/np.sqrt(np.sum((Ex_ref)**2+(Ey_ref)**2))
-    
+
     erry_rel =  np.sqrt(np.sum((Ey_ref-Ey_new)**2))/np.sqrt(np.sum((Ey_ref)**2))
     erry_rel_old =  np.sqrt(np.sum((Ey_ref-Ey_old)**2))/np.sqrt(np.sum((Ey_ref)**2))
-    
+
     err_abs_list.append(err_abs)
     err_rel_list.append(err_rel)
-    
+
     err_abs_list_old.append(err_abs_old)
     err_rel_list_old.append(err_rel_old)
-    
+
     erry_rel_list_old.append(erry_rel_old)
     erry_rel_list.append(erry_rel)
-    
+
 na = np.array
-pl.close('all')	
+pl.close('all')
 ms.mystyle_arial(fontsz=16, dist_tick_lab=10)
 pl.figure(1)
 pl.plot(1000*ob_ref.xmax_test_list, err_abs_list)
@@ -181,4 +178,4 @@ for dist_from_bou in dist_from_bou_list:
     pl.savefig(fname+'.png', dpi=200)
 
 pl.show()
-    
+

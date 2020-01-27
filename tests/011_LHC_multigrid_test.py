@@ -1,8 +1,3 @@
-import sys, os
-BIN=os.path.expanduser('../')
-sys.path.append(BIN)
-BIN=os.path.expanduser('../PyHEADTAIL/testing/script-tests/')
-sys.path.append(BIN)
 from LHC import LHC
 import PyPIC.geom_impact_ellip as ell
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
@@ -34,7 +29,7 @@ machine = LHC(machine_configuration = machine_configuration, optics_mode = 'smoo
 
 
 # generate beam
-bunch = machine.generate_6D_Gaussian_bunch(n_macroparticles = n_macroparticles, intensity = intensity, 
+bunch = machine.generate_6D_Gaussian_bunch(n_macroparticles = n_macroparticles, intensity = intensity,
                             epsn_x = epsn_x, epsn_y = epsn_y, sigma_z = sigma_z)
 
 
@@ -59,9 +54,9 @@ chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
 Vx, Vy = chamber.points_on_boundary(N_points=200)
 
 # build Bassetti Erskine 
-pic_BE = PIC_BE.Interpolated_Bassetti_Erskine(x_aper=x_aper, y_aper=y_aper, Dh=Dh_BE, sigmax=bunch.sigma_x(), sigmay=bunch.sigma_y(), 
+pic_BE = PIC_BE.Interpolated_Bassetti_Erskine(x_aper=x_aper, y_aper=y_aper, Dh=Dh_BE, sigmax=bunch.sigma_x(), sigmay=bunch.sigma_y(),
         n_imag_ellip=20, tot_charge=bunch.intensity*bunch.charge)
-        
+
 # build single grid pic
 pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single, sparse_solver = sparse_solver)
 
@@ -69,13 +64,13 @@ pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = ch
 pic_singlegrid_ext = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single_ext, sparse_solver = sparse_solver)
 
 # build telescope
-pic_multigrid = AddTelescopicGrids(pic_main = pic_singlegrid_ext, f_telescope = 0.3, 
-    target_grid = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target}, 
+pic_multigrid = AddTelescopicGrids(pic_main = pic_singlegrid_ext, f_telescope = 0.3,
+    target_grid = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target},
     N_nodes_discard = 3., N_min_Dh_main = 10, sparse_solver=sparse_solver)
 
 pic_singlegrid.scatter(bunch.x, bunch.y, bunch.particlenumber_per_mp+bunch.y*0., charge=qe)
-pic_multigrid.scatter(bunch.x, bunch.y, bunch.particlenumber_per_mp+bunch.y*0., charge=qe)          
-                                                            
+pic_multigrid.scatter(bunch.x, bunch.y, bunch.particlenumber_per_mp+bunch.y*0., charge=qe)
+
 #scatter and solve     
 #pic solve timing
 import time
@@ -85,10 +80,10 @@ t_start = time.mktime(time.localtime())
 for _ in range(N_rep_test_single):
     pic_singlegrid.solve()
 t_stop = time.mktime(time.localtime())
-t_sw_single = (t_stop-t_start)/N_rep_test_single   
+t_sw_single = (t_stop-t_start)/N_rep_test_single
 print('solving time singlegrid ', t_sw_single)
 
-N_rep_test_multi = 10000                                              
+N_rep_test_multi = 10000
 print('Solving PIC multi %d times'%N_rep_test_multi)
 t_start = time.mktime(time.localtime())
 for _ in range(N_rep_test_multi):
@@ -102,7 +97,7 @@ print('solving time multigrid ', t_sw_multi)
 theta=np.linspace(0., 2*np.pi, 1000)
 n_sigma_probes = 1.
 x_probes = n_sigma_probes*bunch.sigma_x()*np.cos(theta)
-y_probes = n_sigma_probes*bunch.sigma_y()*np.sin(theta)  
+y_probes = n_sigma_probes*bunch.sigma_y()*np.sin(theta)
 
 # get field at probes
 Ex_BE, Ey_BE = pic_BE.gather(x_probes, y_probes)
@@ -126,7 +121,7 @@ pl.plot(Vx, Vy, 'k--', label = 'Chamber')
 pl.plot(x_probes, y_probes, 'c--', label = 'probe')
 pl.xlabel('x [m]')
 pl.ylabel('y [m]')
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.axis('equal')
 pl.legend(loc='best')
@@ -136,7 +131,7 @@ pl.plot(theta*180/np.pi, Ex_singlegrid, '.-g', label = 'Singlegrid')
 pl.plot(theta*180/np.pi, Ex_multigrid, '.-r', label = 'Multigrid')
 pl.xlabel('theta[deg]')
 pl.ylabel('Ex [V/m] ')
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.grid()
 pl.legend(loc='best')
@@ -146,7 +141,7 @@ pl.plot(theta*180/np.pi, Ey_singlegrid, '.-g', label = 'Singlegrid')
 pl.plot(theta*180/np.pi, Ey_multigrid, '.-r', label = 'Multigrid')
 pl.xlabel('theta[deg]')
 pl.ylabel('Ey [V/m] ')
-pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+pl.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 pl.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.grid()
 pl.legend(loc='best')
@@ -177,7 +172,7 @@ pl.loglog(r_probes_val, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
 pl.loglog(r_probes_val, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
 pl.xlabel('r [m]')
 pl.ylabel('RMS error')
-pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
+pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
@@ -207,7 +202,7 @@ pl.loglog(n_sigma_probes, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
 pl.loglog(n_sigma_probes, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
 pl.xlabel('$\sigma$')
 pl.ylabel('RMS error')
-pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
+pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
@@ -224,21 +219,21 @@ xn=xn.flatten()
 yn=yn.T
 yn=yn.flatten()
 #pic gather
-Ex_BE_n, Ey_BE_n = pic_BE.gather(xn, yn)	
+Ex_BE_n, Ey_BE_n = pic_BE.gather(xn, yn)
 Ex_BE_matrix=np.reshape(Ex_BE_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 Ey_BE_matrix=np.reshape(Ey_BE_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 
-Ex_singlegrid_n, Ey_singlegrid_n = pic_singlegrid.gather(xn, yn)	
+Ex_singlegrid_n, Ey_singlegrid_n = pic_singlegrid.gather(xn, yn)
 Ex_singlegrid_matrix=np.reshape(Ex_singlegrid_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 Ey_singlegrid_matrix=np.reshape(Ey_singlegrid_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 
-Ex_multigrid_n, Ey_multigrid_n = pic_multigrid.gather(xn, yn)	
+Ex_multigrid_n, Ey_multigrid_n = pic_multigrid.gather(xn, yn)
 Ex_multigrid_matrix=np.reshape(Ex_multigrid_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 Ey_multigrid_matrix=np.reshape(Ey_multigrid_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 
 pl.figure(4, figsize=(12, 6)).patch.set_facecolor('w')
 sp1 = pl.subplot(121)
-pl.pcolormesh(x_grid_probes, y_grid_probes, 
+pl.pcolormesh(x_grid_probes, y_grid_probes,
     np.log10(np.sqrt((((Ex_singlegrid_matrix-Ex_BE_matrix)**2+(Ey_singlegrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
     vmax=0., vmin=-7.0)
 pl.title('RMS error Singlegrid - BE')
@@ -248,11 +243,11 @@ cb=pl.colorbar(); sp1.set_aspect('equal')
 cb.formatter.set_powerlimits((0, 0))
 cb.update_ticks()
 cb.set_label('RMS error')
-sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 
 sp2 = pl.subplot(122, sharex = sp1, sharey = sp1)
-pl.pcolormesh(x_grid_probes, y_grid_probes, 
+pl.pcolormesh(x_grid_probes, y_grid_probes,
     np.log10(np.sqrt((((Ex_multigrid_matrix-Ex_BE_matrix)**2+(Ey_multigrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
     vmax=0., vmin=-7.0)
 pl.title('RMS error Multigrid - BE')
@@ -262,7 +257,7 @@ cb=pl.colorbar(); sp2.set_aspect('equal')
 cb.formatter.set_powerlimits((0, 0))
 cb.update_ticks()
 cb.set_label('RMS error')
-sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x') 
+sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.subplots_adjust(bottom = .13,top = .70)
 pl.suptitle('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 

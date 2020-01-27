@@ -1,6 +1,3 @@
-import sys
-sys.path.append('..')
-
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.FFT_OpenBoundary as PIC_FFT
@@ -45,7 +42,7 @@ picFFTSq = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_
 if PIC_FPPS: picFPPS = PIC_FPPS(200,200,a=R_cham,solverType='Uniform')
 # build dual grid
 pic_main = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_main)
-pic_dualgrid = AddInternalGrid(pic_main, x_min_internal, x_max_internal, y_min_internal, 
+pic_dualgrid = AddInternalGrid(pic_main, x_min_internal, x_max_internal, y_min_internal,
                                 y_max_internal, Dh_internal, N_nodes_discard)
 
 # generate particles
