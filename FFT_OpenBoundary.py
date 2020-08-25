@@ -99,9 +99,9 @@ class FFT_OpenBoundary(PyPIC_Scatter_Gather):
         fgreen = np.zeros((2 * ny, 2 * nx))
         # Integration and circular Green's function
         fgreen[:ny, :nx] = tmpfgreen[1:, 1:] + tmpfgreen[:-1, :-1] - tmpfgreen[1:, :-1] - tmpfgreen[:-1, 1:]
-        fgreen[ny:, :nx] = fgreen[ny:0:-1, :nx]
-        fgreen[:ny, nx:] = fgreen[:ny, nx:0:-1]
-        fgreen[ny:, nx:] = fgreen[ny:0:-1, nx:0:-1]
+        fgreen[ny:, :nx] = fgreen[ny-1::-1, :nx]
+        fgreen[:ny, nx:] = fgreen[:ny, nx-1::-1]
+        fgreen[ny:, nx:] = fgreen[ny-1::-1, nx-1::-1]
 
         self.fgreen = fgreen
         self.fgreentr = np.fft.fft2(fgreen).copy()
