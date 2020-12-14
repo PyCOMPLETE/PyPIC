@@ -183,9 +183,9 @@ class GPUFFTPoissonSolver(PoissonSolver):
         '''
         nx = self.mesh.nx
         ny = self.mesh.ny
-        green[ny:, :nx]  = green[ ny-1::-1, :nx]
-        green[:ny,  nx:] = green[:ny,       nx-1::-1]
-        green[ny:,  nx:] = green[ ny-1::-1,  nx-1::-1]
+        green[ny:, :nx]  = green[ ny:0:-1, :nx]
+        green[:ny,  nx:] = green[:ny,       nx:0:-1]
+        green[ny:,  nx:] = green[ ny:0:-1,  nx:0:-1]
         return green
 
     def _mirror3d(self, green):
@@ -198,13 +198,13 @@ class GPUFFTPoissonSolver(PoissonSolver):
         nz = self.mesh.nz
         ny = self.mesh.ny
         nx = self.mesh.nx
-        green[nz:, :ny, :nx] = green[nz-1::-1,  :ny,      :nx]
-        green[:nz, ny:, :nx] = green[:nz,       ny-1::-1, :nx]
-        green[nz:, ny:, :nx] = green[nz-1::-1,   ny-1::-1, :nx]
-        green[:nz, :ny, nx:] = green[:nz,      :ny,       nx-1::-1]
-        green[nz:, :ny, nx:] = green[nz-1::-1,  :ny,       nx-1::-1]
-        green[:nz, ny:, nx:] = green[:nz,       ny-1::-1,  nx-1::-1]
-        green[nz:, ny:, nx:] = green[nz-1::-1,   ny-1::-1,  nx-1::-1]
+        green[nz:, :ny, :nx] = green[nz:0:-1,  :ny,      :nx]
+        green[:nz, ny:, :nx] = green[:nz,       ny:0:-1, :nx]
+        green[nz:, ny:, :nx] = green[nz:0:-1,   ny:0:-1, :nx]
+        green[:nz, :ny, nx:] = green[:nz,      :ny,       nx:0:-1]
+        green[nz:, :ny, nx:] = green[nz:0:-1,  :ny,       nx:0:-1]
+        green[:nz, ny:, nx:] = green[:nz,       ny:0:-1,  nx:0:-1]
+        green[nz:, ny:, nx:] = green[nz:0:-1,   ny:0:-1,  nx:0:-1]
         return green
 
     def _fgreen2d(self, y, x):
