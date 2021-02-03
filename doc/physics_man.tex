@@ -101,6 +101,68 @@
 
 \section{Space charge}
 
+
+
+We assume that the bunch travels rigidly along $s$ with velocity $\beta_0 c$:
+\begin{align}
+&\rho\left(x, y, s, t\right) = \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \label{rhorho0}\\
+&\textbf{J}\left(x, y, s, t\right) = \beta_0c\, \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \hat{\textbf{i}}_s \label{JJ0}
+\end{align}
+
+We define $\zeta$ the position along the bunch:
+\begin{equation}
+\zeta = -\beta_0 c \tau \label{zetadef}
+\end{equation}
+where $\tau$ is the difference in arrival time of a certain slice along the bunch with respect to the reference particle.
+
+We call $K$ the lab reference frame in which we have defined all equations above, and we introduce a boosted frame $K'$ moving rigidly with the reference particle.
+The coordinates in the two systems are related by a Lorentz transformation~\cite{jackson}:
+\begin{align}
+ct' &= \gamma \left(ct -\beta s \right)\label{lorA}\\
+x' &= x\label{lorX}\\
+y' &= y\label{lorY}\\
+s' &= \gamma \left(s -\beta ct \right)\label{lorB}
+\end{align}
+The  corresponding inverse transformation is:
+\begin{align}
+ct &= \gamma \left(ct' +\beta s' \right)\label{lorC}\\
+x &= x'\label{lorXinv}\\
+y &= y'\label{lorYinv}\\
+s &= \gamma \left(s' +\beta ct' \right)\label{lorD}
+\end{align}
+
+The quantities $\left(c \rho, J_x, J_y, J_s\right)$ form a Lorentz 4-vector and therefore they are transformed between $K$ and $K'$ by relationships similar to the Eqs.~\ref{lorA}-\ref{lorY}~\cite{jackson}:
+\begin{align}
+c\rho' \left(\textbf{r'}, t'\right)\ &= \gamma_0 \left[c \rho  \left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right) -\beta_0 J_s \left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right) \right]\label{lorrho}\\
+J_s' \left(\textbf{r'}, t'\right)\ &= \gamma_0 \left[J_s  \left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right) -\beta_0 c \rho \left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right) \right]\label{lorjs}
+\end{align}
+where the transformations $\textbf{r}\left(\textbf{r'}, t'\right)$ and $t\left(\textbf{r'}, t'\right)$ are defined by Eqs.~\ref{lorC} and~\ref{lorD} respectively. The transverse components $J_x$ and $J_y$ of the current vector are invariant for our transformation, and are anyhow zero in our case.
+
+Using Eq.\,\ref{JJ0} these become:
+\begin{align}
+\rho' \left(\textbf{r'}, t'\right)\ &= \frac{1}{\gamma_0}\rho\left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right)
+\\
+J_s' \left(\textbf{r'}, t'\right)\ & = 0
+\end{align}
+
+Using Eqs.~\ref{rhorho0} and~\ref{lorC}-\ref{lorYinv}, we obtain:
+\begin{equation}
+\rho  \left(x', y', s(s', t'), t(s', t')\right) = \rho_0  \left(x', y', t(s', t') - \frac{s(s', t')}{\beta c}\right)
+\end{equation}
+
+From Eq.~\ref{lorB} we get:
+\begin{equation}
+t(s', t')- \frac{s(s', t')}{\beta c} = -\frac{s'}{\gamma \beta c}
+\end{equation}
+where the coordinate $t' $ has disappeared.
+
+We can therefore write:
+\begin{equation}
+\rho' \left(x', y', s', t'\right) =   \frac{1}{\gamma_0} \rho_0  \left(x', y', - \frac{s'}{\gamma \beta c}\right)\label{rhoprimerho0}
+\end{equation}
+
+-------
+
 We stay in the thin lens approximation so we approximate the velocity vector of the particle as:
 \begin{equation}
 \textbf{v} = \beta c
@@ -111,14 +173,6 @@ We want to compute the Lorentz force acting on the particle:
 \textbf{F} =q \left( -\nabla \phi -\frac{\partial \textbf{A}}{\partial t}
  + \beta c \ \hat{\textbf{i}}_s \times {\left(\nabla \times \textbf{A} \right)} \right)
 \end{equation}
-
-We assume that the bunch travels rigidly along $s$ with velocity $\beta_0 c$:
-\begin{align}
-&\rho\left(x, y, s, t\right) = \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \label{rhorho0}\\
-&\textbf{J}\left(x, y, s, t\right) = \beta_0\, \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \hat{\textbf{i}}_s
-\end{align}
-
-
 
 \begin{thebibliography}{99}
 
