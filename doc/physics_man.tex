@@ -1,0 +1,158 @@
+
+
+\documentclass[a4paper,12pt]{report}
+
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\usepackage{placeins}
+
+
+\usepackage[english]{babel}
+\usepackage{booktabs}
+\usepackage{stfloats}
+\usepackage[T1]{fontenc}
+
+\usepackage[titletoc,title]{appendix}
+
+\usepackage{float}
+\restylefloat{table}
+
+\usepackage{longtable}
+
+\usepackage{xcolor,colortbl}
+
+\usepackage{mathpazo} % Palatino
+\usepackage{avant}    % Avant Garde
+
+\usepackage[margin=2.6cm, bottom=3.cm, top=3.cm, portrait]{geometry}\usepackage{caption}\usepackage[a4paper]{hyperref}\usepackage{adjustbox}\usepackage{enumitem}
+
+ \usepackage[stable]{footmisc}
+
+\renewcommand{\vec}[1]{\mathbf{#1}}
+
+\setlength\parindent{0pt}
+
+\newcommand{\HRule}[1]{\hfill \rule{0.2\linewidth}{#1}}
+
+\makeatletter
+\newcommand\primitiveinput[1]
+{\@@input #1 }
+\makeatother
+
+\definecolor{Gray}{gray}{0.90}
+
+\renewcommand\thesection{\arabic{section}}
+
+%\renewcommand\appendixname{Appendix}
+%\renewcommand\appendixpagename{Appendix}
+
+\begin{document}
+
+
+\thispagestyle{empty} % Remove page numbering on this page
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\colorbox{Gray}{
+	\parbox[t]{1.0\linewidth}{
+		\centering \fontsize{28pt}{40pt}\selectfont % The first argument for fontsize is the font size of the text and the second is the line spacing - you may need to play with these for your particular title
+		\vspace*{0.7cm} % Space between the start of the title and the top of the grey box
+		
+		\hfill PyPIC \\
+		\hfill phisics manual
+
+%		\hfill Beam Screens\\
+		
+		\vspace*{0.7cm} % Space between the end of the title and the bottom of the grey box
+	}
+}
+
+%----------------------------------------------------------------------------------------
+
+%\vfill
+%                \hfill {\huge Bunch length 1.0 ns}
+                \vfill
+
+%----------------------------------------------------------------------------------------
+%	AUTHOR NAME AND INFORMATION SECTION
+%----------------------------------------------------------------------------------------
+
+{\centering \large 
+\hfill Giovanni Iadarola \\
+%\hfill \\
+\hfill CERN - Geneva, Switzerland
+
+\HRule{1pt}} % Horizontal line, thickness changed here
+
+%----------------------------------------------------------------------------------------
+
+\clearpage % Whitespace to the end of the page
+
+\newpage
+
+\renewcommand*{\arraystretch}{1.4}
+
+
+
+\section{Space charge}
+
+We stay in the thin lens approximation so we approximate the velocity vector of the particle as:
+\begin{equation}
+\textbf{v} = \beta c
+\end{equation}
+
+We want to compute the Lorentz force acting on the particle:
+\begin{equation}
+\textbf{F} =q \left( -\nabla \phi -\frac{\partial \textbf{A}}{\partial t}
+ + \beta c \ \hat{\textbf{i}}_s \times {\left(\nabla \times \textbf{A} \right)} \right)
+\end{equation}
+
+We assume that the bunch travels rigidly along $s$ with velocity $\beta_0 c$:
+\begin{align}
+&\rho\left(x, y, s, t\right) = \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \label{rhorho0}\\
+&\textbf{J}\left(x, y, s, t\right) = \beta_0\, \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \hat{\textbf{i}}_s
+\end{align}
+
+
+
+\begin{thebibliography}{99}
+
+\bibitem{benevento} G. Iadarola and G. Rumolo, ``Electron cloud effects`, proceedings of the ICFA Mini-Workshop on Impedances and Beam Instabilities in Particle Accelerators, Benevento, Italy, 2018.
+
+\bibitem{rumolo_ruggiero} G. Rumolo, F. Ruggiero, and F. Zimmermann, ``Simulation of the electron-cloud build up and its consequences on heat load, beam stability, and diagnostics'', Phys. Rev. ST Accel. Beams 4, 012801, 2001.
+
+\bibitem{jackson} J.D. Jackson, ``Classical electrodynamics'',  Wiley New York,  1999.
+
+\bibitem{griffith} D. Griffith, ``Introduction to electrodynamics'', Prentice Hall, 1999.
+
+\bibitem{zimmermann} F. Zimmermann, “A Simulation Study of Electron-Cloud Instability and Beam- Induced Multipacting in the LHC”, CERN LHC Project Report 95, SLAC-PUB- 7425 (1997).
+
+\bibitem{headtail} G. Rumolo and F. Zimmermann, ``Practical user guide for HEADTAIL'', SL-Note-2002-036-AP.
+
+\bibitem{gianni_thesis} G. Iadarola, ``Electron cloud studies for CERN particle accelerators and simulation code development'', CERN-THESIS-2014-047, 2014.
+
+\bibitem{Iadarola:IPAC17-THPAB043}
+	G.~Iadarola, E.~Belli, K.~S.~B.~Li, L.~Mether, A.~Romano, and G.~Rumolo,
+``Evolution of Python Tools for the Simulation of Electron Cloud Effects'' proceedings of the 8th International Particle Accelerator Conference (IPAC'17), Copenhagen, Denmark, May 2017.
+
+\bibitem{sixtrack} R. De Maria, A. Mereghetti, M. Fitterer, M. Fjellstrom, A. Patapenka, ``Sixtrack physics manual'', \url{http://sixtrack.web.cern.ch/SixTrack/docs/physics_manual.pdf}.
+
+\bibitem{maxwellpinch} G.~Iadarola, ``Properties of the electromagnetic fields generated by a circular-symmetric e-cloud pinch in the ultra-relativistic limit'', CERN-ACC-NOTE-2019-0017.
+
+
+
+%\bibitem{slides} G. Iadarola, R. De Maria, Y. Papaphilippou, ``Modelling and implementation of the ``6D'' beam-beam interaction'', CERN-ACC-SLIDES-2018-001, 2018 (version with animantions at \url{https://indico.cern.ch/event/684338/}).
+
+
+
+\end{thebibliography}
+
+
+
+\end{document}
+
