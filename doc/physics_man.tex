@@ -105,16 +105,14 @@
 
 We assume that the bunch travels rigidly along $s$ with velocity $\beta_0 c$:
 \begin{align}
-&\rho\left(x, y, s, t\right) = \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \label{rhorho0}\\
-&\textbf{J}\left(x, y, s, t\right) = \beta_0c\, \rho_0\left(x, y, t - \frac{s}{\beta c}\right) \hat{\textbf{i}}_s \label{JJ0}
+&\rho\left(x, y, s, t\right) = \rho_0\left(x, y, s - \beta_0 ct\right) \label{rhorho0}\\
+&\textbf{J}\left(x, y, s, t\right) = \beta_0c\, \rho_0\left(x, y, s - \beta_0 ct\right)  \hat{\textbf{i}}_s \label{JJ0}
 \end{align}
 
 We define an auxiliary variable $\zeta$ as the position along the bunch:
 \begin{equation}
-\zeta = s -\beta_0 c t \label{zetadef}
+\zeta = s -\beta_0 c t \, .\label{zetadef}
 \end{equation}
-where $\tau$ is the difference in arrival time of a certain slice along the bunch with respect to the reference particle.
-
 We call $K$ the lab reference frame in which we have defined all equations above, and we introduce a boosted frame $K'$ moving rigidly with the reference particle.
 The coordinates in the two systems are related by a Lorentz transformation~\cite{jackson}:
 \begin{align}
@@ -147,18 +145,18 @@ J_s' \left(\textbf{r'}, t'\right)\ & = 0
 
 Using Eqs.~\ref{rhorho0} and~\ref{lorC}-\ref{lorYinv}, we obtain:
 \begin{equation}
-\rho  \left(x', y', s(s', t'), t(s', t')\right) = \rho_0  \left(x', y', t(s', t') - \frac{s(s', t')}{\beta_0 c}\right)
+\rho  \left(x', y', s(s', t'), t(s', t')\right) = \rho_0  \left(x', y', s(s', t') - \beta_0 c\,t(s', t')\right)
 \end{equation}
 
 From Eq.~\ref{lorB} we get:
 \begin{equation}
-t(s', t')- \frac{s(s', t')}{\beta_0 c} = -\frac{s'}{\gamma_0 \beta c}
+s(s', t')- \beta_0 c\,t(s', t') = \frac{s'}{\gamma_0} 
 \end{equation}
 where the coordinate $t' $ has disappeared.
 
 We can therefore write:
 \begin{equation}
-\rho' \left(x', y', s', t'\right) =   \frac{1}{\gamma_0} \rho_0  \left(x', y', - \frac{s'}{\gamma_0 \beta_0 c}\right)\label{rhoprimerho0}
+\rho' \left(x', y', s', t'\right) =   \frac{1}{\gamma_0} \rho_0  \left(x', y',  \frac{s'}{\gamma_0}\right)\label{rhoprimerho0}
 \end{equation}
 
 The electric potential in the bunch frame is solution of Poisson's equation:
@@ -169,7 +167,23 @@ The electric potential in the bunch frame is solution of Poisson's equation:
 
 From Eq.~\ref{rhoprimerho0} we can write:
 \begin{equation}
-\frac{\partial^2 \phi'}{\partial x'^2} +  \frac{\partial^2 \phi'}{\partial y'^2}+  \frac{\partial^2 \phi'}{\partial s'^2}= -\frac{1}{\gamma_0\varepsilon_0}  \rho_0 (x', y', -\frac{s'}{\gamma_0\beta_0 c})\label{poissrho0}
+\frac{\partial^2 \phi'}{\partial x'^2} +  \frac{\partial^2 \phi'}{\partial y'^2}+  \frac{\partial^2 \phi'}{\partial s'^2}= -\frac{1}{\gamma_0\varepsilon_0}  \rho_0 \left(x', y', \frac{s'}{\gamma_0}\right)\label{poissrho0}
+\end{equation}
+
+We now make the substitution:
+\begin{equation}
+\zeta = \frac{s'}{\gamma_0} \label{subst}
+\end{equation}
+obtained from Eq.~\ref{lorB}, which allows to rewrite Eq.~\ref{poissrho0} as:
+\begin{equation}
+\frac{\partial^2 \phi'}{\partial x^2} +  \frac{\partial^2 \phi'}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi'}{\partial \zeta^2}=  -\frac{1}{\gamma_0\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss}
+\end{equation}
+Here we have dropped the ``$'$'' sign from $x$ and $y$ as these coordinates are unaffected by the Lorentz boost.
+
+
+\textbf{For large enough values of $\gamma$, Eq.~\ref{modifpoiss} can be approximated by:}
+\begin{equation}
+\frac{\partial^2 \phi'}{\partial x^2} +  \frac{\partial^2 \phi'}{\partial y^2} = -\frac{1}{\gamma_0\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
 \end{equation}
 
 -------
