@@ -64,7 +64,7 @@
 		\vspace*{0.7cm} % Space between the start of the title and the top of the grey box
 		
 		\hfill PyPIC \\
-		\hfill phisics manual
+		\hfill physics manual
 
 %		\hfill Beam Screens\\
 		
@@ -129,6 +129,8 @@ y &= y'\label{lorYinv}\\
 s &= \gamma_0 \left(s' +\beta_0 ct' \right)\label{lorD}
 \end{align}
 
+
+
 The quantities $\left(c \rho, J_x, J_y, J_s\right)$ form a Lorentz 4-vector and therefore they are transformed between $K$ and $K'$ by relationships similar to the Eqs.~\ref{lorA}-\ref{lorY}~\cite{jackson}:
 \begin{align}
 c\rho' \left(\textbf{r'}, t'\right)\ &= \gamma_0 \left[c \rho  \left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right) -\beta_0 J_s \left(\textbf{r}\left(\textbf{r'}, t'\right), t\left(\textbf{r'}, t'\right)\right) \right]\label{lorrho}\\
@@ -186,7 +188,72 @@ Here we have dropped the ``$'$'' sign from $x$ and $y$ as these coordinates are 
 \frac{\partial^2 \phi'}{\partial x^2} +  \frac{\partial^2 \phi'}{\partial y^2} = -\frac{1}{\gamma_0\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
 \end{equation}
 
--------
+The quantities $\left( \frac{\phi}{c}, A_x, A_y, A_s\right)$ form a Lorentz 4-vector, we can show that the $s$ component of the vector potential in the lab frame vanishes:
+\begin{align}
+\phi &= \gamma_0 \left( {\phi'} +  \beta_0 c A'_s\right)\\
+A_s &= A'_s +\beta_0 \frac{\phi'}{c}
+\end{align}
+In the bunch frame the charges are at rest therefore $A'_x=A'_y=A'_z=0$ therefore:
+\begin{align}
+\phi &= \gamma_0 \phi'\\
+A_s &= \beta_0 \frac{\phi'}{c} =  \frac{\beta_0}{\gamma_0c}\phi
+\end{align}
+
+\section{Interaction time}
+In the lab frame the particle moves with speed $\beta$:
+\begin{equation}
+s(t) = \zeta_p +\beta c t
+\end{equation}
+
+In the frame $K'$, the kinematic equation of the particle can be obtained by replacing Eqs.~\ref{lorC} and~\ref{lorD} into Eq.~\ref{st_tau}:
+\begin{equation}
+\gamma_0 \left(s' +\beta_0 ct' \right) = \zeta_p +\beta \gamma_0 \left(ct' +\beta_0 s' \right)
+\end{equation}
+
+Solving for $s'$ we obtain:
+\begin{equation}
+s' = -\beta \gamma c \tau = \gamma \zeta\label{sprimezeta}
+\end{equation}
+Of course for the reference particle we obtain $s' = 0$.
+We observe that \textbf{beam particles are at rest in the reference frame $K'$ and that the distance between them is increased by a factor $\gamma$ with respect to the lab frame $K$}.
+
+\section{Transverse kick on the beam particle}
+
+We now evaluate the change on the transverse momentum for a beam particle defined in the lab frame by its transverse coordinates $x$ and $y$ and by its delay $\tau$ with respect to the reference particle (or equivalently by its $\zeta$ coordinate, defined by Eq.~\ref{zetadef}).
+
+We have seen that in the frame $K'$ the particle is at rest and has longitudinal coordinate $s' = \gamma \zeta$ (see Eq.~\ref{sprimezeta}). 
+The x' component of the electric field $\textbf{E}'$ acting on P is given by (see Eqs.~\ref{potential} and~\ref{phiphiprime}):
+\begin{equation}
+E'_x = -\frac{\partial \phi'}{\partial x} = -\frac{1}{\gamma_0}\frac{\partial \phi}{\partial x} \label{Exprime}
+\end{equation}
+Again, we have dropped the ``$'$'' sign from $x$ and $y$ as these coordinates are unaffected by the Lorentz boost.
+
+
+The change in the x component of the momentum, which is an invariant for our Lorentz transformation, is given by :
+\begin{equation}
+\Delta P_x = \Delta P'_x = qE'_x T'
+\end{equation}
+
+Using Eqs.~\ref{Exprime} and~\ref{Tprime} we can write:
+\begin{equation}
+\Delta P_x = -\frac{qL}{\beta c} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)
+\end{equation}
+
+Normalizing to the momentum of the reference particle:
+
+\begin{equation}
+\Delta p_x = \frac{\Delta P_x} {P}= -\frac{qL}{ m\gamma\beta^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}
+\end{equation}
+
+Similarly, for the $y$-direction we can write: 
+\begin{equation}
+\Delta p_y = \frac{\Delta P_y} {P}= -\frac{qL}{ m\gamma\beta^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)\label{dpy}
+\end{equation}
+
+
+\section{Temporary}
+
+[It is probably better to compute the kick in the bunch frame.]
 
 We stay in the thin lens approximation so we approximate the velocity vector of the particle as:
 \begin{equation}
@@ -195,8 +262,53 @@ We stay in the thin lens approximation so we approximate the velocity vector of 
 
 We want to compute the Lorentz force acting on the particle:
 \begin{equation}
-\textbf{F} =q \left( -\nabla \phi -\frac{\partial \textbf{A}}{\partial t}
+\begin{split}
+\textbf{F} &=q \left( -\nabla \phi -\frac{\partial \textbf{A}}{\partial t}
+ + \beta c \ \hat{\textbf{i}}_s \times {\left(\nabla \times \textbf{A} \right)} \right)\\
+ &=q \left( -\nabla \phi -\frac{\beta_0}{\gamma_0 c}\frac{\partial \phi}{\partial t}\hat{\textbf{i}}_s
  + \beta c \ \hat{\textbf{i}}_s \times {\left(\nabla \times \textbf{A} \right)} \right)
+ \end{split}
+\end{equation}
+
+We compute the vector product:
+\begin{align}
+\begin{split}
+\hat{\textbf{i}}_s \times \left(\nabla \times \textbf{A}\right) &= \left(\frac{\partial A_s}{\partial x} - \frac{\partial A_x}{\partial s} \right) \hat{\textbf{i}}_x + \left(\frac{\partial A_s}{\partial y} - \frac{\partial A_y}{\partial s} \right) \hat{\textbf{i}}_y\\
+ &= \left(\frac{\partial A_s}{\partial x} - \frac{\partial A_x}{\partial s} \right) \hat{\textbf{i}}_x + \left(\frac{\partial A_s}{\partial y} - \frac{\partial A_y}{\partial s} \right) \hat{\textbf{i}}_y + \underbrace{\left(\frac{\partial A_s}{\partial s} - \frac{\partial A_s}{\partial s} \right)}_{=0} \hat{\textbf{i}}_s\\
+ &= \nabla A_s - \frac{\partial \textbf{A}}{\partial s} 
+\end{split} 
+\end{align}
+
+We replace:
+\begin{equation}
+\textbf{F} 
+=q \left( -\nabla \phi -\frac{\beta_0}{\gamma_0 c}\frac{\partial \phi}{\partial t}\hat{\textbf{i}}_s
+ + \beta  \beta_0\nabla \phi - \frac{\beta \beta_0}{\gamma_0} \frac{\partial \phi}{\partial s} \hat{\textbf{i}}_s
+  \right)
+\end{equation}
+
+The potentials will have the same form as the sources (this can be shown explicitly using the Lorentz transformations):
+\begin{equation}
+\phi(x, y, s, t) = \phi_0\left(x, y, t - \frac{s}{\beta_0 c}\right)
+\end{equation}
+For a function in this form we can write:
+\begin{equation}
+\frac{\partial \phi}{\partial s} = -\frac{1}{\beta_0 c}\frac{\partial \phi}{\partial t} \label{derder}
+\end{equation}
+
+We replace:
+\begin{equation}
+\textbf{F} 
+=q \left( -\nabla \phi -\frac{\beta_0}{\gamma_0 c}\frac{\partial \phi}{\partial t}\hat{\textbf{i}}_s
+ + \beta  \beta_0\nabla \phi 
+ + \frac{\beta}{\gamma_0 c} \frac{\partial \phi}{\partial t} \hat{\textbf{i}}_s
+  \right)
+\end{equation}
+
+Reorganizing:
+\begin{equation}
+\textbf{F} 
+=  -q(1-\beta  \beta_0)\nabla \phi +\frac{(\beta-\beta_0)}{\gamma_0 c}\frac{\partial \phi}{\partial t}\hat{\textbf{i}}_s
 \end{equation}
 
 \begin{thebibliography}{99}
