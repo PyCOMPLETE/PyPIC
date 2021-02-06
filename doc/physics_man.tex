@@ -201,10 +201,7 @@ Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation i
 \frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss}
 \end{equation}
 
-\textbf{For large enough values of $\gamma_0$, Eq.~\ref{modifpoiss} can be approximated by:}
-\begin{equation}
-\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
-\end{equation}
+
 
 %\section{Interaction time}
 %In the lab frame the particle moves with speed $\beta$:
@@ -295,11 +292,13 @@ We replace:
 
 The potentials will have the same form as the sources (this can be shown explicitly using the Lorentz transformations):
 \begin{equation}
-\phi(x, y, s, t) = \phi_0\left(x, y, t - \frac{s}{\beta_0 c}\right)
+\phi(x, y, s, t) = \phi\left(x, y, t - \frac{s}{\beta_0 c}\right)
 \end{equation}
 For a function in this form we can write:
 \begin{equation}
-\frac{\partial}{\partial\zeta} = \frac{\partial \phi}{\partial s} = -\frac{1}{\beta_0 c}\frac{\partial \phi}{\partial t} \label{derder}
+ \frac{\partial \phi}{\partial s} = 
+\frac{\partial}{\partial\zeta} 
+ = -\frac{1}{\beta_0 c}\frac{\partial \phi}{\partial t} \label{derder}
 \end{equation}
 
 
@@ -348,9 +347,47 @@ from which we can compute the kicks on the normalized momenta ($P_0=m_0\beta_0\g
 \begin{align}
 \Delta p_x = \frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}\\
 \Delta p_y = \frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)\label{dpy}\\
-\Delta \delta \simeq \Delta p_z = \frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}\\
+\Delta \delta \simeq \Delta p_z = \frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}
 \end{align}
 
+Of your beam includes particles of different species (tracking of fragments), note that heree $q$ is the charge of the kicked particle while $m_0$ is the mass of the reference particle.
+
+
+\subsection{2.5D approximation}
+For large enough values of $\gamma_0$, Eq.~\ref{modifpoiss} can be approximated by:
+\begin{equation}
+\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
+\end{equation}
+which means that we can solve a simple 2D problem for each beam slice (ideentified by its $\zeta$).
+
+
+\subsection{Modulated 2D}
+
+Often the beam distribution can be factorized as:
+\begin{equation}
+\rho_0(x,y,\zeta) = Nq_0\lambda_0(\zeta)\rho_\perp(x,y) 
+\end{equation}
+where:
+\begin{align}
+&\int \lambda_0(z) \,dz = 1\\
+&\int \rho_\perp(x,y) \,dx\,dy = 1
+\end{align}
+In this case the potential can be factorized as:
+\begin{equation}
+\phi(x,y,\zeta) = q_0\lambda_0(\zeta)\phi_\perp(x,y) 
+\end{equation}
+
+where $\phi_\perp(x,y)$ is the solution of the following 2D Poisson equation:
+\begin{equation}
+\frac{\partial^2 \phi_\perp}{\partial x^2} +  \frac{\partial^2 \phi_\perp}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_\perp \left(x, y\right) \label{2dpoisspeerp}
+\end{equation}
+
+The kick can be expressed as:
+\begin{align}
+\Delta p_x &= \frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)\label{dpx}\\
+\Delta p_y &= \frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)\label{dpy}\\
+\Delta \delta \simeq \Delta p_z &= \frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)\label{dpz}
+\end{align}
 
 
 
