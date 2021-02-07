@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class FieldMap(ABS):
+class FieldMap(ABC):
 
     '''
     The init will have context argument, specipying the context
@@ -9,7 +9,7 @@ class FieldMap(ABS):
     '''
 
     @abstractmethod
-    def get_values_at_points(
+    def get_values_at_points(self,
             x, y, z=0, 
             return_rho=False, 
             return_phi=False,
@@ -17,6 +17,13 @@ class FieldMap(ABS):
             return_dphi_dy=False, 
             return_dphi_dz=False):
         pass
+
+    @abstractmethod
+    def get_data_and_singleparticle_code(self):
+        '''
+        To be defined, to inject element in 
+        single-particle tracking
+        '''
 
 
 class BiGaussianFieldMap(FieldMap):
@@ -33,7 +40,7 @@ class BiGaussianFieldMap(FieldMap):
 
         pass
 
-    def get_values_at_points(
+    def get_values_at_points(self,
             x, y, z=0, 
             return_rho=False, 
             return_phi=False,
@@ -58,7 +65,7 @@ class InterpolatedFieldMap(FieldMap):
         # 1D, 2D or 3D is inferred from the matrix size 
         pass
 
-    def get_values_at_points(
+    def get_values_at_points(self,
             x, y, z=0, 
             return_rho=False, 
             return_phi=False,
@@ -68,7 +75,7 @@ class InterpolatedFieldMap(FieldMap):
         pass
 
 
-class DualGridFieldMap(InterpolatedFieldMap):
+class DualGridFieldMap(FieldMap):
     def __init__(self, external_grid, internal_grid_properties,
                  context=None):
         pass
