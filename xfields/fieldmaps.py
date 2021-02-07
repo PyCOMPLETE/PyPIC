@@ -3,6 +3,11 @@ from abc import ABC, abstractmethod
 
 class FieldMap(ABS):
 
+    '''
+    The init will have context argument, specipying the context
+    in which wee store the state of the field map
+    '''
+
     @abstractmethod
     def get_values_at_points(
             x, y, z=0, 
@@ -19,7 +24,13 @@ class BiGaussianFieldMap(FieldMap):
     Bassetti-Erskine
     Must be 2D, no closed form dor 3D in general...
     '''
-    def __init__(self, charge, sigma_x, sigma_y):
+    def __init__(self, charge, sigma_x, sigma_y, theta=0, 
+                 context=None):
+        'theta is a rotation angle, e.g. to handle coupling'
+
+        # For now:
+        assert (theta == 0), 'Rotation (theta != 0 not yet implemented)'
+
         pass
 
     def get_values_at_points(
@@ -38,7 +49,8 @@ class InterpolatedFieldMap(FieldMap):
                  x_grid=None, y_grid=None, z_grid=None
                  dx=None, dy=None, dz=None,
                  xy_interp_method='linear',
-                 z_interp_method='linear'):
+                 z_interp_method='linear',
+                 context=None):
         '''
         interp_methods can be 'linear' or 'cubic'
         '''
@@ -57,7 +69,8 @@ class InterpolatedFieldMap(FieldMap):
 
 
 class DualGridFieldMap(InterpolatedFieldMap):
-    def __init__(self, external_grid, internal_grid_properties):
+    def __init__(self, external_grid, internal_grid_properties,
+                 context=None):
         pass
 
 
