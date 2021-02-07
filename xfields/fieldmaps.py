@@ -3,10 +3,29 @@ from abc import ABC, abstractmethod
 
 class FieldMap(ABC):
 
-    '''
-    The init will have context argument, specipying the context
-    in which wee store the state of the field map
-    '''
+    def __init__(self, context=None, solver=None, solver_type=None, **kwargs):
+
+        '''
+        The init will have context argument, specipying the context
+        in which wee store the state of the field map
+        '''
+
+        if solver is not None:
+            'Check conmpatibility with grid'
+            self.solver = solver
+        elif solver=='generate':
+            self.generate_solver(solver_type)
+
+    @abstractmethod
+    def generate_solver(self, solver_type):
+        pass
+
+    @abstractmethod
+    def get_data_and_singleparticle_code(self):
+        '''
+        To be defined, to inject element in 
+        single-particle tracking
+        '''
 
     @abstractmethod
     def get_values_at_points(self,
@@ -18,12 +37,33 @@ class FieldMap(ABC):
             return_dphi_dz=False):
         pass
 
+    def update_rho(self, rho, reset=True):
+        self.rho = rho.copy()
+
+    def update_phi(self, phi, reset=True):
+        self.phi = phi.copy()
+
     @abstractmethod
-    def get_data_and_singleparticle_code(self):
+    def update_rho_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True):
         '''
-        To be defined, to inject element in 
-        single-particle tracking
+        If reset is false charge density is added to the stored one
         '''
+
+    def update_phi_from_rho(self, solver=None):
+
+        if solver is None:
+            if hasattr(self, 'solver'):
+                solver = self.solver
+            else:
+                raise ValueError('I have no solver to compute phi!')
+
+    def update_all_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
+                                  solver=None):
+        
+        self.update_rho_from_particles(
+            x_p, y_p, z_p, ncharges_p, q0, reset=reset)
+
+        self.update_phi_from_rho(solver=solver)
 
 
 class BiGaussianFieldMap(FieldMap):
@@ -47,7 +87,29 @@ class BiGaussianFieldMap(FieldMap):
             return_dphi_dx=False, 
             return_dphi_dy=False, 
             return_dphi_dz=False):
-        pass   
+        pass 
+
+        '''
+    To have the same behavior as for the others we might keep different 
+    sigmas for rho and phi
+    '''
+
+    def update_rho(self, rho, reset):
+        raise ValueError('rho cannot be directly updated'
+                         'for UpdatableBiGaussianFieldMap')
+
+    def update_rho_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True):
+
+        assert reset, ('rho cannot be added for '
+                      'for UpdatableBiGaussianFieldMap')
+        # Basically updates sigma_rhos
+
+    def update_phi_from_rho(self, solver=None):
+        
+        assert (solver is None), ('no solver can be passed for'
+                                  'UpdatableBiGaussianFieldMap')
+        # Updates sigma_phi from sigma_rho
+        pass  
 
 
 class InterpolatedFieldMap(FieldMap): 
