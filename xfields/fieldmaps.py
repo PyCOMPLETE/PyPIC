@@ -28,6 +28,7 @@ class FieldMap(ABC):
         To be defined, to inject element in 
         single-particle tracking
         '''
+        pass
 
     @abstractmethod
     def get_values_at_points(self,
@@ -104,12 +105,13 @@ class BiGaussianFieldMap(FieldMap):
             return_dphi_dx=False, 
             return_dphi_dy=False, 
             return_dphi_dz=False):
-        pass 
+
 
         '''
-    To have the same behavior as for the others we might keep different 
-    sigmas for rho and phi
-    '''
+        To have the same behavior as for the others we might keep different 
+        sigmas for rho and phi
+        '''
+        pass 
 
     def update_rho(self, rho, reset):
         raise ValueError('rho cannot be directly updated'
@@ -134,6 +136,7 @@ class InterpolatedFieldMap(FieldMap):
     def __init__(self, rho=None, phi=None, 
                  x_grid=None, y_grid=None, z_grid=None
                  dx=None, dy=None, dz=None,
+                 x_range=None, y_range=None, z_range=None, 
                  xy_interp_method='linear',
                  z_interp_method='linear',
                  context=None):
