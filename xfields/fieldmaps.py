@@ -14,6 +14,23 @@ class FieldMap(ABS):
         pass
 
 
+class BiGaussianFieldMap(FieldMap):
+    '''
+    Bassetti-Erskine
+    Must be 2D, no closed form dor 3D in general...
+    '''
+    def __init__(self, charge, sigma_x, sigma_y):
+        pass
+
+    def get_values_at_points(
+            x, y, z=0, 
+            return_rho=False, 
+            return_phi=False,
+            return_dphi_dx=False, 
+            return_dphi_dy=False, 
+            return_dphi_dz=False):
+        pass   
+
 
 class InterpolatedFieldMap(FieldMap): 
 
@@ -39,19 +56,11 @@ class InterpolatedFieldMap(FieldMap):
         pass
 
 
-class BiGaussianFieldMap(FieldMap):
-    '''
-    Bassetti-Erskine
-    Must be 2D, no closed form dor 3D in general...
-    '''
-    def __init__(self, charge, sigma_x, sigma_y):
+class DualGridFieldMap(InterpolatedFieldMap):
+    def __init__(self, external_grid, internal_grid_properties):
         pass
 
-    def get_values_at_points(
-            x, y, z=0, 
-            return_rho=False, 
-            return_phi=False,
-            return_dphi_dx=False, 
-            return_dphi_dy=False, 
-            return_dphi_dz=False):
-        pass    
+
+
+
+ 
