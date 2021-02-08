@@ -1,4 +1,4 @@
-cdef extern from "hellofunctions.h" :
+cdef extern from "p2m.h" :
     void p2m_rectmesh3d(
 	const int pidx,
         const int nparticles,
