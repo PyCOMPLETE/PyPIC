@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class FieldMap(ABC):
 
     @abstractmethod
-    def __init__(self, context=None, solver=None, solver_type=None, 
+    def __init__(self, context=None, solver=None, solver_type=None,
                  updatable=True, **kwargs):
 
         '''
@@ -25,29 +25,29 @@ class FieldMap(ABC):
     @abstractmethod
     def get_data_and_singleparticle_code(self):
         '''
-        To be defined, to inject element in 
+        To be defined, to inject element in
         single-particle tracking
         '''
         pass
 
     @abstractmethod
     def get_values_at_points(self,
-            x, y, z=0, 
-            return_rho=False, 
+            x, y, z=0,
+            return_rho=False,
             return_phi=False,
-            return_dphi_dx=False, 
-            return_dphi_dy=False, 
+            return_dphi_dx=False,
+            return_dphi_dy=False,
             return_dphi_dz=False):
         pass
 
     def update_rho(self, rho, reset=True):
-        
+
         self._assert_updatable()
-        
+
         self.rho = rho.copy()
 
     def update_phi(self, phi, reset=True):
-        
+
         self._assert_updatable()
 
         self.phi = phi.copy()
@@ -57,11 +57,11 @@ class FieldMap(ABC):
         '''
         If reset is false charge density is added to the stored one
         '''
-        
+
         self._assert_updatable()
 
     def update_phi_from_rho(self, solver=None):
-        
+
         self._assert_updatable()
 
         if solver is None:
@@ -72,7 +72,7 @@ class FieldMap(ABC):
 
     def update_all_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
                                   solver=None):
-        
+
         self._assert_updatable()
 
         self.update_rho_from_particles(
@@ -89,7 +89,7 @@ class BiGaussianFieldMap(FieldMap):
     Bassetti-Erskine
     Must be 2D, no closed form dor 3D in general...
     '''
-    def __init__(self, charge, sigma_x, sigma_y, theta=0, 
+    def __init__(self, charge, sigma_x, sigma_y, theta=0,
                  context=None):
         'theta is a rotation angle, e.g. to handle coupling'
 
@@ -99,19 +99,19 @@ class BiGaussianFieldMap(FieldMap):
         pass
 
     def get_values_at_points(self,
-            x, y, z=0, 
-            return_rho=False, 
+            x, y, z=0,
+            return_rho=False,
             return_phi=False,
-            return_dphi_dx=False, 
-            return_dphi_dy=False, 
+            return_dphi_dx=False,
+            return_dphi_dy=False,
             return_dphi_dz=False):
 
 
         '''
-        To have the same behavior as for the others we might keep different 
+        To have the same behavior as for the others we might keep different
         sigmas for rho and phi
         '''
-        pass 
+        pass
 
     def update_rho(self, rho, reset):
         raise ValueError('rho cannot be directly updated'
@@ -124,19 +124,19 @@ class BiGaussianFieldMap(FieldMap):
         # Basically updates sigma_rhos
 
     def update_phi_from_rho(self, solver=None):
-        
+
         assert (solver is None), ('no solver can be passed for'
                                   'UpdatableBiGaussianFieldMap')
         # Updates sigma_phi from sigma_rho
-        pass  
+        pass
 
 
-class InterpolatedFieldMap(FieldMap): 
+class InterpolatedFieldMap(FieldMap):
 
-    def __init__(self, rho=None, phi=None, 
-                 x_grid=None, y_grid=None, z_grid=None
+    def __init__(self, rho=None, phi=None,
+                 x_grid=None, y_grid=None, z_grid=None,
                  dx=None, dy=None, dz=None,
-                 x_range=None, y_range=None, z_range=None, 
+                 x_range=None, y_range=None, z_range=None,
                  xy_interp_method='linear',
                  z_interp_method='linear',
                  context=None):
@@ -148,23 +148,23 @@ class InterpolatedFieldMap(FieldMap):
         pass
 
     def get_values_at_points(self,
-            x, y, z=0, 
-            return_rho=False, 
+            x, y, z=0,
+            return_rho=False,
             return_phi=False,
-            return_dphi_dx=False, 
-            return_dphi_dy=False, 
+            return_dphi_dx=False,
+            return_dphi_dy=False,
             return_dphi_dz=False):
         pass
 
 
-class InterpolatedFieldMapWithBoundary(FieldMap): 
+class InterpolatedFieldMapWithBoundary(FieldMap):
 
-    def __init__(self, rho=None, phi=None, 
-                 x_grid=None, y_grid=None, z_grid=None
+    def __init__(self, rho=None, phi=None,
+                 x_grid=None, y_grid=None, z_grid=None,
                  dx=None, dy=None, dz=None,
                  xy_interp_method='linear',
                  z_interp_method='linear',
-                 boundary=None
+                 boundary=None,
                  context=None):
         '''
         Does the Shortley-Weller interpolation close to the boundary.
@@ -174,11 +174,11 @@ class InterpolatedFieldMapWithBoundary(FieldMap):
         pass
 
     def get_values_at_points(self,
-            x, y, z=0, 
-            return_rho=False, 
+            x, y, z=0,
+            return_rho=False,
             return_phi=False,
-            return_dphi_dx=False, 
-            return_dphi_dy=False, 
+            return_dphi_dx=False,
+            return_dphi_dy=False,
             return_dphi_dz=False):
         pass
 
@@ -188,7 +188,3 @@ class DualGridFieldMap(FieldMap):
                  context=None):
         pass
 
-
-
-
- 
