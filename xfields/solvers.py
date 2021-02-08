@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 class Solver(ABC):
 
     @abstractmethod
-    def __init__(self, context=None, **kwargs)
+    def __init__(self, context=None, **kwargs):
+        pass
 
     @abstractmethod
     def solve(self, rho):
@@ -19,7 +20,7 @@ class FFTSolver3D(Solver):
         pass
 
 class FFTSolver2D(Solver):
-    
+
     def solve(self, rho):
         '''
         If an array 3D is passed, it should solve all of them together.
@@ -39,4 +40,4 @@ class FDSolver(Solver):
     def solve(self, rho):
         '''
         If an array 3D is passed, it should solve all of them together.
-        '''    
+        '''
