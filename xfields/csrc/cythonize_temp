@@ -1,0 +1,2 @@
+cythonize -a -i  p2m_cpu.pyx
+

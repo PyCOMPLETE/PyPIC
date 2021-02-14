@@ -12,7 +12,7 @@ cdef extern from "p2m.h" :
 def p2m(double[::1] x, double[::1] y, double[::1] z,
         double x0, double y0, double z0,
         double dx, double dy, double dz,
-        int nx, int ny, int nz, double[::1] rho):
+        int nx, int ny, int nz, double[::1, :, :] rho):
 
     p2m_rectmesh3d(
 	len(x),
@@ -20,4 +20,4 @@ def p2m(double[::1] x, double[::1] y, double[::1] z,
         x0, y0, z0,
         dx, dy, dz,
         nx, ny, nz,
-        &rho[0])
+        &rho[0,0,0])

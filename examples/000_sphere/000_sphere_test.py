@@ -21,3 +21,22 @@ x = x_cube[mask_sphere]
 y = y_cube[mask_sphere]
 z = z_cube[mask_sphere]
 
+# PIC
+x_lim = (-1., 1.)
+y_lim = (-1., 1.)
+z_lim = (-1., 1.)
+
+dx = 0.01
+dy = 0.015
+dz = 0.012
+
+xg = np.arange(x_lim[0], x_lim[1]+0.1*dx, dx)
+yg = np.arange(y_lim[0], y_lim[1]+0.1*dy, dy)
+zg = np.arange(z_lim[0], z_lim[1]+0.1*dz, dz)
+
+nx = len(xg)
+ny = len(yg)
+nz = len(zg)
+
+rho = np.zeros((nx, ny, nz), dtype=np.float64)
+
