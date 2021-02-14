@@ -6,10 +6,11 @@ from numpy.random import rand
 
 import p2m_cpu
 import matplotlib.pyplot as plt
+plt.close('all')
 
 center_xyz = np.array([0.1, 0.2, -0.3])
 radius = .5
-n_part_cube = 10000
+n_part_cube = 10000000
 
 x_cube = radius*(2. * rand(n_part_cube) - 1.) + center_xyz[0]
 y_cube = radius*(2. * rand(n_part_cube) - 1.) + center_xyz[1]
@@ -43,11 +44,19 @@ rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
+# Quick check on the x axis
+res = np.zeros_like(xg)
+p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
+        dx, dy, dz, nx, ny, nz, rho, res)
+plt.figure(100)
+plt.plot(xg, res)
+plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
+
 # Check integral
 int_rho = np.sum(rho)*dx*dy*dz
 assert np.isclose(int_rho, len(x))
 
-plt.close('all')
+
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111)
 ax1.pcolormesh(xg, yg, np.sum(rho, axis=2).T, shading='gouraud')
