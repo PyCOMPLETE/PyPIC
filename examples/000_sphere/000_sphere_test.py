@@ -7,7 +7,7 @@ from numpy.random import rand
 import p2m_cpu
 import matplotlib.pyplot as plt
 
-center_xyz = np.array([0.1, 0.2, 0.3])
+center_xyz = np.array([0.1, 0.2, -0.3])
 radius = .5
 n_part_cube = 10000
 
@@ -43,6 +43,10 @@ rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
+# Check integral
+int_rho = np.sum(rho)*dx*dy*dz
+assert np.isclose(int_rho, len(x))
+
 plt.close('all')
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111)
@@ -50,4 +54,15 @@ ax1.pcolormesh(xg, yg, np.sum(rho, axis=2).T, shading='gouraud')
 ax1.set_aspect('equal')
 ax1.add_patch(plt.Circle((center_xyz[0], center_xyz[1]), radius,
                          color='w', fill=False))
+ax1.set_xlabel('x')
+ax1.set_ylabel('y')
+
+fig2 = plt.figure(2)
+ax2 = fig2.add_subplot(111)
+ax2.pcolormesh(yg, zg, np.sum(rho, axis=0).T, shading='gouraud')
+ax2.set_aspect('equal')
+ax2.add_patch(plt.Circle((center_xyz[1], center_xyz[2]), radius,
+                         color='w', fill=False))
+ax2.set_xlabel('y')
+ax2.set_ylabel('z')
 plt.show()

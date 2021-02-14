@@ -15,6 +15,8 @@ void p2m_rectmesh3d(
         double *grid1d
 ) {
 
+    double vol_m1 = 1/(dx*dy*dz);
+
     int pidx = 0; //vectorize_over pidx nparticles
 
     // indices
@@ -28,14 +30,14 @@ void p2m_rectmesh3d(
     double dzi = z[pidx] - (z0 + kx * dz);
 
     // weights
-    double wijk =    (1.-dxi/dx)*(1.-dyi/dy)*(1.-dzi/dz);
-    double wi1jk =   (1.-dxi/dx)*(dyi/dy)   *(1.-dzi/dz);
-    double wij1k =   (dxi/dx)   *(1.-dyi/dy)*(1.-dzi/dz);
-    double wi1j1k =  (dxi/dx)   *(dyi/dy)   *(1.-dzi/dz);
-    double wijk1 =   (1.-dxi/dx)*(1.-dyi/dy)*(dzi/dz);
-    double wi1jk1 =  (1.-dxi/dx)*(dyi/dy)   *(dzi/dz);
-    double wij1k1 =  (dxi/dx)   *(1.-dyi/dy)*(dzi/dz);
-    double wi1j1k1 = (dxi/dx)   *(dyi/dy)   *(dzi/dz);
+    double wijk =    vol_m1 * (1.-dxi/dx) * (1.-dyi/dy) * (1.-dzi/dz);
+    double wi1jk =   vol_m1 * (1.-dxi/dx) * (dyi/dy)    * (1.-dzi/dz);
+    double wij1k =   vol_m1 * (dxi/dx)    * (1.-dyi/dy) * (1.-dzi/dz);
+    double wi1j1k =  vol_m1 * (dxi/dx)    * (dyi/dy)    * (1.-dzi/dz);
+    double wijk1 =   vol_m1 * (1.-dxi/dx) * (1.-dyi/dy) * (dzi/dz);
+    double wi1jk1 =  vol_m1 * (1.-dxi/dx) * (dyi/dy)    * (dzi/dz);
+    double wij1k1 =  vol_m1 * (dxi/dx)    * (1.-dyi/dy) * (dzi/dz);
+    double wi1j1k1 = vol_m1 * (dxi/dx)    * (dyi/dy)    * (dzi/dz);
 
     if (pidx < nparticles) {
         if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
