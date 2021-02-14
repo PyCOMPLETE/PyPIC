@@ -1,5 +1,5 @@
 
-inline void p2m_rectmesh3d(
+void p2m_rectmesh3d(
         // INPUTS:
           // length of x, y, z arrays
         const int nparticles,

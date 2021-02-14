@@ -1,6 +1,5 @@
 cdef extern from "p2m.h" :
     void p2m_rectmesh3d(
-	const int pidx,
         const int nparticles,
         double* x, double* y, double* z,
         const double x0, const double y0, const double z0,
@@ -10,13 +9,13 @@ cdef extern from "p2m.h" :
     );
 
 
-def p2m_1part(int pidx, double[::1] x, double[::1] y, double[::1] z,
+def p2m(double[::1] x, double[::1] y, double[::1] z,
         double x0, double y0, double z0,
         double dx, double dy, double dz,
         int nx, int ny, int nz, double[::1] rho):
 
     p2m_rectmesh3d(
-	pidx, len(x),
+	len(x),
         &x[0], &y[0],&z[0],
         x0, y0, z0,
         dx, dy, dz,
