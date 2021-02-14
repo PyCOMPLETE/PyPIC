@@ -5,6 +5,7 @@ import numpy as np
 from numpy.random import rand
 
 import p2m_cpu
+import matplotlib.pyplot as plt
 
 center_xyz = np.array([0.1, 0.2, 0.3])
 radius = .5
@@ -38,5 +39,15 @@ nx = len(xg)
 ny = len(yg)
 nz = len(zg)
 
-rho = np.zeros((nx, ny, nz), dtype=np.float64)
+rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 
+p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
+
+plt.close('all')
+fig1 = plt.figure(1)
+ax1 = fig1.add_subplot(111)
+ax1.pcolormesh(xg, yg, np.sum(rho, axis=2).T, shading='gouraud')
+ax1.set_aspect('equal')
+ax1.add_patch(plt.Circle((center_xyz[0], center_xyz[1]), radius,
+                         color='w', fill=False))
+plt.show()

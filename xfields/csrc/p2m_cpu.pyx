@@ -1,4 +1,4 @@
-cdef extern from "p2m.h" :
+cdef extern from "autogen_cpu_p2m.h" :
     void p2m_rectmesh3d(
         const int nparticles,
         double* x, double* y, double* z,
