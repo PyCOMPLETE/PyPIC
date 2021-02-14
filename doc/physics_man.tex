@@ -198,7 +198,7 @@ A_s &= \beta_0 \frac{\phi'}{c} =  \frac{\beta_0}{\gamma_0c}\phi
 
 Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation in $\phi$:
 \begin{equation}
-\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss}
+\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss_zeta}
 \end{equation}
 
 
@@ -346,9 +346,9 @@ In this way the force over the single interaction becomes independent on time an
 from which we can compute the kicks on the normalized momenta ($P_0=m_0\beta_0\gamma_0c$):
 
 \begin{align}
-\Delta p_x = \frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}\\
-\Delta p_y = \frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)\label{dpy}\\
-\Delta \delta \simeq \Delta p_z = \frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}
+\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}\\
+\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)\label{dpy}\\
+\Delta \delta \simeq \Delta p_z = \frac{m_0}{m}\frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}
 \end{align}
 
 Of your beam includes particles of different species (tracking of fragments), note that heree $q$ is the charge of the kicked particle while $m_0$ is the mass of the reference particle.
@@ -385,9 +385,9 @@ where $\phi_\perp(x,y)$ is the solution of the following 2D Poisson equation:
 
 The kick can be expressed as:
 \begin{align}
-\Delta p_x &= \frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)\label{dpx}\\
-\Delta p_y &= \frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)\label{dpy}\\
-\Delta \delta \simeq \Delta p_z &= \frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m_0\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)\label{dpz}
+\Delta p_x &= \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)\label{dpx_mod}\\
+\Delta p_y &= \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)\label{dpy_mod}\\
+\Delta \delta \simeq \Delta p_z &= \frac{ m_0} {m}\frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)\label{dpz_mod}
 \end{align}
 
 
