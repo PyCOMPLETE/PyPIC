@@ -413,7 +413,7 @@ where $\Pi(x)$ is a rectangular window defined as:
 \begin{equation}
 \Pi(x) = 
 \begin{cases}
-1\quad\text{for } -\frac{1}{2}<x<\frac{1}{2}\\
+1\quad\text{for } 0<x<1\\
 0\quad\text{elsewhere}
 \end{cases}
 \end{equation}
@@ -443,16 +443,16 @@ We change variable into $x'' = x - x'$:
 The integrand vanishes outside the set of the $(x, x'')$ defined by:
 \begin{equation}
 \begin{cases}
--\frac{L}{2} < x <\frac{L}{2}\\
--\frac{L}{2} < (x"-x) <\frac{L}{2}
+0 < x <{L}\\
+0 < (x"-x) <{L}
 \end{cases}
 \end{equation}
 
 Combining the two equations we obtain:
 \begin{equation}
--L<-\frac{L}{2}+x < x'' <\frac{L}{2}+x<L
+0<x < x'' <{L}+x<2L
 \end{equation}
-i.e. the integrand is zero for $|x''|<L$.
+i.e. the integrand is zero for $0<x''<2L$.
 Therefore in equation \eqref{eq:conv1} we can replace the $G(x'')$ with its truncated version:
 \begin{equation}
 G_{2L}(x'') = G(x'')\,\Pi
@@ -500,7 +500,7 @@ This is a cyclic convolution, so we can proceed as followd. We split the integra
 \phi_L(x) = 
 \Pi\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
-\int_{-L +2nL}^{L+2nL} 
+\int_{2nL}^{2(n+1)L} 
 \rho(x')\,G_{2LR}(x-x') dx'
 \label{eq:conv3}
 \end{equation}
@@ -509,7 +509,7 @@ In each term I replace $x''' = x'+2nL$:
 \phi_L(x) = 
 \Pi\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
-\int_{-L }^{L} 
+\int_{0 }^{2L} 
 \rho(x'''-2nL)\,G_{2LR}(x-x'''-2nL) dx'
 \label{eq:conv4}
 \end{equation}
@@ -519,11 +519,11 @@ But $G_{2LR}$ is periodic:
 \phi_L(x) &= 
 \Pi\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
-\int_{-L }^{L} 
+\int_{0 }^{2L} 
 \rho(x'''-2nL)\,G_{2LR}(x-x''') dx'''\\
 \\&=
 \Pi\left(\frac{x}{L}\right)
-\int_{-L }^{L} 
+\int_{0 }^{2L}  
 \sum_{n=-\infty}^{+\infty}
 \rho(x'''-2nL)\,G_{2LR}(x-x''') dx'''
 \end{split}
@@ -537,15 +537,30 @@ I can define a replicated version of $\rho(x)$:
 \end{equation}
 
 obtaining:
-But $G_{2LR}$ is periodic:
 \begin{equation}
 \phi_L(x) = 
 \Pi\left(\frac{x}{L}\right)
-\int_{-L }^{L} 
-\sum_{n=-\infty}^{+\infty}
+\int_{0 }^{2L} 
 \rho_{2LR}(x')\,G_{2LR}(x-x') dx'
 \label{eq:conv6}
 \end{equation}
+
+The function:
+
+\begin{equation}
+\phi_{2LR}(x) = 
+\int_{0 }^{2L} 
+\rho_{2LR}(x')\,G_{2LR}(x-x') dx'
+\label{eq:conv7}
+\end{equation}
+is periodic of period $2L$. From it the potential of interest can be simply calculated by selecting the interval $[0, L]$:
+\begin{equation}
+\phi_L(x) = 
+\Pi\left(\frac{x}{L}\right)
+\phi_{2LR}(x)
+\label{eq:sel}
+\end{equation}
+
 
 
 
