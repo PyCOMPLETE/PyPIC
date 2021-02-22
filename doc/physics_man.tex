@@ -401,11 +401,13 @@ We start from a 1D case for illustration and then we generalize.
 We assume free space. The potential can be written as the convolution of a Green function with the charge distribution:
 \begin{equation}
 \phi(x) = \int_{-\infty}^{+\infty} \rho(x')\,G(x-x') dx'
+\label{eq:conv}
 \end{equation}
 
 We assume that the source is limited to a region of measure $L$:
 \begin{equation}
 \rho(x) = \rho(x)\,\Pi\left(\frac{x}{L}\right)
+\label{eq:rholim}
 \end{equation}
 where $\Pi(x)$ is a rectangular window defined as:
 \begin{equation}
@@ -418,9 +420,81 @@ where $\Pi(x)$ is a rectangular window defined as:
 
 We are interested in the electric potential only the region occupied by the sources, so we can compute:
 \begin{equation}
-\phi_L(x) = \phi_L(x) \Pi(x) 
+\phi_L(x) = \phi(x) \Pi\left(\frac{x}{L}\right)
+\label{eq:philim}
 \end{equation}
 
+We replace Eq.\,\eqref{eq:rholim} and Eq.\,\eqref{eq:philim} into Eq.\eqref{eq:conv}, obtaining:
+\begin{equation}
+\phi_L(x) = \Pi\left(\frac{x}{L}\right)
+\int_{-\infty}^{+\infty} 
+\Pi\left(\frac{x'}{L}\right)
+\rho(x')\,G(x-x') dx'
+\end{equation}
+We change variable into $x'' = x - x'$:
+\begin{equation}
+\phi_L(x) = 
+\int_{-\infty}^{+\infty} 
+\Pi\left(\frac{x}{L}\right)
+\Pi\left(\frac{x-x''}{L}\right)
+\rho(x-x'')\,G(x'') dx''
+\label{eq:conv1}
+\end{equation}
+The integrand vanishes outside the set of the $(x, x'')$ defined by:
+\begin{equation}
+\begin{cases}
+-\frac{L}{2} < x <\frac{L}{2}\\
+-\frac{L}{2} < (x"-x) <\frac{L}{2}
+\end{cases}
+\end{equation}
+
+Combining the two equations we obtain:
+\begin{equation}
+-L<-\frac{L}{2}+x < x'' <\frac{L}{2}+x<L
+\end{equation}
+i.e. the integrand is zero for $|x''|<L$.
+Therefore in equation \eqref{eq:conv1} we can replace the $G(x'')$ with its truncated version:
+\begin{equation}
+G_{2L}(x'') = G(x'')\,\Pi
+\left(
+\frac{x''}{2L}
+\right)
+\end{equation}
+obtaining:
+\begin{equation}
+\phi_L(x) = 
+\int_{-\infty}^{+\infty} 
+\Pi\left(\frac{x}{L}\right)
+\Pi\left(\frac{x-x''}{L}\right)
+\rho(x-x'')\,G_{2L}(x'') dx''
+\label{eq:conv2}
+\end{equation}
+
+Since the two window function force the integrand to zero outside the region $|x''|<L$ we can replace $G_{2L}(x'')$ with its replicated version:
+\begin{equation}
+G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x'-2nL) = \sum_{n=-\infty}^{+\infty}G(x''-2nL)\,\Pi
+\left(
+\frac{x''-2nL}{2L}
+\right)
+\end{equation}
+obtaining:
+\begin{equation}
+\phi_L(x) = 
+\int_{-\infty}^{+\infty} 
+\Pi\left(\frac{x}{L}\right)
+\Pi\left(\frac{x-x''}{L}\right)
+\rho(x-x'')\,G_{2LR}(x'') dx''
+\label{eq:conv2}
+\end{equation}
+
+We can go back to the initial coordinate by substituting $x'' = x-x'$:
+\begin{equation}
+\phi_L(x) = 
+\Pi\left(\frac{x}{L}\right)
+\int_{-\infty}^{+\infty} 
+\rho(x')\,G_{2LR}(x-x') dx'
+\label{eq:conv2}
+\end{equation}
 
 \begin{thebibliography}{99}
 
