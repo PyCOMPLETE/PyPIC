@@ -553,7 +553,7 @@ The function:
 \rho_{2LR}(x')\,G_{2LR}(x-x') dx'
 \label{eq:conv7}
 \end{equation}
-is periodic of period $2L$. From it the potential of interest can be simply calculated by selecting the interval $[0, L]$:
+is periodic of period $2L$. From it the potential of interest can be simply calculated by selecting the first half period $[0, L]$:
 \begin{equation}
 \phi_L(x) = 
 \Pi\left(\frac{x}{L}\right)
@@ -561,6 +561,17 @@ is periodic of period $2L$. From it the potential of interest can be simply calc
 \label{eq:sel}
 \end{equation}
 
+We expand $\phi_{2LR}(x)$ in Fourier series:
+\begin{equation}
+\phi_{2LR}(x) = \sum_{k=-\infty}^{+\infty} \hat{\phi}_k\, e^{j2\pi k \frac{x}{2L}}
+\label{eq:sel}
+\end{equation}
+where the Fourier coefficient are given by:
+
+\begin{equation}
+\hat{\phi}_k = \frac{1}{2L}\int_0^{2L} \phi_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx
+\label{eq:phik}
+\end{equation}
 
 
 
