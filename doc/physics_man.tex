@@ -476,6 +476,7 @@ G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x'-2nL) = \sum_{n=-\infty}^{+\in
 \left(
 \frac{x''-2nL}{2L}
 \right)
+\label{eq:GRL}
 \end{equation}
 obtaining:
 \begin{equation}
@@ -484,7 +485,6 @@ obtaining:
 \Pi\left(\frac{x}{L}\right)
 \Pi\left(\frac{x-x''}{L}\right)
 \rho(x-x'')\,G_{2LR}(x'') dx''
-\label{eq:conv2}
 \end{equation}
 
 We can go back to the initial coordinate by substituting $x'' = x-x'$:
@@ -493,8 +493,62 @@ We can go back to the initial coordinate by substituting $x'' = x-x'$:
 \Pi\left(\frac{x}{L}\right)
 \int_{-\infty}^{+\infty} 
 \rho(x')\,G_{2LR}(x-x') dx'
-\label{eq:conv2}
 \end{equation}
+
+This is a cyclic convolution, so we can proceed as followd. We split the integral:
+\begin{equation}
+\phi_L(x) = 
+\Pi\left(\frac{x}{L}\right)
+\sum_{n=-\infty}^{+\infty}
+\int_{-L +2nL}^{L+2nL} 
+\rho(x')\,G_{2LR}(x-x') dx'
+\label{eq:conv3}
+\end{equation}
+In each term I replace $x''' = x'+2nL$:
+\begin{equation}
+\phi_L(x) = 
+\Pi\left(\frac{x}{L}\right)
+\sum_{n=-\infty}^{+\infty}
+\int_{-L }^{L} 
+\rho(x'''-2nL)\,G_{2LR}(x-x'''-2nL) dx'
+\label{eq:conv4}
+\end{equation}
+But $G_{2LR}$ is periodic:
+\begin{equation}
+\begin{split}
+\phi_L(x) &= 
+\Pi\left(\frac{x}{L}\right)
+\sum_{n=-\infty}^{+\infty}
+\int_{-L }^{L} 
+\rho(x'''-2nL)\,G_{2LR}(x-x''') dx'''\\
+\\&=
+\Pi\left(\frac{x}{L}\right)
+\int_{-L }^{L} 
+\sum_{n=-\infty}^{+\infty}
+\rho(x'''-2nL)\,G_{2LR}(x-x''') dx'''
+\end{split}
+\label{eq:conv5}
+\end{equation}
+
+I can define a replicated version of $\rho(x)$:
+\begin{equation}
+\rho_{2LR}(x)= \sum_{n=-\infty}^{+\infty}
+\rho(x-2nL)
+\end{equation}
+
+obtaining:
+But $G_{2LR}$ is periodic:
+\begin{equation}
+\phi_L(x) = 
+\Pi\left(\frac{x}{L}\right)
+\int_{-L }^{L} 
+\sum_{n=-\infty}^{+\infty}
+\rho_{2LR}(x')\,G_{2LR}(x-x') dx'
+\label{eq:conv6}
+\end{equation}
+
+
+
 
 \begin{thebibliography}{99}
 
