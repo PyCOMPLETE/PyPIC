@@ -63,7 +63,7 @@
 		\centering \fontsize{28pt}{40pt}\selectfont % The first argument for fontsize is the font size of the text and the second is the line spacing - you may need to play with these for your particular title
 		\vspace*{0.7cm} % Space between the start of the title and the top of the grey box
 		
-		\hfill PyPIC \\
+		\hfill Xfields \\
 		\hfill physics manual
 
 %		\hfill Beam Screens\\
@@ -96,6 +96,11 @@
 \newpage
 
 \renewcommand*{\arraystretch}{1.4}
+
+
+\section{FFT method}
+
+We illustrate the method in a single dimension then extend to multiple dimensions.
 
 
 
@@ -200,7 +205,6 @@ Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation i
 \begin{equation}
 \frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss_zeta}
 \end{equation}
-
 
 
 %\section{Interaction time}
@@ -390,6 +394,32 @@ The kick can be expressed as:
 \Delta \delta \simeq \Delta p_z &= \frac{ m_0} {m}\frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)\label{dpz_mod}
 \end{align}
 
+\section{FFT solver}
+
+We start from a 1D case for illustration and then we generalize.
+
+We assume free space. The potential can be written as the convolution of a Green function with the charge distribution:
+\begin{equation}
+\phi(x) = \int_{-\infty}^{+\infty} \rho(x')\,G(x-x') dx'
+\end{equation}
+
+We assume that the source is limited to a region of measure $L$:
+\begin{equation}
+\rho(x) = \rho(x)\,\Pi\left(\frac{x}{L}\right)
+\end{equation}
+where $\Pi(x)$ is a rectangular window defined as:
+\begin{equation}
+\Pi(x) = 
+\begin{cases}
+1\quad\text{for } -\frac{1}{2}<x<\frac{1}{2}\\
+0\quad\text{elsewhere}
+\end{cases}
+\end{equation}
+
+We are interested in the electric potential only the region occupied by the sources, so we can compute:
+\begin{equation}
+\phi_L(x) = \phi_L(x) \Pi(x) 
+\end{equation}
 
 
 \begin{thebibliography}{99}
