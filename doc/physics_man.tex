@@ -404,75 +404,84 @@ We assume free space. The potential can be written as the convolution of a Green
 \label{eq:conv}
 \end{equation}
 
-We assume that the source is limited to a region of measure $L$:
+We assume that the source is limited to the region  $[0, L]$:
 \begin{equation}
-\rho(x) = \rho(x)\,\Pi\left(\frac{x}{L}\right)
+\rho(x) = \rho(x)\,\Pi_{[0,L]}\left(x\right)
 \label{eq:rholim}
 \end{equation}
-where $\Pi(x)$ is a rectangular window defined as:
+where $\Pi_{[a,b]}(x)$ is a rectangular window function defined as:
 \begin{equation}
-\Pi(x) = 
+\Pi_{[a,b]}(x) = 
 \begin{cases}
-1\quad\text{for } -\frac{1}{2}<x<\frac{1}{2}\\
+1\quad\text{for } a<x<b\\
 0\quad\text{elsewhere}
 \end{cases}
 \end{equation}
 
 We are interested in the electric potential only the region occupied by the sources, so we can compute:
 \begin{equation}
-\phi_L(x) = \phi(x) \Pi\left(\frac{x}{L}\right)
+\phi_L(x) = \phi(x) \Pi_[0, L]\left(\frac{x}{L}\right)
 \label{eq:philim}
 \end{equation}
 
 We replace Eq.\,\eqref{eq:rholim} and Eq.\,\eqref{eq:philim} into Eq.\eqref{eq:conv}, obtaining:
 \begin{equation}
-\phi_L(x) = \Pi\left(\frac{x}{L}\right)
+\phi_L(x) = \Pi_{[0,L]}\left( x\right)
 \int_{-\infty}^{+\infty} 
-\Pi\left(\frac{x'}{L}\right)
+\Pi_{[0,L]}\left(x\right)
 \rho(x')\,G(x-x') dx'
 \end{equation}
 We change variable into $x'' = x - x'$:
 \begin{equation}
 \phi_L(x) = 
 \int_{-\infty}^{+\infty} 
-\Pi\left(\frac{x}{L}\right)
-\Pi\left(\frac{x-x''}{L}\right)
+\Pi_{[0,L]}\left({x}\right)
+\Pi_{[0,L]}\left({x-x''}\right)
 \rho(x-x'')\,G(x'') dx''
 \label{eq:conv1}
 \end{equation}
 The integrand vanishes outside the set of the $(x, x'')$ defined by:
 \begin{equation}
 \begin{cases}
--\frac{L}{2} < x <\frac{L}{2}\\
--\frac{L}{2} < (x"-x) <\frac{L}{2}
+0 < x <{L}\\
+0 < (x-x'') <{L}
+\end{cases}
+\end{equation}
+
+We flip the signs in the second equation, obtaining:
+\begin{equation}
+\begin{cases}
+0 < x <{L}\\
+-L < (x''-x) <0
 \end{cases}
 \end{equation}
 
 Combining the two equations we obtain:
 \begin{equation}
--L<-\frac{L}{2}+x < x'' <\frac{L}{2}+x<L
+-L<-L + x < x'' <x<L
 \end{equation}
 i.e. the integrand is zero for $-L<x''<L$.
 Therefore in equation \eqref{eq:conv1} we can replace the $G(x'')$ with its truncated version:
 \begin{equation}
-G_{2L}(x'') = G(x'')\,\Pi
+G_{2L}(x'') = G(x'')\,\Pi_{[-L,L]}
 \left(
-\frac{x''}{2L}
+{x''}
 \right)
 \end{equation}
+
 obtaining:
 \begin{equation}
 \phi_L(x) = 
 \int_{-\infty}^{+\infty} 
-\Pi\left(\frac{x}{L}\right)
-\Pi\left(\frac{x-x''}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x-x''}{L}\right)
 \rho(x-x'')\,G_{2L}(x'') dx''
 \label{eq:conv2}
 \end{equation}
 
 Since the two window function force the integrand to zero outside the region $|x''|<L$ we can replace $G_{2L}(x'')$ with its replicated version:
 \begin{equation}
-G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x'-2nL) = \sum_{n=-\infty}^{+\infty}G(x''-2nL)\,\Pi
+G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x'-2nL) = \sum_{n=-\infty}^{+\infty}G(x''- L -2nL)\,\Pi_{[-L,L]}
 \left(
 \frac{x''-2nL}{2L}
 \right)
@@ -482,15 +491,15 @@ obtaining:
 \begin{equation}
 \phi_L(x) = 
 \int_{-\infty}^{+\infty} 
-\Pi\left(\frac{x}{L}\right)
-\Pi\left(\frac{x-x''}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x-x''}{L}\right)
 \rho(x-x'')\,G_{2LR}(x'') dx''
 \end{equation}
 
 We can go back to the initial coordinate by substituting $x'' = x-x'$:
 \begin{equation}
 \phi_L(x) = 
-\Pi\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
 \int_{-\infty}^{+\infty} 
 \rho(x')\,G_{2LR}(x-x') dx'
 \end{equation}
@@ -498,18 +507,18 @@ We can go back to the initial coordinate by substituting $x'' = x-x'$:
 This is a cyclic convolution, so we can proceed as followd. We split the integral:
 \begin{equation}
 \phi_L(x) = 
-\Pi\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
-\int_{-\frac{L}{2} +2nL }^{+\frac{L}{2} +2nL } 
+\int_{2nL}^{2(n+1)L} 
 \rho(x')\,G_{2LR}(x-x') dx'
 \label{eq:conv3}
 \end{equation}
 In each term I replace $x''' = x'+2nL$:
 \begin{equation}
 \phi_L(x) = 
-\Pi\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  } 
+\int_{0 }^{2L} 
 \rho(x'''-2nL)\,G_{2LR}(x-x'''-2nL) dx'
 \label{eq:conv4}
 \end{equation}
@@ -517,13 +526,13 @@ But $G_{2LR}$ is periodic:
 \begin{equation}
 \begin{split}
 \phi_L(x) &= 
-\Pi\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  }
+\int_{0 }^{2L} 
 \rho(x'''-2nL)\,G_{2LR}(x-x''') dx'''\\
 \\&=
-\Pi\left(\frac{x}{L}\right)
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  }
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
+\int_{0 }^{2L}  
 \sum_{n=-\infty}^{+\infty}
 \rho(x'''-2nL)\,G_{2LR}(x-x''') dx'''
 \end{split}
@@ -539,7 +548,7 @@ I can define a replicated version of $\rho(x)$:
 obtaining:
 \begin{equation}
 \phi_L(x) = 
-\Pi\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
 \int_{0 }^{2L} 
 \rho_{2LR}(x')\,G_{2LR}(x-x') dx'
 \label{eq:conv6}
@@ -549,14 +558,14 @@ The function:
 
 \begin{equation}
 \phi_{2LR}(x) = 
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  }
+\int_{0 }^{2L} 
 \rho_{2LR}(x')\,G_{2LR}(x-x') dx'
 \label{eq:confin}
 \end{equation}
-is periodic of period $2L$. From it the potential of interest can be simply calculated by selecting the  half period $[-L/2, L/2]$:
+is periodic of period $2L$. From it the potential of interest can be simply calculated by selecting the first half period $[0, L]$:
 \begin{equation}
 \phi_L(x) = 
-\Pi\left(\frac{x}{L}\right)
+\Pi_{[0,L]}\left(\frac{x}{L}\right)
 \phi_{2LR}(x)
 \label{eq:sel}
 \end{equation}
@@ -583,20 +592,16 @@ With the change of variable $x'' = x-x'$ we obtain:
 \begin{equation}
 \tilde{\phi}_k = 
 \frac{1}{2L}
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  } 
+\int_0^{2L} 
 \rho_{2LR}(x') e^{-j2\pi k \frac{x'}{2L}}dx'\,
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  }
+\int_{0 }^{2L} 
 \,G_{2LR}(x'') e^{-j2\pi k \frac{x''}{2L}}\,  \,  dx''
 \end{equation}
 
 where we recognize the Fourier coefficients of $\rho_{2LR}(x)$ and $\,G_{2LR}(x)$:
 \begin{align}
-\tilde{\rho}_k = \frac{1}{2L}
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  }
- \rho_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx \label{eq:rhok}\\
-\tilde{G}_k = \frac{1}{2L}
-\int_{-\frac{L}{2}  }^{+\frac{L}{2}  }
- G_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx \label{eq:Gk}
+\tilde{\rho}_k = \frac{1}{2L}\int_0^{2L} \rho_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx \label{eq:rhok}\\
+\tilde{G}_k = \frac{1}{2L}\int_0^{2L} G_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx \label{eq:Gk}
 \end{align}
 obtaining simply:
 \begin{equation}
@@ -663,11 +668,12 @@ This can be rewritten as:
 In summary the potential at the grid nodes can be computed as follows:
 \begin{enumerate}
 \item We sample or average the Green function with step $h_x$ over the interval $[0, L]$, obtaining the sequence $G(x_n)$ for $n=0, ..., N-1$
-\item We build its replicate version in the interval $[L, 2L]$ using the fact that: 
+\item We build its replicate version in the interval $[L, 2L]$ using the fact that:
 \begin{equation}
-G_{2LR}(2L-x) = G(-x) = G(x)
-\end{equation}
+G_{2LR}(2L-x) = G(-x) = G(x) 
+\end{equation}....
 \end{enumerate}
+
 
 \subsection{Extension to 3D}
 
