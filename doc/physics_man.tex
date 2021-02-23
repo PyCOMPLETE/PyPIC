@@ -563,39 +563,116 @@ is periodic of period $2L$. From it the potential of interest can be simply calc
 
 We expand $\phi_{2LR}(x)$ in Fourier series:
 \begin{equation}
-\phi_{2LR}(x) = \frac{1}{2L}\sum_{k=-\infty}^{+\infty} \hat{\phi}_k\, e^{j2\pi k \frac{x}{2L}}
+\phi_{2LR}(x) = \sum_{k=-\infty}^{+\infty} \hat{\phi}_k\, e^{-j2\pi k \frac{x}{2L}}
 \label{eq:phifour}
 \end{equation}
 where the Fourier coefficient are given by:
 
 \begin{equation}
-\hat{\phi}_k = \int_0^{2L} \phi_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx
+\hat{\phi}_k = \frac{1}{2L}\int_0^{2L} \phi_{2LR}(x)\, e^{j2\pi k \frac{x}{2L}} \, dx
 \label{eq:phik}
 \end{equation}
 
 We replace Eq.\,\eqref{eq:confin} into Eq.\,\eqref{eq:phik} obtaining:
 \begin{equation}
-\hat{\phi}_k = \int_0^{2L} \int_{0 }^{2L} 
-\rho_{2LR}(x')\,G_{2LR}(x-x') dx'\, e^{-j2\pi k \frac{x}{2L}} \,  dx'\, dx
+\hat{\phi}_k = \frac{1}{2L}\int_0^{2L} \int_{0 }^{2L} 
+\rho_{2LR}(x')\,G_{2LR}(x-x') \, e^{j2\pi k \frac{x}{2L}} \,  dx'\, dx
 \end{equation}
 
 With the change of variable $x'' = x-x'$ we obtain:
 \begin{equation}
 \hat{\phi}_k = 
+\frac{1}{2L}
 \int_0^{2L} 
-\rho_{2LR}(x') e^{-j2\pi k \frac{x'}{2L}}dx'\,
+\rho_{2LR}(x') e^{j2\pi k \frac{x'}{2L}}dx'\,
 \int_{0 }^{2L} 
-\,G_{2LR}(x'') e^{-j2\pi k \frac{x''}{2L}}\,  \,  dx''
+\,G_{2LR}(x'') e^{j2\pi k \frac{x''}{2L}}\,  \,  dx''
 \end{equation}
 
 where we recognize the Fourier coefficients of $\rho_{2LR}(x)$ and $\,G_{2LR}(x)$:
 \begin{align}
-\hat{\rho}_k = \int_0^{2L} \rho_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx\\
-\hat{G}_k = \int_0^{2L} G_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx\\
+\hat{\rho}_k = \frac{1}{2L}\int_0^{2L} \rho_{2LR}(x)\, e^{j2\pi k \frac{x}{2L}} \, dx \label{eq:rhok}\\
+\hat{G}_k = \frac{1}{2L}\int_0^{2L} G_{2LR}(x)\, e^{j2\pi k \frac{x}{2L}} \, dx \label{eq:Gk}
 \end{align}
 obtaining simply:
 \begin{equation}
-\hat{\phi}_k = \hat{G}_k \, \hat{\rho}_k
+\hat{\phi}_k = 2L \, \hat{G}_k \, \hat{\rho}_k
+\end{equation}
+
+I assume to have the functions $\rho_{2LR}(x)$ and  $G_{2LR}(x)$ sampled (or averaged) with step:
+\begin{equation}
+\Delta x = \frac{2L}{M} = \frac{L}{N}
+\end{equation}
+
+I can approximate the integrals in Eqs.\,\eqref{eq:rhok} and\,\eqref{eq:Gk} as:
+\begin{align}
+\hat{\rho}_k = \frac{1}{M}\sum_{n=0}^{M-1} \rho_{2LR}(x_n)\, e^{j2\pi  \frac{kn}{M}} \label{eq:rhokfft}\\
+\hat{G}_k = \frac{1}{M}\sum_{n=0}^{M-1} G_{2LR}(x_n)\, e^{j2\pi  \frac{kn}{M}}  \label{eq:Gkfft}
+\end{align}
+
+Using Eq.\,\eqref{eq:phifour} we can obtained a sampled version of $\phi(x)$:
+\begin{equation}
+\phi_{2LR}(x_n) = 
+2L \sum_{n=0}^{M-1}  
+\hat{G}_k \, \hat{\rho}_k\, e^{-j2\pi \frac{kn}{M}}
+\label{eq:phifft}
+\end{equation}
+where we have assumed that $\phi(x)$ is sufficiently smooth to allow truncating the sum.
+
+\subsection{Extension to 3D}
+
+In summary in 1D what one needs to do is:
+
+Transform the sources and the Green function:
+\begin{align}
+\hat{\rho}_k = \frac{1}{M}\sum_{n=0}^{M-1} \rho_{2LR}(x_n)\, e^{j2\pi  \frac{kn}{M}} \\
+\hat{G}_k = \frac{1}{M}\sum_{n=0}^{M-1} G_{2LR}(x_n)\, e^{j2\pi  \frac{kn}{M}}  
+\end{align}
+
+Do the product and antitransform:
+\begin{equation}
+\phi_{2LR}(x_n) = 
+2L \sum_{n=0}^{M-1}  
+\hat{G}_k \, \hat{\rho}_k\, e^{-j2\pi \frac{kn}{M}}
+\end{equation}
+
+Repeating the same reasoning along all directions one obtains:
+\begin{align}
+&\hat{\rho}_{k_x k_y k_z} = 
+\frac{1}{M_x M_y M_z}
+\sum_{n_x=0}^{M_x-1} e^{j 2\pi  \frac{k_x n_x}{M_x}} 
+\sum_{n_y=0}^{M_y-1} e^{j 2\pi  \frac{k_y n_y}{M_y}}
+\sum_{n_z=0}^{M_z-1} e^{j 2\pi  \frac{k_z n_z}{M_z}}\, 
+\rho_{2LR}(x_{n_x}, y_{n_y}, z_{n_z})\\
+&\hat{G}_{k_x k_y k_z} = 
+\frac{1}{M_x M_y M_z}
+\sum_{n_x=0}^{M_x-1} e^{j 2\pi  \frac{k_x n_x}{M_x}} 
+\sum_{n_y=0}^{M_y-1} e^{j 2\pi  \frac{k_y n_y}{M_y}}
+\sum_{n_z=0}^{M_z-1} e^{j 2\pi  \frac{k_z n_z}{M_z}}\, 
+G_{2LR}(x_{n_x}, y_{n_y}, z_{n_z})
+\end{align}
+
+\begin{multline}
+\phi_{2LR}(x_{n_x}, y_{n_y}, z_{n_z}) = \\
+(2L_x)(2L_y)(2L_z)
+\sum_{k_x=0}^{M_x-1} e^{-j 2\pi  \frac{k_x n_x}{M_x}} 
+\sum_{k_y=0}^{M_y-1} e^{-j 2\pi  \frac{k_y n_y}{M_y}}
+\sum_{k_z=0}^{M_z-1} e^{-j 2\pi  \frac{k_z n_z}{M_z}}\, 
+\hat{G}_{k_x k_y k_z} \hat{\rho}_{k_x k_y k_z}
+\end{multline}
+
+The continuous convolution in 3D is written as 
+
+\begin{equation}
+\phi(x, y, z) = \iiint_{-\infty}^{+\infty} \rho(x', y', z')
+   \,G(x-x', y-y', z-z')\,dx'\,dy'\,dz'
+\end{equation}
+
+where:
+\begin{equation}
+G(x, y, z) = \frac{1}{4\pi\varepsilon_0}\frac{1}{
+\sqrt{x^2 +y^2 +z^2}
+}
 \end{equation}
 
 \begin{thebibliography}{99}
