@@ -398,6 +398,7 @@ The kick can be expressed as:
 
 We start from a 1D case for illustration and then we generalize.
 
+\subsection{1D case}
 We assume free space. The potential can be written as the convolution of a Green function with the charge distribution:
 \begin{equation}
 \phi(x) = \int_{-\infty}^{+\infty} \rho(x')\,G(x-x') dx'
@@ -481,11 +482,11 @@ obtaining:
 
 Since the two window function force the integrand to zero outside the region $|x''|<L$ we can replace $G_{2L}(x'')$ with its replicated version:
 \begin{equation}
-G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x'-2nL) = \sum_{n=-\infty}^{+\infty}G(x''- L -2nL)\,\Pi_{[-L,L]}
+G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x''-2nL) = \sum_{n=-\infty}^{+\infty}G(x'' -2nL)\,\Pi_{[-L,L]}
 \left(
 \frac{x''-2nL}{2L}
 \right)
-\label{eq:GRL}
+\label{eq:GLR}
 \end{equation}
 obtaining:
 \begin{equation}
@@ -544,8 +545,12 @@ I can define a replicated version of $\rho(x)$:
 \rho_{2LR}(x)= \sum_{n=-\infty}^{+\infty}
 \rho(x-2nL)
 \end{equation}
+noting that this implies:
+\begin{equation}
+\rho_{2LR}(x)= 0 \quad \text{for } L<x<2L 
+\end{equation}
 
-obtaining:
+We obtain:
 \begin{equation}
 \phi_L(x) = 
 \Pi_{[0,L]}\left(\frac{x}{L}\right)
@@ -659,19 +664,57 @@ This can be rewritten as:
 \frac{1}{M}
 \sum_{n=0}^{M-1}  
 (h_x\hat{G}_k) \, \hat{\rho}_k\, e^{j2\pi \frac{kn}{M}} 
-=\text{DFT}^{-1}\left\{
-(h_x\hat{G}_k) \, \hat{\rho}_k)
+=\text{DFT}^{-1}\left\{\phi_k
 \right\}
 \label{eq:invfft}
 \end{equation}
+where 
+\begin{equation}
+\hat{\phi}_k =h_x\hat{G}_k \, \hat{\rho}_k
+\label{eq:phiknint}
+\end{equation}
+We call ``Integrated Green Function'' the quantity:
+\begin{equation}
+G_{2LR}(x_n) = h_x G_{2LR}(x_n)
+\end{equation}
+we introduce the corresponding Fourier transform:
+\begin{equation}
+\hat{G}_k^\text{int} = \text{DFT}\left\{ G_{2LR}^\text{int}(x_n)\right\}
+\end{equation}
+Eq.\,\eqref{eq:phiknint} can be rewritten as:
+\begin{equation}
+\hat{\phi}_k =\hat{G}_k^\text{int} \, \hat{\rho}_k
+\end{equation}
 
+
+
+\subsubsection{Algorithm - 1D}
 In summary the potential at the grid nodes can be computed as follows:
 \begin{enumerate}
 \item We sample or average the Green function with step $h_x$ over the interval $[0, L]$, obtaining the sequence $G(x_n)$ for $n=0, ..., N-1$
-\item We build its replicate version in the interval $[L, 2L]$ using the fact that:
+\item We build its replicated integrated version:
+
+[SORT THIS OUT!!!!!]
+\begin{align}
+&G_{2LR}^\text{int}(x_n) = h_x G(x_n) \quad \text{for } 0<x_n<L\\
+&G_{2LR}^\text{int}(x_n) = G^\text{int}_{2LR}(2L-x) = G(-x) = G(x) 
+\end{align}
+\item We transform it:
 \begin{equation}
-G_{2LR}(2L-x) = G(-x) = G(x) 
-\end{equation}....
+{G}_k = \text{DFT}\left\{ G_{2LR}(x_n)\right\}
+\end{equation}
+\item To obtain $\rho_{2LR}(x_n)$ over the interval $[0, 2L]$ it is enough to extend with zeros the sequence defined in the interval $[0, L]$.
+\item We transform:
+\begin{equation}
+{\rho}_k = \text{DFT}\left\{ \rho_{2LR}(x_n)\right\}
+\end{equation}
+\item We compute the potential:
+\begin{equation}
+\phi_{2LR}(x_n) 
+=\text{DFT}^{-1}\left\{
+(h_x\hat{G}_k) \, \hat{\rho}_k)
+\right\}
+\end{equation}
 \end{enumerate}
 
 
