@@ -396,7 +396,38 @@ The kick can be expressed as:
 
 \section{FFT solver}
 
+We will use the following notation for the Discrete Fourier Transform of a sequence of length $M$:
+\begin{equation}
+\hat{a}_k = \text{DFT}_M(a_m) =  \sum_{m=0}^{M-1} a_m\, e^{-j2\pi  \frac{km}{M}}  \quad \text{for } k \in 0, ..., M
+\end{equation}
+The corresponding inverse transform is defined as:
+\begin{equation}
+{a}_n = \text{DFT}^{-1}_M(\hat{a}_k) =  \frac{1}{M}\sum_{k=0}^{M-1} \hat{a}_k\, e^{j2\pi  \frac{km}{M}}  \quad \text{for } m \in 0, ..., M
+\end{equation}
+
+Multidimensional Discrete Fourier Transforms are obtained by applying sequentially 1D DFTs.. For example, in two dimensions:
+
+\begin{equation}
+\begin{split}
+\hat{a}_{k_xk_y} &= \text{DFT}_{M_xM_y}\left\{a_{m_xm_y}\right\}  
+= \text{DFT}_{M_y} \left\{\text{DFT}_{M_x}\left\{a_{m_xm_y}\right\}\right\}\\  
+&=\sum_{m_x=0}^{M_x-1} e^{-j 2\pi  \frac{k_x m_x}{M_x}} 
+\sum_{m_y=0}^{M_y-1} e^{-j 2\pi  \frac{k_y m_y}{M_y}} a_{m_xm_y}
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+{a}_{n_xn_y} &= \text{DFT}^{-1}_{M_xM_y}\left\{a_{k_x k_y}\right\}  
+= \text{DFT}^{-1}_{M_y} \left\{\text{DFT}^{-1}_{M_x}\left\{\hat{a}_{k_x k_y}\right\}\right\}\\  
+&=\frac{1}{M_x M_y}\sum_{k_x=0}^{M_x-1} e^{j 2\pi  \frac{k_x m_x}{M_x}} 
+\sum_{k_y=0}^{M_y-1} e^{j 2\pi  \frac{k_y m_y}{M_y}} \hat{a}_{k_xk_y}
+\end{split}
+\end{equation}
+
+
+
 We start from a 1D case for illustration and then we generalize.
+
 
 \subsection{1D case}
 We assume free space. The potential can be written as the convolution of a Green function with the charge distribution:
@@ -414,7 +445,7 @@ where $\Pi_{[a,b]}(x)$ is a rectangular window function defined as:
 \begin{equation}
 \Pi_{[a,b]}(x) = 
 \begin{cases}
-1\quad\text{for } a<x<b\\
+1\quad\text{for } x \in [a, b]\\
 0\quad\text{elsewhere}
 \end{cases}
 \end{equation}
@@ -547,7 +578,8 @@ I can define a replicated version of $\rho(x)$:
 \end{equation}
 noting that this implies:
 \begin{equation}
-\rho_{2LR}(x)= 0 \quad \text{for } L<x<2L 
+\rho_{2LR}(x)= 0 \quad \text{for } x \in [L, 2L]
+\label{eq:zeros}
 \end{equation}
 
 We obtain:
@@ -630,8 +662,8 @@ I can approximate the integrals in Eqs.\,\eqref{eq:rhok} and\,\eqref{eq:Gk} as:
 
 where we recognize the Discrete Fourier Transforms:
 \begin{align}
-\hat{\rho}_k = \text{DFT}\left\{ \rho_{2LR}(x_n)\right\}\\
-\hat{G}_k = \text{DFT}\left\{ G_{2LR}(x_n)\right\}
+\hat{\rho}_k = \text{DFT}_M\left\{ \rho_{2LR}(x_n)\right\}\\
+\hat{G}_k = \text{DFT}_M\left\{ G_{2LR}(x_n)\right\}
 \end{align}
 
 
@@ -664,7 +696,7 @@ This can be rewritten as:
 \frac{1}{M}
 \sum_{n=0}^{M-1}  
 (h_x\hat{G}_k) \, \hat{\rho}_k\, e^{j2\pi \frac{kn}{M}} 
-=\text{DFT}^{-1}\left\{\phi_k
+=\text{DFT}_M^{-1}\left\{\phi_k
 \right\}
 \label{eq:invfft}
 \end{equation}
@@ -679,7 +711,7 @@ G_{2LR}(x_n) = h_x G_{2LR}(x_n)
 \end{equation}
 we introduce the corresponding Fourier transform:
 \begin{equation}
-\hat{G}_k^\text{int} = \text{DFT}\left\{ G_{2LR}^\text{int}(x_n)\right\}
+\hat{G}_k^\text{int} = \text{DFT}_M\left\{ G_{2LR}^\text{int}(x_n)\right\}
 \end{equation}
 Eq.\,\eqref{eq:phiknint} can be rewritten as:
 \begin{equation}
@@ -691,34 +723,94 @@ Eq.\,\eqref{eq:phiknint} can be rewritten as:
 \subsubsection{Algorithm - 1D}
 In summary the potential at the grid nodes can be computed as follows:
 \begin{enumerate}
-\item We sample or average the Green function with step $h_x$ over the interval $[0, L]$, obtaining the sequence $G(x_n)$ for $n=0, ..., N-1$
-\item We build its replicated integrated version:
-
-[SORT THIS OUT!!!!!]
-\begin{align}
-&G_{2LR}^\text{int}(x_n) = h_x G(x_n) \quad \text{for } 0<x_n<L\\
-&G_{2LR}^\text{int}(x_n) = G^\text{int}_{2LR}(2L-x) = G(-x) = G(x) 
-\end{align}
+\item We compute the Integrated Green function at the grid points in the range $[0, L]$:
+\begin{equation}
+G_{2LR}^\text{int}(x_n) = \int_{x_n-\frac{h_x}{2}}^{x_n+\frac{h_x}{2}} G(x) dx
+\end{equation}
+\item We extend to the interval $[L, 2L]$ using the fact that in this interval:
+\begin{equation}
+G^\text{int}_{2LR}(x_n) = G^\text{int}_{2LR}(x_n-2L) =  G^\text{int}_{2LR}(2L-x_n)
+\end{equation}
+where the first equality comes from the periodicity of $G^\text{int}_{2LR}(x)$ and the second from the fact that $G(x)$ is an even function (i.e. $G(x) = G(-x)$).
+Note that for $x_n \in [L, 2L]$ we have that $2L-x_n \in [0, L]$ so we can reuse the values computed at the previous step.
 \item We transform it:
 \begin{equation}
-{G}_k = \text{DFT}\left\{ G_{2LR}(x_n)\right\}
+\hat{G}^\text{int}_k = \text{DFT}_{2N}\left\{ G_{2LR}(x_n)\right\}
 \end{equation}
-\item To obtain $\rho_{2LR}(x_n)$ over the interval $[0, 2L]$ it is enough to extend with zeros the sequence defined in the interval $[0, L]$.
-\item We transform:
+\item We assume that we are given $\rho(x_n)$ in the interval $[0, L]$. From this we can obtaining $\rho_{2LR}(x_n)$ over the interval $[0, 2L]$ simply extending the sequence with zeros (see Eq.\,\eqref{eq:zeros}).
+\item We transform it:
 \begin{equation}
-{\rho}_k = \text{DFT}\left\{ \rho_{2LR}(x_n)\right\}
+\hat{\rho}_k = \text{DFT}_{2N}\left\{ \rho_{2LR}(x_n)\right\}
 \end{equation}
-\item We compute the potential:
+\item We compute the potential in the transformed domain:
 \begin{equation}
-\phi_{2LR}(x_n) 
-=\text{DFT}^{-1}\left\{
-(h_x\hat{G}_k) \, \hat{\rho}_k)
-\right\}
+\hat{\phi}_k = {G}^\text{int}_k {\rho}_k \quad \text{for } k\in [0, 2N]
+\end{equation}
+\item We inverse-transform:
+\begin{equation}
+\phi_{2LR}(x_n)  = \text{DFT}_{2N}^{-1}\left\{\hat{\phi}_k\right\}
+\end{equation}
+which provides the physical potential in the range $[0, L]$:
+\begin{equation}
+\phi(x_n)  = \phi_{2LR}(x_n)  \quad \text{for } x_n\in [0, L]
 \end{equation}
 \end{enumerate}
 
 
 \subsection{Extension to 3D}
+
+The procedure described can be extended to multiple dimensions by applying the same reasoning for all coordinates. Obtaining the following procedure:
+\begin{enumerate}
+\item We compute the Integrated Green function at the grid points in the volume $[0, L_x]\times[0, L_y]\times[0, L_z]$:
+\begin{equation}
+G_{2LR}^\text{int}(x_{n_x}, y_{n_y}, z_{n_z}) = 
+\int_{x_{n_x}-\frac{h_x}{2}}^{x_{n_x}+\frac{h_x}{2}} dx
+\int_{y_{n_y}-\frac{h_y}{2}}^{y_{n_y}+\frac{h_y}{2}} dy
+\int_{y_{n_z}-\frac{h_z}{2}}^{y_{n_z}+\frac{h_z}{2}} dz\,
+G(x,y,z)
+\end{equation}
+\item We extend to the region $[0, 2L_x]\times[0, 2L_y]\times[0, 2L_z]$ using the fact that:
+\begin{multline}
+G^\text{int}_{2LR}(x_n, y_n, z_n) = G^\text{int}_{2LR}(x_n-2L_x, y_n, z_n) =  G^\text{int}_{2LR}(2L_x-x_n, y_n, z_n)\\
+\text{for } x_n \in [L_x, 2L_x], y_n \in [0, 2L_y], z_n \in [0, 2L_z]
+\end{multline}
+\begin{multline}
+G^\text{int}_{2LR}(x_n, y_n, z_n) = G^\text{int}_{2LR}(x_n, y_n-2L_y, z_n) =  G^\text{int}_{2LR}(x_n, 2L_y-y_n,  z_n)\\
+\text{for } y_n \in [L_y, 2L_y], x_n \in [0, 2L_x], z_n \in [0, 2L_z]
+\end{multline}
+\begin{multline}
+G^\text{int}_{2LR}(x_n, y_n, z_n) = G^\text{int}_{2LR}(x_n, y_n, z_n-2L_z) =  G^\text{int}_{2LR}(x_n, y_n,  2L_z-z_n)\\
+\text{for } z_n \in [L_z, 2L_z], x_n \in [0, 2L_x], y_n \in [0, 2L_y]
+\end{multline}
+This allows reusing the values computed at the previous step.
+\item We transform it:
+\begin{equation}
+\hat{G}^\text{int}_{k_x k_y k_z} = 
+\text{DFT}_{2N_x 2N_y 2N_z}\left\{ G_{2LR}(x_n, y_n, z_n)\right\}
+\end{equation}
+\item We assume that we are given $\rho(x_n, y_n, z_n)$ in the region $[0, L_x]\times[0, L_y]\times[0, L_z]$. From this we can obtaining $\rho_{2LR}(x_n)$ over the region $[0, 2L_x]\times[0, 2L_y]\times[0, 2L_z]$ simply extending the matrix with zeros (see Eq.\,\eqref{eq:zeros}).
+\item We transform it:
+\begin{equation}
+\hat{\rho}^\text{int}_{k_x k_y k_z} = 
+\text{DFT}_{2N_x 2N_y 2N_z}\left\{ \rho_{2LR}(x_n, y_n, z_n)\right\}
+\end{equation}
+\item We compute the potential in the transformed domain:
+\begin{equation}
+\hat{\phi}_{k_x k_y k_z} = {G}^\text{int}_{k_x k_y k_z} {\rho}_{k_x k_y k_z} \quad \text{for } k_{x/y/z}\in [0, 2N_{x/y/z}]
+\end{equation}
+\item We inverse-transform:
+\begin{equation}
+\phi_{2LR}(x_n, y_n, z_n)  = \text{DFT}_{2N_x 2N_y 2N_z}^{-1}
+\left\{\hat{\phi}_{k_x k_y k_z}\right\}
+\end{equation}
+which provides the physical potential in the region $[0, L_x]\times[0, L_y]\times[0, L_z]$:
+\begin{multline}
+\phi(x_n, y_n, z_n) = \phi_{2LR}(x_n, y_n, z_n)  
+\text{ for } (x_n, y_n, z_n) \in [0, L_x]\times[0, L_y]\times[0, L_z]
+\end{multline}
+\end{enumerate}
+
+ 
 
 In summary in 1D what one needs to do is:
 
