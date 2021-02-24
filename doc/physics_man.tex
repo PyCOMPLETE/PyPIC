@@ -873,7 +873,8 @@ F(x,y,z) =&\iiint \frac{1}{\sqrt{x^{2}+y^{2}+z^{2}}} d x d y d z\\
 &+x z \ln \left(y+\sqrt{x^{2}+y^{2}+z^{2}}\right)
 +x y \ln \left(z+\sqrt{x^{2}+y^{2}+z^{2}}\right)
 \end{align}
- 
+
+Note that we need to choose the first cell center to be in (0,0,0) for evaluation of the integrated Green function. Therefore the cell edges have non zero coordinates and the denominators in the formula will always be non-vanishing.
 
 \begin{thebibliography}{99}
 
