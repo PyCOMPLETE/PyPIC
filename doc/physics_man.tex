@@ -720,7 +720,7 @@ Eq.\,\eqref{eq:phiknint} can be rewritten as:
 
 
 
-\subsubsection{Algorithm - 1D}
+\subsubsection{The algorithm (1D)}
 In summary the potential at the grid nodes can be computed as follows:
 \begin{enumerate}
 \item We compute the Integrated Green function at the grid points in the range $[0, L]$:
@@ -757,7 +757,7 @@ which provides the physical potential in the range $[0, L]$:
 \end{enumerate}
 
 
-\subsection{Extension to 3D}
+\subsection{Extension to multiple dimensionss}
 
 The procedure described can be extended to multiple dimensions by applying the same reasoning for all coordinates. Obtaining the following procedure:
 \begin{enumerate}
@@ -766,7 +766,7 @@ The procedure described can be extended to multiple dimensions by applying the s
 G_{2LR}^\text{int}(x_{n_x}, y_{n_y}, z_{n_z}) = 
 \int_{x_{n_x}-\frac{h_x}{2}}^{x_{n_x}+\frac{h_x}{2}} dx
 \int_{y_{n_y}-\frac{h_y}{2}}^{y_{n_y}+\frac{h_y}{2}} dy
-\int_{y_{n_z}-\frac{h_z}{2}}^{y_{n_z}+\frac{h_z}{2}} dz\,
+\int_{z_{n_z}-\frac{h_z}{2}}^{z_{n_z}+\frac{h_z}{2}} dz\,
 G(x,y,z)
 \end{equation}
 \item We extend to the region $[0, 2L_x]\times[0, 2L_y]\times[0, 2L_z]$ using the fact that:
@@ -811,60 +811,69 @@ which provides the physical potential in the region $[0, L_x]\times[0, L_y]\time
 \end{enumerate}
 
  
+\subsection{Green functions}
 
-In summary in 1D what one needs to do is:
+\subsubsection{3D Poisson problem in free space}
 
-Transform the sources and the Green function:
-\begin{align}
-\hat{\rho}_k = \frac{1}{M}\sum_{n=0}^{M-1} \rho_{2LR}(x_n)\, e^{j2\pi  \frac{kn}{M}} \\
-\hat{G}_k = \frac{1}{M}\sum_{n=0}^{M-1} G_{2LR}(x_n)\, e^{j2\pi  \frac{kn}{M}}  
-\end{align}
-
-Do the product and antitransform:
+For the equation:
 \begin{equation}
-\phi_{2LR}(x_n) = 
-2L \sum_{n=0}^{M-1}  
-\hat{G}_k \, \hat{\rho}_k\, e^{-j2\pi \frac{kn}{M}}
+\nabla^2 \phi(x,y,z) = -\frac{1}{\varepsilon_0} \rho(x,y,z)
 \end{equation}
-
-Repeating the same reasoning along all directions one obtains:
-\begin{align}
-&\hat{\rho}_{k_x k_y k_z} = 
-\frac{1}{M_x M_y M_z}
-\sum_{n_x=0}^{M_x-1} e^{j 2\pi  \frac{k_x n_x}{M_x}} 
-\sum_{n_y=0}^{M_y-1} e^{j 2\pi  \frac{k_y n_y}{M_y}}
-\sum_{n_z=0}^{M_z-1} e^{j 2\pi  \frac{k_z n_z}{M_z}}\, 
-\rho_{2LR}(x_{n_x}, y_{n_y}, z_{n_z})\\
-&\hat{G}_{k_x k_y k_z} = 
-\frac{1}{M_x M_y M_z}
-\sum_{n_x=0}^{M_x-1} e^{j 2\pi  \frac{k_x n_x}{M_x}} 
-\sum_{n_y=0}^{M_y-1} e^{j 2\pi  \frac{k_y n_y}{M_y}}
-\sum_{n_z=0}^{M_z-1} e^{j 2\pi  \frac{k_z n_z}{M_z}}\, 
-G_{2LR}(x_{n_x}, y_{n_y}, z_{n_z})
-\end{align}
-
-\begin{multline}
-\phi_{2LR}(x_{n_x}, y_{n_y}, z_{n_z}) = \\
-(2L_x)(2L_y)(2L_z)
-\sum_{k_x=0}^{M_x-1} e^{-j 2\pi  \frac{k_x n_x}{M_x}} 
-\sum_{k_y=0}^{M_y-1} e^{-j 2\pi  \frac{k_y n_y}{M_y}}
-\sum_{k_z=0}^{M_z-1} e^{-j 2\pi  \frac{k_z n_z}{M_z}}\, 
-\hat{G}_{k_x k_y k_z} \hat{\rho}_{k_x k_y k_z}
-\end{multline}
-
-The continuous convolution in 3D is written as 
-
+where:
+\begin{equation}
+\nabla = \left(\frac{\partial}{\partial x}, 
+                      \frac{\partial}{\partial y},
+                      \frac{\partial}{\partial z} \right)
+\end{equation}
+the solution can be written as 
 \begin{equation}
 \phi(x, y, z) = \iiint_{-\infty}^{+\infty} \rho(x', y', z')
    \,G(x-x', y-y', z-z')\,dx'\,dy'\,dz'
 \end{equation}
-
 where:
 \begin{equation}
 G(x, y, z) = \frac{1}{4\pi\varepsilon_0}\frac{1}{
 \sqrt{x^2 +y^2 +z^2}
 }
 \end{equation}
+
+The corresponding integrated Green function can be written as:
+\begin{align}
+G_{2LR}^\text{int}(x_{n_x}, y_{n_y}, z_{n_z}) =& 
+\int_{x_{n_x}-\frac{h_x}{2}}^{x_{n_x}+\frac{h_x}{2}} dx
+\int_{y_{n_y}-\frac{h_y}{2}}^{y_{n_y}+\frac{h_y}{2}} dy
+\int_{z_{n_z}-\frac{h_z}{2}}^{x_{n_z}+\frac{h_z}{2}} dz\,
+G(x,y,z)\\
+= &+F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}, z_{n_x}+\frac{h_z}{2}\right) \\
+    &- F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)\\
+    &- F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}+\frac{h_z}{2}\right)\\ 
+    &+ F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)\\
+    &-F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}, z_{n_x}+\frac{h_z}{2}\right) \\
+    &+ F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)\\
+    &+ F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}+\frac{h_z}{2}\right)\\ 
+    &- F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)
+\end{align}
+where $F(x,y,z)$ is a primitive of $G(x,y,z)$, which can be obtained as:
+\begin{equation}
+F(x,y,z) = 
+\int_{x_0}^{x} dx
+\int_{y_0}^{y} dy
+\int_{z_0}^{x} dz\,
+G(x,y,z)
+\end{equation}
+where $(x_0, y_0, z_0)$ is an arbitrary starting point.
+
+An expression for $F(x,y,z)$ is the following
+\begin{align}
+F(x,y,z) =&\iiint \frac{1}{\sqrt{x^{2}+y^{2}+z^{2}}} d x d y d z\\ 
+= &-\frac{z^{2}}{2} \arctan \left(\frac{x y}{z \sqrt{x^{2}+y^{2}+z^{2}}}\right)
+-\frac{y^{2}}{2} \arctan \left(\frac{x z}{y \sqrt{x^{2}+y^{2}+z^{2}}}\right)\\
+&-\frac{x^{2}}{2} \arctan \left(\frac{y z}{x \sqrt{x^{2}+y^{2}+z^{2}}}\right) 
++y z \ln \left(x+\sqrt{x^{2}+y^{2}+z^{2}}\right)\\
+&+x z \ln \left(y+\sqrt{x^{2}+y^{2}+z^{2}}\right)
++x y \ln \left(z+\sqrt{x^{2}+y^{2}+z^{2}}\right)
+\end{align}
+ 
 
 \begin{thebibliography}{99}
 
