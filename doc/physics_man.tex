@@ -452,7 +452,7 @@ where $\Pi_{[a,b]}(x)$ is a rectangular window function defined as:
 
 We are interested in the electric potential only the region occupied by the sources, so we can compute:
 \begin{equation}
-\phi_L(x) = \phi(x) \Pi_[0, L]\left(\frac{x}{L}\right)
+\phi_L(x) = \phi(x) \Pi_{[0, L]}\left(\frac{x}{L}\right)
 \label{eq:philim}
 \end{equation}
 
@@ -813,7 +813,7 @@ which provides the physical potential in the region $[0, L_x]\times[0, L_y]\time
  
 \subsection{Green functions}
 
-\subsubsection{3D Poisson problem in free space}
+\subsubsection{3D Poisson problem, free space boundary conditions}
 
 For the equation:
 \begin{equation}
@@ -851,7 +851,7 @@ G(x,y,z)\\
     &-F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}, z_{n_x}+\frac{h_z}{2}\right) \\
     &+ F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)\\
     &+ F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}+\frac{h_z}{2}\right)\\ 
-    &- F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)
+    & - F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}, z_{n_x}-\frac{h_z}{2}\right)
 \end{align}
 where $F(x,y,z)$ is a primitive of $G(x,y,z)$, which can be obtained as:
 \begin{equation}
@@ -865,6 +865,62 @@ where $(x_0, y_0, z_0)$ is an arbitrary starting point.
 
 An expression for $F(x,y,z)$ is the following
 \begin{align}
+F(x,y,z) =&\frac{1}{4\pi\varepsilon_0}\iiint \frac{1}{\sqrt{x^{2}+y^{2}+z^{2}}} d x d y d z\\ 
+= \frac{1}{4\pi \varepsilon_0}&\left[-\frac{z^{2}}{2} \arctan \left(\frac{x y}{z \sqrt{x^{2}+y^{2}+z^{2}}}\right)\right.
+-\frac{y^{2}}{2} \arctan \left(\frac{x z}{y \sqrt{x^{2}+y^{2}+z^{2}}}\right)\\
+&-\frac{x^{2}}{2} \arctan \left(\frac{y z}{x \sqrt{x^{2}+y^{2}+z^{2}}}\right) 
++y z \ln \left(x+\sqrt{x^{2}+y^{2}+z^{2}}\right)\\
+&\left. +x z \ln \left(y+\sqrt{x^{2}+y^{2}+z^{2}}\right)
++x y \ln \left(z+\sqrt{x^{2}+y^{2}+z^{2}}\right)\right]
+\end{align}
+
+Note that we need to choose the first cell center to be in (0,0,0) for evaluation of the integrated Green function. Therefore the cell edges have non zero coordinates and the denominators in the formula will always be non-vanishing.
+
+\subsubsection{2D Poisson problem, free space boundary conditions}
+
+For the equation:
+\begin{equation}
+\nabla_\perp^2 \phi(x,y) = -\frac{1}{\varepsilon_0} \rho(x,y)
+\end{equation}
+where:
+\begin{equation}
+\nabla = \left(\frac{\partial}{\partial x}, 
+                      \frac{\partial}{\partial y} \right)
+\end{equation}
+the solution can be written as 
+\begin{equation}
+\phi(x, y) = \iiint_{-\infty}^{+\infty} \rho(x', y')
+   \,G(x-x', y-y')\,dx'\,dy'
+\end{equation}
+where:
+\begin{equation}
+G(x, y) = -\frac{1}{4\pi\varepsilon_0} \log\left( \frac{x^2 + y^2}{r_0^2}\right)
+\end{equation}
+where $r_0$ is arbitrary constant which has no effect on the evaluated fields (changes the potential by an additive constant). 
+
+The corresponding integrated Green function can be written as:
+\begin{align}
+G_{2LR}^\text{int}(x_{n_x}, y_{n_y}) =& 
+\int_{x_{n_x}-\frac{h_x}{2}}^{x_{n_x}+\frac{h_x}{2}} dx
+\int_{y_{n_y}-\frac{h_y}{2}}^{y_{n_y}+\frac{h_y}{2}} dy\,
+G(x,y,z)\\
+= &+F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}\right)\\
+    &-F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}\right)\\
+    &-F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}\right)\\ 
+    &+F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}\right)\\
+    &...\iint \ln \left(x^{2}+y^{2}\right) \mathrm{d} x \mathrm{~d} y=-3 x y+x^{2} \arctan (y / x)+y^{2} \arctan (x / y)+x y \ln \left(x^{2}+y^{2}\right)
+\end{align}
+where $F(x,y)$ is a primitive of $G(x,y)$, which can be obtained as:
+\begin{equation}
+F(x,y) = 
+\int_{x_0}^{x} dx
+\int_{y_0}^{y} dy\,
+G(x,y)
+\end{equation}
+where $(x_0, y_0)$ is an arbitrary starting point.
+
+An expression for $F(x,y,z)$ is the following
+\begin{align}
 F(x,y,z) =&\iiint \frac{1}{\sqrt{x^{2}+y^{2}+z^{2}}} d x d y d z\\ 
 = &-\frac{z^{2}}{2} \arctan \left(\frac{x y}{z \sqrt{x^{2}+y^{2}+z^{2}}}\right)
 -\frac{y^{2}}{2} \arctan \left(\frac{x z}{y \sqrt{x^{2}+y^{2}+z^{2}}}\right)\\
@@ -875,6 +931,7 @@ F(x,y,z) =&\iiint \frac{1}{\sqrt{x^{2}+y^{2}+z^{2}}} d x d y d z\\
 \end{align}
 
 Note that we need to choose the first cell center to be in (0,0,0) for evaluation of the integrated Green function. Therefore the cell edges have non zero coordinates and the denominators in the formula will always be non-vanishing.
+
 
 \begin{thebibliography}{99}
 
