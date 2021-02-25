@@ -908,7 +908,6 @@ G(x,y,z)\\
     &-F\left(x_{n_x}+\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}\right)\\
     &-F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}+\frac{h_y}{2}\right)\\ 
     &+F\left(x_{n_x}-\frac{h_x}{2}, y_{n_x}-\frac{h_y}{2}\right)\\
-    &...\iint \ln \left(x^{2}+y^{2}\right) \mathrm{d} x \mathrm{~d} y=-3 x y+x^{2} \arctan (y / x)+y^{2} \arctan (x / y)+x y \ln \left(x^{2}+y^{2}\right)
 \end{align}
 where $F(x,y)$ is a primitive of $G(x,y)$, which can be obtained as:
 \begin{equation}
@@ -919,18 +918,13 @@ G(x,y)
 \end{equation}
 where $(x_0, y_0)$ is an arbitrary starting point.
 
-An expression for $F(x,y,z)$ is the following
+An expression for $F(x,y,z)$ is the following (where we have chosen $r_0=1$:
 \begin{align}
-F(x,y,z) =&\iiint \frac{1}{\sqrt{x^{2}+y^{2}+z^{2}}} d x d y d z\\ 
-= &-\frac{z^{2}}{2} \arctan \left(\frac{x y}{z \sqrt{x^{2}+y^{2}+z^{2}}}\right)
--\frac{y^{2}}{2} \arctan \left(\frac{x z}{y \sqrt{x^{2}+y^{2}+z^{2}}}\right)\\
-&-\frac{x^{2}}{2} \arctan \left(\frac{y z}{x \sqrt{x^{2}+y^{2}+z^{2}}}\right) 
-+y z \ln \left(x+\sqrt{x^{2}+y^{2}+z^{2}}\right)\\
-&+x z \ln \left(y+\sqrt{x^{2}+y^{2}+z^{2}}\right)
-+x y \ln \left(z+\sqrt{x^{2}+y^{2}+z^{2}}\right)
+F(x,y,z) &=-\frac{1}{4\pi\varepsilon_0}\iint \ln \left(x^{2}+y^{2}\right) dx/,dy\\
+&=\frac{1}{4\pi\varepsilon_0}\left[3 x y-x^{2} \arctan (y / x)-y^{2} \arctan (x / y)-x y \ln \left(x^{2}+y^{2}\right)\right]
 \end{align}
 
-Note that we need to choose the first cell center to be in (0,0,0) for evaluation of the integrated Green function. Therefore the cell edges have non zero coordinates and the denominators in the formula will always be non-vanishing.
+Note that we need to choose the first cell center to be in (0,0) for evaluation of the integrated Green function. Therefore the cell edges have non zero coordinates and the denominators in the formula will always be non-vanishing.
 
 
 \begin{thebibliography}{99}
