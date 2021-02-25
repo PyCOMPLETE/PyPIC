@@ -24,9 +24,9 @@ y = y_cube[mask_sphere]
 z = z_cube[mask_sphere]
 
 # PIC
-x_lim = (-1., 1.)
-y_lim = (-1., 1.)
-z_lim = (-1., 1.)
+x_lim = (-1.1, 1.)
+y_lim = (-1.2, 1.)
+z_lim = (-1.3, 1.)
 
 dx = 0.01
 dy = 0.015
@@ -40,9 +40,23 @@ nx = len(xg)
 ny = len(yg)
 nz = len(zg)
 
+# Prepare arrays
 rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
+phi = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
+gint = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
+
+# Build grid for primitive function
+xg_F = np.arange(0, len(xg)+1) * dx - dx/2
+yg_F = np.arange(0, len(yg)+1) * dy - dy/2
+zg_F = np.arange(0, len(zg)+1) * dz - dz/2
+XX_F, YY_F, ZZ_F = np.meshgrid(xg_F, yg_F, zg_F, indexing='ij')
+
+def primitive_func_3d():
+    pass #To be implemented
 
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
+
+
 
 # Quick check on the x axis
 res = np.zeros_like(xg)
