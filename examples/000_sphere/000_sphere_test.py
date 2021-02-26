@@ -3,6 +3,8 @@ sys.path.append('../../xfields/csrc')
 
 import numpy as np
 from numpy.random import rand
+from scipy.constants import epsilon_0
+from numpy import pi
 
 import p2m_cpu
 import matplotlib.pyplot as plt
@@ -43,16 +45,38 @@ nz = len(zg)
 # Prepare arrays
 rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 phi = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
-gint = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
+gint_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
 
 # Build grid for primitive function
-xg_F = np.arange(0, len(xg)+1) * dx - dx/2
-yg_F = np.arange(0, len(yg)+1) * dy - dy/2
-zg_F = np.arange(0, len(zg)+1) * dz - dz/2
+xg_F = np.arange(0, nx+1) * dx - dx/2
+yg_F = np.arange(0, ny+1) * dy - dy/2
+zg_F = np.arange(0, nz+1) * dz - dz/2
 XX_F, YY_F, ZZ_F = np.meshgrid(xg_F, yg_F, zg_F, indexing='ij')
 
-def primitive_func_3d():
-    pass #To be implemented
+def primitive_func_3d(x,y,z):
+    abs_r = np.sqrt(x * x + y * y + z * z)
+    inv_abs_r = 1./abs_r
+    res = 1./(4*pi*epsilon_0)*(
+            -0.5 * (z*z * np.arctan(x*y*inv_abs_r/z)
+                    + y*y * np.arctan(x*z*inv_abs_r/y)
+                    + x*x * np.arctan(y*z*inv_abs_r/x))
+               + y*z*np.log(x+abs_r)
+               + x*z*np.log(y+abs_r)
+               + x*y*np.log(z+abs_r))
+    return res
+
+# Compute primitive
+F_temp = primitive_func_3d(XX_F, YY_F, ZZ_F)
+
+# Integrated Green Function
+gint_rep[:nx, :ny, :nz] = (F_temp[ 1:,  1:,  1:]
+                         - F_temp[:-1,  1:,  1:]
+                         - F_temp[ 1:, :-1,  1:]
+                         + F_temp[:-1, :-1,  1:]
+                         - F_temp[ 1:,  1:, :-1]
+                         + F_temp[:-1,  1:, :-1]
+                         + F_temp[ 1:, :-1, :-1]
+                         - F_temp[:-1, :-1, :-1])
 
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
