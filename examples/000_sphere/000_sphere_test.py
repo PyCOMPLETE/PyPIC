@@ -78,6 +78,15 @@ gint_rep[:nx, :ny, :nz] = (F_temp[ 1:,  1:,  1:]
                          + F_temp[ 1:, :-1, :-1]
                          - F_temp[:-1, :-1, :-1])
 
+# Replicate
+gint_rep[nx:, :ny, :nz] = gint_rep[nx:0:-1,  :ny,      :nz]
+gint_rep[:nx, ny:, :nz] = gint_rep[:nx,       ny:0:-1, :nz]
+gint_rep[nx:, ny:, :nz] = gint_rep[nx:0:-1,   ny:0:-1, :nz]
+gint_rep[:nx, :ny, nz:] = gint_rep[:nx,      :ny,       nz:0:-1]
+gint_rep[nx:, :ny, nz:] = gint_rep[nx:0:-1,  :ny,       nz:0:-1]
+gint_rep[:nx, ny:, nz:] = gint_rep[:nx,       ny:0:-1,  nz:0:-1]
+gint_rep[nx:, ny:, nz:] = gint_rep[nx:0:-1,   ny:0:-1,  nz:0:-1]
+
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 
