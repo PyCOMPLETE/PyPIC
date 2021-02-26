@@ -46,6 +46,8 @@ nz = len(zg)
 rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 phi = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 gint_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
+rho_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
+phi_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
 
 # Build grid for primitive function
 xg_F = np.arange(0, nx+1) * dx - dx/2
@@ -87,17 +89,33 @@ gint_rep[nx:, :ny, nz:] = gint_rep[nx:0:-1,  :ny,       nz:0:-1]
 gint_rep[:nx, ny:, nz:] = gint_rep[:nx,       ny:0:-1,  nz:0:-1]
 gint_rep[nx:, ny:, nz:] = gint_rep[nx:0:-1,   ny:0:-1,  nz:0:-1]
 
+# Transform the green function
+gint_rep_transf = np.fft.fftn(gint_rep)
+
+# p2m
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
+# solve
+rho_rep[:,:,:] = 0.
+rho_rep[:nx, :ny, :nz] = rho
+phi_rep = np.fft.ifftn(np.fft.fftn(rho_rep) * gint_rep_transf)
+assert np.max(np.abs(np.imag(phi_rep)))/np.max(np.abs(rho_rep))<1e-5
+phi[:,:,:] = np.real(phi_rep)[:nx, :ny, :nz]
 
-
-# Quick check on the x axis
+# Quick check on the x axis - rho
 res = np.zeros_like(xg)
 p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, rho, res)
 plt.figure(100)
 plt.plot(xg, res)
 plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
+
+# Quick check on the x axis - phi
+res = np.zeros_like(xg)
+p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
+        dx, dy, dz, nx, ny, nz, phi, res)
+plt.figure(101)
+plt.plot(xg, res)
 
 # Check integral
 int_rho = np.sum(rho)*dx*dy*dz
