@@ -45,14 +45,17 @@ nz = len(zg)
 # Prepare arrays
 rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 phi = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
+dphi_dx = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
+dphi_dy = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
+dphi_dz = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
+
 gint_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
 rho_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
-phi_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
 
 # Build grid for primitive function
-xg_F = np.arange(0, nx+1) * dx - dx/2
-yg_F = np.arange(0, ny+1) * dy - dy/2
-zg_F = np.arange(0, nz+1) * dz - dz/2
+xg_F = np.arange(0, nx+2) * dx - dx/2
+yg_F = np.arange(0, ny+2) * dy - dy/2
+zg_F = np.arange(0, nz+2) * dz - dz/2
 XX_F, YY_F, ZZ_F = np.meshgrid(xg_F, yg_F, zg_F, indexing='ij')
 
 def primitive_func_3d(x,y,z):
@@ -71,23 +74,26 @@ def primitive_func_3d(x,y,z):
 F_temp = primitive_func_3d(XX_F, YY_F, ZZ_F)
 
 # Integrated Green Function
-gint_rep[:nx, :ny, :nz] = (F_temp[ 1:,  1:,  1:]
-                         - F_temp[:-1,  1:,  1:]
-                         - F_temp[ 1:, :-1,  1:]
-                         + F_temp[:-1, :-1,  1:]
-                         - F_temp[ 1:,  1:, :-1]
-                         + F_temp[:-1,  1:, :-1]
-                         + F_temp[ 1:, :-1, :-1]
-                         - F_temp[:-1, :-1, :-1])
+gint_rep[:nx+1, :ny+1, :nz+1] = (F_temp[ 1:,  1:,  1:]
+                               - F_temp[:-1,  1:,  1:]
+                               - F_temp[ 1:, :-1,  1:]
+                               + F_temp[:-1, :-1,  1:]
+                               - F_temp[ 1:,  1:, :-1]
+                               + F_temp[:-1,  1:, :-1]
+                               + F_temp[ 1:, :-1, :-1]
+                               - F_temp[:-1, :-1, :-1])
 
 # Replicate
-gint_rep[nx:, :ny, :nz] = gint_rep[nx:0:-1,  :ny,      :nz]
-gint_rep[:nx, ny:, :nz] = gint_rep[:nx,       ny:0:-1, :nz]
-gint_rep[nx:, ny:, :nz] = gint_rep[nx:0:-1,   ny:0:-1, :nz]
-gint_rep[:nx, :ny, nz:] = gint_rep[:nx,      :ny,       nz:0:-1]
-gint_rep[nx:, :ny, nz:] = gint_rep[nx:0:-1,  :ny,       nz:0:-1]
-gint_rep[:nx, ny:, nz:] = gint_rep[:nx,       ny:0:-1,  nz:0:-1]
-gint_rep[nx:, ny:, nz:] = gint_rep[nx:0:-1,   ny:0:-1,  nz:0:-1]
+# To define how to make the replicas I have a look at:
+# np.abs(np.fft.fftfreq(10))*10
+# = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
+gint_rep[nx+1:, :ny, :nz] = gint_rep[nx:1:-1,  :ny,      :nz]
+gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx,       ny:1:-1, :nz]
+gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx:1:-1,   ny:1:-1, :nz]
+gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx,      :ny,       nz:1:-1]
+gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx:1:-1,  :ny,       nz:1:-1]
+gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx,       ny:1:-1,  nz:1:-1]
+gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx:1:-1,   ny:1:-1,  nz:1:-1]
 
 # Transform the green function
 gint_rep_transf = np.fft.fftn(gint_rep)
@@ -96,11 +102,16 @@ gint_rep_transf = np.fft.fftn(gint_rep)
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 # solve
-rho_rep[:,:,:] = 0.
+rho_rep[:,:,:] = 0. # reset
 rho_rep[:nx, :ny, :nz] = rho
 phi_rep = np.fft.ifftn(np.fft.fftn(rho_rep) * gint_rep_transf)
 assert np.max(np.abs(np.imag(phi_rep)))/np.max(np.abs(rho_rep))<1e-5
 phi[:,:,:] = np.real(phi_rep)[:nx, :ny, :nz]
+
+# Compute gradients
+#dphi_dx[1:nx, :, :] = 1/(2*dx)*(phi
+#
+#phi[0:self.Nxg-2,:] - self.hlpphi[2:self.Nxg,:];
 
 # Quick check on the x axis - rho
 res = np.zeros_like(xg)
