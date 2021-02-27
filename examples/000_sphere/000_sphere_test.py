@@ -108,10 +108,10 @@ phi_rep = np.fft.ifftn(np.fft.fftn(rho_rep) * gint_rep_transf)
 assert np.max(np.abs(np.imag(phi_rep)))/np.max(np.abs(rho_rep))<1e-5
 phi[:,:,:] = np.real(phi_rep)[:nx, :ny, :nz]
 
-# Compute gradients
-#dphi_dx[1:nx, :, :] = 1/(2*dx)*(phi
-#
-#phi[0:self.Nxg-2,:] - self.hlpphi[2:self.Nxg,:];
+# Compute gradient
+dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])
+dphi_dy[:,1:ny-1,:] = 1/(2*dy)*(phi[:,2:,:]-phi[:,:-2,:])
+dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 
 # Quick check on the x axis - rho
 res = np.zeros_like(xg)
@@ -128,6 +128,16 @@ p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
 plt.figure(101)
 plt.plot(xg, res)
 
+# Quick check on the x axis - phi
+ex= np.zeros_like(xg)
+p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
+        dx, dy, dz, nx, ny, nz, dphi_dx, ex)
+ex *= (-1.)
+plt.figure(102)
+plt.plot(xg, ex)
+
+plt.figure(101)
+plt.plot(xg, res)
 # Check integral
 int_rho = np.sum(rho)*dx*dy*dz
 assert np.isclose(int_rho, len(x))
