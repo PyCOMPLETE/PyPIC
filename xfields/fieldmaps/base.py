@@ -22,13 +22,13 @@ class FieldMap(ABC):
         pass
         return solver
 
-    @abstractmethod
-    def get_data_and_singleparticle_code(self):
-        '''
-        To be defined, to inject element in
-        single-particle tracking
-        '''
-        pass
+    # @abstractmethod
+    # def get_data_and_singleparticle_code(self):
+    #     '''
+    #     To be defined, to inject element in
+    #     single-particle tracking
+    #     '''
+    #     pass
 
     @abstractmethod
     def get_values_at_points(self,
