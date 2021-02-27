@@ -11,8 +11,7 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 center_xyz = np.array([0.1, 0.2, -0.3])
-center_xyz = np.array([0, 0, 0])
-radius = .25
+radius = .5
 n_part_cube = 10000000
 
 x_cube = radius*(2. * rand(n_part_cube) - 1.) + center_xyz[0]
@@ -27,13 +26,13 @@ y = y_cube[mask_sphere]
 z = z_cube[mask_sphere]
 
 # PIC
-x_lim = (-1/2, 1./2)
-y_lim = (-1/2, 1./2)
-z_lim = (-1/2, 1./2)
+x_lim = (-1.1, 1.)
+y_lim = (-1.2, 1.)
+z_lim = (-1.3, 1.)
 
-dx = 0.01
-dy = 0.01
-dz = 0.01
+dx = 0.02
+dy = 0.025
+dz = 0.03
 
 xg = np.arange(x_lim[0], x_lim[1]+0.1*dx, dx)
 yg = np.arange(y_lim[0], y_lim[1]+0.1*dy, dy)
@@ -88,13 +87,13 @@ gint_rep[:nx+1, :ny+1, :nz+1] = (F_temp[ 1:,  1:,  1:]
 # To define how to make the replicas I have a look at:
 # np.abs(np.fft.fftfreq(10))*10
 # = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
-gint_rep[nx+1:, :ny, :nz] = gint_rep[nx-1:0:-1,  :ny,      :nz]
-gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx,       ny-1:0:-1, :nz]
-gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx-1:0:-1,   ny-1:0:-1, :nz]
-gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx,      :ny,       nz-1:0:-1]
-gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx-1:0:-1,  :ny,       nz-1:0:-1]
-gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx,       ny-1:0:-1,  nz-1:0:-1]
-gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1,   ny-1:0:-1,  nz:1:-1]
+gint_rep[nx+1:, :ny, :nz] = gint_rep[nx-1:0:-1, :ny, :nz]
+gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx, ny-1:0:-1, :nz]
+gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx-1:0:-1, ny-1:0:-1, :nz]
+gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx, :ny, nz-1:0:-1]
+gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx-1:0:-1,  :ny, nz-1:0:-1]
+gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx, ny-1:0:-1, nz-1:0:-1]
+gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
 
 # Transform the green function
 gint_rep_transf = np.fft.fftn(gint_rep)
