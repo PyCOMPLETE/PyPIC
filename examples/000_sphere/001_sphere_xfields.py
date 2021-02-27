@@ -1,12 +1,14 @@
 import sys
 sys.path.append('../../xfields/csrc')
+import p2m_cpu
 
 import numpy as np
 from numpy.random import rand
 from scipy.constants import epsilon_0
 from numpy import pi
 
-import p2m_cpu
+from xfields import FFTSolver3D
+
 import matplotlib.pyplot as plt
 plt.close('all')
 
@@ -53,6 +55,7 @@ dphi_dz = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 # solve
+solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=nx, ny=ny, nz=nz)
 
 # Compute gradient
 dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])

@@ -1,3 +1,7 @@
+import numpy as np
+from scipy.constants import epsilon_0
+from numpy import pi
+
 from .base import Solver
 
 class FFTSolver2D(Solver):
@@ -12,6 +16,7 @@ class FFTSolver3D(Solver):
         # Prepare arrays
         gint_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
         rho_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
+        phi_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
 
         # Build grid for primitive function
         xg_F = np.arange(0, nx+2) * dx - dx/2
@@ -62,3 +67,14 @@ class FFTSolver3D(Solver):
         phi_rep = np.fft.ifftn(np.fft.fftn(rho_rep) * gint_rep_transf)
         return np.real(phi_rep)[:nx, :ny, :nz]
 
+def primitive_func_3d(x,y,z):
+    abs_r = np.sqrt(x * x + y * y + z * z)
+    inv_abs_r = 1./abs_r
+    res = 1./(4*pi*epsilon_0)*(
+            -0.5 * (z*z * np.arctan(x*y*inv_abs_r/z)
+                    + y*y * np.arctan(x*z*inv_abs_r/y)
+                    + x*x * np.arctan(y*z*inv_abs_r/x))
+               + y*z*np.log(x+abs_r)
+               + x*z*np.log(y+abs_r)
+               + x*y*np.log(z+abs_r))
+    return res
