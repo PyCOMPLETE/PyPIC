@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 plt.close('all')
 
 center_xyz = np.array([0.1, 0.2, -0.3])
-radius = .5
+center_xyz = np.array([0, 0, 0])
+radius = .25
 n_part_cube = 10000000
 
 x_cube = radius*(2. * rand(n_part_cube) - 1.) + center_xyz[0]
@@ -26,13 +27,13 @@ y = y_cube[mask_sphere]
 z = z_cube[mask_sphere]
 
 # PIC
-x_lim = (-1.1, 1.)
-y_lim = (-1.2, 1.)
-z_lim = (-1.3, 1.)
+x_lim = (-1/2, 1./2)
+y_lim = (-1/2, 1./2)
+z_lim = (-1/2, 1./2)
 
 dx = 0.01
-dy = 0.015
-dz = 0.012
+dy = 0.01
+dz = 0.01
 
 xg = np.arange(x_lim[0], x_lim[1]+0.1*dx, dx)
 yg = np.arange(y_lim[0], y_lim[1]+0.1*dy, dy)
@@ -87,13 +88,13 @@ gint_rep[:nx+1, :ny+1, :nz+1] = (F_temp[ 1:,  1:,  1:]
 # To define how to make the replicas I have a look at:
 # np.abs(np.fft.fftfreq(10))*10
 # = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
-gint_rep[nx+1:, :ny, :nz] = gint_rep[nx:1:-1,  :ny,      :nz]
-gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx,       ny:1:-1, :nz]
-gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx:1:-1,   ny:1:-1, :nz]
-gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx,      :ny,       nz:1:-1]
-gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx:1:-1,  :ny,       nz:1:-1]
-gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx,       ny:1:-1,  nz:1:-1]
-gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx:1:-1,   ny:1:-1,  nz:1:-1]
+gint_rep[nx+1:, :ny, :nz] = gint_rep[nx-1:0:-1,  :ny,      :nz]
+gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx,       ny-1:0:-1, :nz]
+gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx-1:0:-1,   ny-1:0:-1, :nz]
+gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx,      :ny,       nz-1:0:-1]
+gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx-1:0:-1,  :ny,       nz-1:0:-1]
+gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx,       ny-1:0:-1,  nz-1:0:-1]
+gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1,   ny-1:0:-1,  nz:1:-1]
 
 # Transform the green function
 gint_rep_transf = np.fft.fftn(gint_rep)
@@ -127,14 +128,21 @@ p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, phi, res)
 plt.figure(101)
 plt.plot(xg, res)
+plt.plot(-xg, res)
 
 # Quick check on the x axis - phi
 ex= np.zeros_like(xg)
-p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
+p2m_cpu.m2p(xg+center_xyz[0],
+        0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, dphi_dx, ex)
 ex *= (-1.)
+e_ref = len(x)/(4*pi*epsilon_0) * (
+        xg/radius**3*(np.abs(xg)<radius)
+      + np.sign(xg)/xg**2*(np.abs(xg)>=radius))
 plt.figure(102)
 plt.plot(xg, ex)
+plt.plot(xg, e_ref)
+plt.grid(True)
 
 plt.figure(101)
 plt.plot(xg, res)
