@@ -56,6 +56,7 @@ p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 # solve
 solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=nx, ny=ny, nz=nz)
+phi[:,:,:] = solver.solve(rho)
 
 # Compute gradient
 dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])
@@ -76,7 +77,6 @@ p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, phi, res)
 plt.figure(101)
 plt.plot(xg, res)
-plt.plot(-xg, res)
 
 # Quick check on the x axis - phi
 ex= np.zeros_like(xg)

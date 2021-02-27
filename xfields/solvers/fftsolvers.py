@@ -60,12 +60,14 @@ class FFTSolver3D(Solver):
         self.nz = nz
         self._rho_rep = rho_rep
         self._phi_rep = phi_rep
+        self._gint_rep_transf = gint_rep_transf
 
     def solve(self, rho):
-        rho_rep[:,:,:] = 0. # reset
-        rho_rep[:nx, :ny, :nz] = rho
-        phi_rep = np.fft.ifftn(np.fft.fftn(rho_rep) * gint_rep_transf)
-        return np.real(phi_rep)[:nx, :ny, :nz]
+        self._rho_rep[:,:,:] = 0. # reset
+        self._rho_rep[:self.nx, :self.ny, :self.nz] = rho
+        self._phi_rep = np.fft.ifftn(
+                np.fft.fftn(self._rho_rep) * self._gint_rep_transf)
+        return np.real(self._phi_rep)[:self.nx, :self.ny, :self.nz]
 
 def primitive_func_3d(x,y,z):
     abs_r = np.sqrt(x * x + y * y + z * z)
