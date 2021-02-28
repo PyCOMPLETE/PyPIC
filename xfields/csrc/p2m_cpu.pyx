@@ -54,9 +54,9 @@ def m2p(
 
     for ii in range(n_maps):
         mq_pointers[ii] = <double*>(
-                <np.ndarray>mesh_quantities[ii]).data
+                (<np.ndarray>mesh_quantities[ii]).data)
         pq_pointers[ii] = <double*>(
-                <np.ndarray>particles_quantities[ii]).data
+                (<np.ndarray>particles_quantities[ii]).data)
 
     m2p_rectmesh3d(
          len(x),
