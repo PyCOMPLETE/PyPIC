@@ -41,35 +41,32 @@ def m2p(
         double x0, double y0, double z0,
         double dx, double dy, double dz,
         int nx, int ny, int nz,
-        np.ndarray mesh_quantity,
-        np.ndarray particles_quantity):
+        mesh_quantities,
+        particles_quantities):
 
-    cdef int n_maps = 1
+    assert len(mesh_quantities) == len(particles_quantities)
+    cdef int n_maps = len(mesh_quantities)
+
     cdef double** mq_pointers= \
-      <double**>malloc(n_maps * sizeof(double*))
+       <double**>malloc(n_maps * sizeof(double*))
     cdef double** pq_pointers = \
-      <double**>malloc(n_maps * sizeof(double*))
+       <double**>malloc(n_maps * sizeof(double*))
 
-    cdef np.ndarray Acsc_data
-    cdef double* Acsc_data_ptr
-    Acsc_data = mesh_quantity.data
-    Acsc_data_ptr = <double*>Acsc_data.data
+    for ii in range(n_maps):
+        mq_pointers[ii] = <double*>(
+                <np.ndarray>mesh_quantities[ii]).data
+        pq_pointers[ii] = <double*>(
+                <np.ndarray>particles_quantities[ii]).data
 
-    #cdef np.ndarray this_data
-    #this_data = mesh_quantity.data
-    #mq_pointers[0] = <double*>this_data.data
-    #this_data = particles_quantity.data
-    #pq_pointers[0] = <double*>this_data.data
-
-    # m2p_rectmesh3d(
-    #     len(x),
-    #     &x[0], &y[0],&z[0],
-    #     x0, y0, z0,
-    #     dx, dy, dz,
-    #     nx, ny, nz,
-    #     n_maps,
-    #     mq_pointers,
-    #     pq_pointers)
+    m2p_rectmesh3d(
+         len(x),
+         &x[0], &y[0],&z[0],
+         x0, y0, z0,
+         dx, dy, dz,
+         nx, ny, nz,
+         n_maps,
+         mq_pointers,
+         pq_pointers)
 
     free(mq_pointers)
     free(pq_pointers)

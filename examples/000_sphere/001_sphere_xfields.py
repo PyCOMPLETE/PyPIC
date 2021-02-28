@@ -63,37 +63,33 @@ dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])
 dphi_dy[:,1:ny-1,:] = 1/(2*dy)*(phi[:,2:,:]-phi[:,:-2,:])
 dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 
-# Quick check on the x axis - rho
-res = np.zeros_like(xg)
-p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, rho, res)
-plt.figure(100)
-plt.plot(xg, res)
-plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
-
-# Quick check on the x axis - phi
-res = np.zeros_like(xg)
-p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, phi, res)
-plt.figure(101)
-plt.plot(xg, res)
-
-# Quick check on the x axis - phi
-ex= np.zeros_like(xg)
+# Interpolation
+# Quick check on the x axis
+rho_xg= np.zeros_like(xg)
+phi_xg= np.zeros_like(xg)
+ex_xg= np.zeros_like(xg)
 p2m_cpu.m2p(xg+center_xyz[0],
         0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, dphi_dx, ex)
-ex *= (-1.)
+        dx, dy, dz, nx, ny, nz,
+        [rho, phi, dphi_dx],
+        [rho_xg, phi_xg, ex_xg])
+ex_xg *= (-1.)
+
+plt.figure(100)
+plt.plot(xg, rho_xg)
+plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
+
+plt.figure(101)
+plt.plot(xg, phi_xg)
+
 e_ref = len(x)/(4*pi*epsilon_0) * (
         xg/radius**3*(np.abs(xg)<radius)
       + np.sign(xg)/xg**2*(np.abs(xg)>=radius))
 plt.figure(102)
-plt.plot(xg, ex)
+plt.plot(xg, ex_xg)
 plt.plot(xg, e_ref)
 plt.grid(True)
 
-plt.figure(101)
-plt.plot(xg, res)
 # Check integral
 int_rho = np.sum(rho)*dx*dy*dz
 assert np.isclose(int_rho, len(x))

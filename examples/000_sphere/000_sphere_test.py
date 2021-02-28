@@ -116,7 +116,7 @@ dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 # Quick check on the x axis - rho
 res = np.zeros_like(xg)
 p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, rho, res)
+        dx, dy, dz, nx, ny, nz, [rho], [res])
 plt.figure(100)
 plt.plot(xg, res)
 plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
@@ -124,16 +124,15 @@ plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
 # Quick check on the x axis - phi
 res = np.zeros_like(xg)
 p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, phi, res)
+        dx, dy, dz, nx, ny, nz, [phi], [res])
 plt.figure(101)
 plt.plot(xg, res)
-plt.plot(-xg, res)
 
 # Quick check on the x axis - phi
 ex= np.zeros_like(xg)
 p2m_cpu.m2p(xg+center_xyz[0],
         0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, dphi_dx, ex)
+        dx, dy, dz, nx, ny, nz, [dphi_dx], [ex])
 ex *= (-1.)
 e_ref = len(x)/(4*pi*epsilon_0) * (
         xg/radius**3*(np.abs(xg)<radius)
