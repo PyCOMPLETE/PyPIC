@@ -72,7 +72,7 @@ void p2m_rectmesh3d(
 }
 
 
-void m2p_rectmesh3d_scalar(
+void m2p_rectmesh3d(
     // INPUTS:
       // length of x, y, z arrays
     const int nparticles,
@@ -84,14 +84,17 @@ void m2p_rectmesh3d_scalar(
     const double dx, const double dy, const double dz,
       // mesh dimension (number of cells)
     const int nx, const int ny, const int nz,
-      // scalar field defined over mesh
-    double *mesh_quantity,
+      // number of quantities to be interpolated
+    const int n_quantities,
+      // scalar fields defined over mesh
+    double** mesh_quantity,
     // OUTPUTS:
-    double* particles_quantity
+    double** particles_quantity
 ) {
 
-    int pidx = 0; //vectorize_over pidx nparticles
+    int iq = 0;
 
+    int pidx = 0; //vectorize_over pidx nparticles
 
     // indices
     int jx = floor((x[pidx] - x0) / dx);
@@ -116,16 +119,21 @@ void m2p_rectmesh3d_scalar(
     if (pidx < nparticles) {
         if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
         {
-            particles_quantity[pidx] = ( wijk   * mesh_quantity[jx   + ix*nx     + kx*nx*ny]
-                                       + wij1k  * mesh_quantity[jx+1 + ix*nx     + kx*nx*ny]
-                                       + wi1jk  * mesh_quantity[jx+  + (ix+1)*nx + kx*nx*ny]
-                                       + wi1j1k * mesh_quantity[jx+1 + (ix+1)*nx + kx*nx*ny]
-                                       + wijk1  * mesh_quantity[jx   + ix*nx     + (kx+1)*nx*ny]
-                                       + wij1k1 * mesh_quantity[jx+1 + ix*nx     + (kx+1)*nx*ny]
-                                       + wi1jk1 * mesh_quantity[jx+  + (ix+1)*nx + (kx+1)*nx*ny]
-                                       + wi1j1k1* mesh_quantity[jx+1 + (ix+1)*nx + (kx+1)*nx*ny]);
+            for (iq=0; iq<n_quantities; iq++){
+		particles_quantity[iq][pidx] = ( 
+			wijk   * mesh_quantity[iq][jx   + ix*nx     + kx*nx*ny]
+                      + wij1k  * mesh_quantity[iq][jx+1 + ix*nx     + kx*nx*ny]
+                      + wi1jk  * mesh_quantity[iq][jx+  + (ix+1)*nx + kx*nx*ny]
+                      + wi1j1k * mesh_quantity[iq][jx+1 + (ix+1)*nx + kx*nx*ny]
+                      + wijk1  * mesh_quantity[iq][jx   + ix*nx     + (kx+1)*nx*ny]
+                      + wij1k1 * mesh_quantity[iq][jx+1 + ix*nx     + (kx+1)*nx*ny]
+                      + wi1jk1 * mesh_quantity[iq][jx+  + (ix+1)*nx + (kx+1)*nx*ny]
+                      + wi1j1k1* mesh_quantity[iq][jx+1 + (ix+1)*nx + (kx+1)*nx*ny]);
+	    }
         } else {
-            particles_quantity[pidx] = 0;
+            for (iq=0; iq<n_quantities; iq++){
+            	particles_quantity[iq][pidx] = 0;
+		}
         }
     }
     //end_vectorize
