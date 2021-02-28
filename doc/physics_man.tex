@@ -203,7 +203,8 @@ A_s &= \beta_0 \frac{\phi'}{c} =  \frac{\beta_0}{\gamma_0c}\phi
 
 Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation in $\phi$:
 \begin{equation}
-\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss_zeta}
+\boxed{
+\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right)} \label{modifpoiss_zeta}
 \end{equation}
 
 
@@ -347,9 +348,13 @@ In this way the force over the single interaction becomes independent on time an
 from which we can compute the kicks on the normalized momenta (recalling that $P_0=m_0\beta_0\gamma_0c$):
 
 \begin{align}
-\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}\\
-\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)\label{dpy}\\
-\Delta \delta \simeq \Delta p_z = \frac{m_0}{m}\frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}
+&\boxed{
+\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)}\label{dpx}\\
+&\boxed{
+\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)}\label{dpy}\\
+&\boxed{
+\Delta \delta \simeq \Delta p_z = \frac{m_0}{m}\frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)}
+\label{dpz}
 \end{align}
 
 If the beam includes particles of different species (tracking of fragments), note that here $q$ and $m$ refer to the individuak particle while $m_0$ is the mass of the reference particle.
@@ -358,7 +363,8 @@ If the beam includes particles of different species (tracking of fragments), not
 \subsection{2.5D approximation}
 For large enough values of $\gamma_0$, Eq.~\ref{modifpoiss} can be approximated by:
 \begin{equation}
-\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
+\boxed{
+\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) }\label{2dpoiss}
 \end{equation}
 which means that we can solve a simple 2D problem for each beam slice (identified by its coordinate $\zeta$).
 
@@ -386,9 +392,12 @@ where $\phi_\perp(x,y)$ is the solution of the following 2D Poisson equation:
 
 The kick can be expressed as:
 \begin{align}
-\Delta p_x &= \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)\label{dpx_mod}\\
-\Delta p_y &= \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)\label{dpy_mod}\\
-\Delta \delta \simeq \Delta p_z &= \frac{ m_0} {m}\frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)\label{dpz_mod}
+&\boxed{
+\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)}\label{dpx_mod}\\
+&\boxed{
+\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)}\label{dpy_mod}\\
+&\boxed{
+\Delta \delta \simeq \Delta p_z = \frac{ m_0} {m}\frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)}\label{dpz_mod}
 \end{align}
 
 \section{FFT Poisson solver}
@@ -707,7 +716,8 @@ we introduce the corresponding Fourier transform:
 \end{equation}
 Eq.\,\eqref{eq:phiknint} can be rewritten as:
 \begin{equation}
-\hat{\phi}_k =\hat{G}_k^\text{int} \, \hat{\rho}_k
+\boxed{
+\hat{\phi}_k =\hat{G}_k^\text{int} \, \hat{\rho}_k}
 \end{equation}
 
 In summary the potential at the grid nodes can be computed as follows:
