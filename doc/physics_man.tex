@@ -190,12 +190,12 @@ Here we have dropped the ``$'$'' sign from $x$ and $y$ as these coordinates are 
 
 
 
-The quantities $\left( \frac{\phi}{c}, A_x, A_y, A_s\right)$ form a Lorentz 4-vector, we can show that the $s$ component of the vector potential in the lab frame vanishes:
+The quantities $\left( \frac{\phi}{c}, A_x, A_y, A_s\right)$ form a Lorentz 4-vector, so we can write:
 \begin{align}
 \phi &= \gamma_0 \left( {\phi'} +  \beta_0 c A'_s\right)\\
 A_s &= A'_s +\beta_0 \frac{\phi'}{c}
 \end{align}
-In the bunch frame the charges are at rest therefore $A'_x=A'_y=A'_z=0$ therefore:
+In the bunch frame the charges are at rest therefore $A'_x=A'_y=A'_s=0$ therefore:
 \begin{align}
 \phi &= \gamma_0 \phi'\label{phiphip}\\
 A_s &= \beta_0 \frac{\phi'}{c} =  \frac{\beta_0}{\gamma_0c}\phi
@@ -259,13 +259,13 @@ Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation i
 %\end{equation}
 
 
-
+We now compute the Lorentz force on the particles.
 We stay in the thin lens approximation so we approximate the velocity vector of the particle as:
 \begin{equation}
 \textbf{v} = \beta c\, \hat{\textbf{i}}_s
 \end{equation}
 
-We want to compute the Lorentz force acting on the particle:
+The Lorenz force can be written as:
 \begin{equation}
 \begin{split}
 \textbf{F} &=q \left( -\nabla \phi -\frac{\partial \textbf{A}}{\partial t}
@@ -319,21 +319,20 @@ Reorganizing:
 =  -q(1-\beta  \beta_0)\nabla \phi -\frac{\beta_0(\beta-\beta_0)}{\gamma_0}\frac{\partial \phi}{\partial \zeta}\hat{\textbf{i}}_s
 \end{equation}
 
-Explicit dependencies:
+Writing the dependencies explicitly:
 \begin{align}
 F_x(x, y, \zeta(t)) &=  -q(1-\beta  \beta_0) \frac{\partial \phi}{\partial x}(x, y, \zeta(t))\\
 F_y(x, y, \zeta(t)) &=  -q(1-\beta  \beta_0) \frac{\partial \phi}{\partial y}(x, y, \zeta(t))\\
 F_z(x, y, \zeta(t)) &=  -q\left(1-\beta  \beta_0 -\frac{\beta_0(\beta-\beta_0)}{\gamma_0}\right) \frac{\partial \phi}{\partial \zeta}(x, y, \zeta(t))
 \end{align}
 
-Over the single interaction we neglect the particle slippage:
+Over the single interaction we neglect the particle slippage\footnote{In any case one would need to take into account also the dispersion in order to have the right slippage.}:
 \begin{align}
 &\beta = \beta_0\\
 &\zeta(t) = \zeta
 \end{align}
-(in any case one would need to take into account also the dispersion in order to have the right slippage).
 
-gives the following simplification:
+This gives the following simplification:
 \begin{align}
 F_x(x, y, \zeta) &=  -q(1-\beta_0^2) \frac{\partial \phi}{\partial x}(x, y, \zeta)\\
 F_y(x, y, \zeta) &=  -q(1-\beta_0^2) \frac{\partial \phi}{\partial y}(x, y, \zeta)\\
@@ -345,7 +344,7 @@ In this way the force over the single interaction becomes independent on time an
 \Delta \textbf{P} = \frac{L}{\beta_0 c}\textbf{F} 
 \end{equation}
 
-from which we can compute the kicks on the normalized momenta ($P_0=m_0\beta_0\gamma_0c$):
+from which we can compute the kicks on the normalized momenta (recalling that $P_0=m_0\beta_0\gamma_0c$):
 
 \begin{align}
 \Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}\\
@@ -353,7 +352,7 @@ from which we can compute the kicks on the normalized momenta ($P_0=m_0\beta_0\g
 \Delta \delta \simeq \Delta p_z = \frac{m_0}{m}\frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}
 \end{align}
 
-Of your beam includes particles of different species (tracking of fragments), note that heree $q$ is the charge of the kicked particle while $m_0$ is the mass of the reference particle.
+If the beam includes particles of different species (tracking of fragments), note that here $q$ and $m$ refer to the individuak particle while $m_0$ is the mass of the reference particle.
 
 
 \subsection{2.5D approximation}
@@ -361,7 +360,7 @@ For large enough values of $\gamma_0$, Eq.~\ref{modifpoiss} can be approximated 
 \begin{equation}
 \frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
 \end{equation}
-which means that we can solve a simple 2D problem for each beam slice (identified by its $\zeta$).
+which means that we can solve a simple 2D problem for each beam slice (identified by its coordinate $\zeta$).
 
 
 \subsection{Modulated 2D}
