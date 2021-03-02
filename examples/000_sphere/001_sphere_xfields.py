@@ -24,6 +24,7 @@ mask_sphere = ((x_cube - center_xyz[0])**2
 x = x_cube[mask_sphere]
 y = y_cube[mask_sphere]
 z = z_cube[mask_sphere]
+pweights = 1. + 0*x
 
 # PIC
 x_lim = (-1.1, 1.)
@@ -35,45 +36,20 @@ dy = 0.025
 dz = 0.03
 
 xg = np.arange(x_lim[0], x_lim[1]+0.1*dx, dx)
-yg = np.arange(y_lim[0], y_lim[1]+0.1*dy, dy)
-zg = np.arange(z_lim[0], z_lim[1]+0.1*dz, dz)
-
-nx = len(xg)
-ny = len(yg)
-nz = len(zg)
-
-# Prepare arrays
-rho = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
-phi = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
-dphi_dx = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
-dphi_dy = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
-dphi_dz = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
-
-# p2m
-pweights = 1. + 0*x
-li.p2m(x, y, z, pweights, xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz, rho)
 
 # solve
-solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=nx, ny=ny, nz=nz)
-
 
 # Build fieldmap object
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
     y_range=y_lim, dy=dy, z_range=z_lim, dz=dz)
-fmap.update_rho(rho)
-fmap.update_phi_from_rho(solver)
 
-# Interpolation
-# Quick check on the x axis
-# rho_xg= np.zeros_like(xg)
-# phi_xg= np.zeros_like(xg)
-# ex_xg= np.zeros_like(xg)
-# li.m2p(xg+center_xyz[0],
-#         0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
-#         dx, dy, dz, nx, ny, nz,
-#         [rho, phi, dphi_dx],
-#         [rho_xg, phi_xg, ex_xg])
+# Compute potential
+#solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=fmap.nx, ny=fmap.ny, nz=fmap.nz)
+solver = fmap.generate_solver('FFTSolver3D')
+fmap.update_from_particles(x_p=x, y_p=y, z_p=z, ncharges_p=pweights, q0=1.,
+                           solver=solver)
+
+# Check on the x axis
 rho_xg, phi_xg, ex_xg, _, _ = fmap.get_values_at_points(x=xg+center_xyz[0],
         y=0*xg+center_xyz[1], z=0*xg+center_xyz[2])
 ex_xg *= (-1.)
@@ -94,13 +70,13 @@ plt.plot(xg, e_ref)
 plt.grid(True)
 
 # Check integral
-int_rho = np.sum(rho)*dx*dy*dz
+int_rho = np.sum(fmap.rho)*dx*dy*dz
 assert np.isclose(int_rho, len(x))
 
 
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111)
-ax1.pcolormesh(xg, yg, np.sum(rho, axis=2).T, shading='gouraud')
+ax1.pcolormesh(fmap.x_grid, fmap.y_grid, np.sum(fmap.rho, axis=2).T, shading='gouraud')
 ax1.set_aspect('equal')
 ax1.add_patch(plt.Circle((center_xyz[0], center_xyz[1]), radius,
                          color='w', fill=False))
@@ -109,7 +85,7 @@ ax1.set_ylabel('y')
 
 fig2 = plt.figure(2)
 ax2 = fig2.add_subplot(111)
-ax2.pcolormesh(yg, zg, np.sum(rho, axis=0).T, shading='gouraud')
+ax2.pcolormesh(fmap.y_grid, fmap.z_grid, np.sum(fmap.rho, axis=0).T, shading='gouraud')
 ax2.set_aspect('equal')
 ax2.add_patch(plt.Circle((center_xyz[1], center_xyz[2]), radius,
                          color='w', fill=False))

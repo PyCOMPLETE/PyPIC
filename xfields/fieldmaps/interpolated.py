@@ -2,6 +2,7 @@ import numpy as np
 
 from .base import FieldMap
 from . import linear_interpolators as li
+from ..solvers.fftsolvers import FFTSolver3D
 
 class TriLinearInterpolatedFieldMap(FieldMap):
 
@@ -75,6 +76,14 @@ class TriLinearInterpolatedFieldMap(FieldMap):
     def dz(self):
         return self.z_grid[1] - self.z_grid[0]
 
+    @property
+    def rho(self):
+        return self._rho
+
+    @property
+    def phi(self):
+        return self._phi
+
     def get_values_at_points(self,
             x, y, z,
             return_rho=True,
@@ -135,9 +144,12 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             raise ValueError('Not implemented!')
 
         # Compute gradient
-        self._dphi_dx[1:self.nx-1,:,:] = 1/(2*self.dx)*(self._phi[2:,:,:]-self._phi[:-2,:,:])
-        self._dphi_dy[:,1:self.ny-1,:] = 1/(2*self.dy)*(self._phi[:,2:,:]-self._phi[:,:-2,:])
-        self._dphi_dz[:,:,1:self.nz-1] = 1/(2*self.dz)*(self._phi[:,:,2:]-self._phi[:,:,:-2])
+        self._dphi_dx[1:self.nx-1,:,:] = 1/(2*self.dx)*(
+                self._phi[2:,:,:]-self._phi[:-2,:,:])
+        self._dphi_dy[:,1:self.ny-1,:] = 1/(2*self.dy)*(
+                self._phi[:,2:,:]-self._phi[:,:-2,:])
+        self._dphi_dz[:,:,1:self.nz-1] = 1/(2*self.dz)*(
+                self._phi[:,:,2:]-self._phi[:,:,:-2])
 
     def update_phi_from_rho(self, solver=None):
 
@@ -153,10 +165,8 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self.update_phi(new_phi)
 
 
-    def update_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
+    def update_from_particles(self, x_p, y_p, z_p, ncharges_p, q0, reset=True,
                             update_phi=True, solver=None, force=False):
-
-        raise ValueError('Not implemented!')
 
         if not force:
             self._assert_updatable()
@@ -165,19 +175,25 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             self._rho[:,:,:] = 0.
 
         li.p2m(x_p, y_p, z_p,
+                q0*ncharges_p,
                 self.x_grid[0], self.y_grid[0], self.z_grid[0],
                 self.dx, self.dy, self.dz,
                 self.nx, self.ny, self.nz,
                 self._rho)
 
-
+        if update_phi:
+            self.update_phi_from_rho(solver=solver)
 
     def generate_solver(self, solver):
-        raise ValueError('Not implemented!')
+
         if solver == 'FFTSolver3D':
-            pass
+            solver = FFTSolver3D(
+                    dx=self.dx, dy=self.dy, dz=self.dz,
+                    nx=self.nx, ny=self.ny, nz=self.nz)
         else:
-            pass
+            raise ValueError(f'solver name {solver} not recognized')
+
+        return solver
 
 def _configure_grid(vname, v_grid, dv, v_range, nv):
 
