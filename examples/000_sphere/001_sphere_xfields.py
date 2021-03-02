@@ -50,7 +50,9 @@ dphi_dy = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 dphi_dz = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 
 # p2m
-li.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
+pweights = 1. + 0*x
+li.p2m(x, y, z, pweights, xg[0], yg[0], zg[0],
+        dx, dy, dz, nx, ny, nz, rho)
 
 # solve
 solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=nx, ny=ny, nz=nz)

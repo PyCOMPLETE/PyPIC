@@ -54,13 +54,6 @@ class FieldMap(ABC):
 
         self.phi = phi.copy()
 
-    @abstractmethod
-    def update_rho_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True):
-        '''
-        If reset is false charge density is added to the stored one
-        '''
-
-        self._assert_updatable()
 
     @abstractmethod
     def update_phi_from_rho(self, solver=None):
@@ -74,7 +67,7 @@ class FieldMap(ABC):
                 raise ValueError('I have no solver to compute phi!')
 
     @abstractmethod
-    def update_all_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
+    def update_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
                                   solver=None):
 
         self._assert_updatable()

@@ -152,26 +152,28 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         new_phi = solver.solve(self._rho)
         self.update_phi(new_phi)
 
-    def update_rho_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True):
-        '''
-        If reset is false charge density is added to the stored one
-        '''
 
-        raise ValueError('To be implemented!')
-        self._assert_updatable()
+    def update_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
+                            update_phi=True, solver=None, force=False):
 
-    def update_all_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
-                                  solver=None):
+        raise ValueError('Not implemented!')
 
-        raise ValueError('To be implemented!')
-        self._assert_updatable()
+        if not force:
+            self._assert_updatable()
 
-        self.update_rho_from_particles(
-            x_p, y_p, z_p, ncharges_p, q0, reset=reset)
+        if reset:
+            self._rho[:,:,:] = 0.
 
-        self.update_phi_from_rho(solver=solver)
+        li.p2m(x_p, y_p, z_p,
+                self.x_grid[0], self.y_grid[0], self.z_grid[0],
+                self.dx, self.dy, self.dz,
+                self.nx, self.ny, self.nz,
+                self._rho)
+
+
 
     def generate_solver(self, solver):
+        raise ValueError('Not implemented!')
         if solver == 'FFTSolver3D':
             pass
         else:

@@ -97,7 +97,9 @@ gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
 gint_rep_transf = np.fft.fftn(gint_rep)
 
 # p2m
-li.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
+pweights = 1. + 0*x
+li.p2m(x, y, z, pweights, xg[0], yg[0], zg[0],
+        dx, dy, dz, nx, ny, nz, rho)
 
 # solve
 rho_rep[:,:,:] = 0. # reset

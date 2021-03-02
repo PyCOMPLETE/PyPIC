@@ -5,6 +5,8 @@ void p2m_rectmesh3d(
         const int nparticles,
           // particle positions
         double* x, double* y, double* z,
+	  // particle weights
+	double* part_weights,
           // mesh origin
         const double x0, const double y0, const double z0,
           // mesh distances per cell
@@ -19,6 +21,8 @@ void p2m_rectmesh3d(
 
     int pidx = 0; //vectorize_over pidx nparticles
 
+    double pwei = part_weights[pidx];
+
     // indices
     int jx = floor((x[pidx] - x0) / dx);
     int ix = floor((y[pidx] - y0) / dy);
@@ -30,14 +34,14 @@ void p2m_rectmesh3d(
     double dzi = z[pidx] - (z0 + kx * dz);
 
     // weights
-    double wijk =    vol_m1 * (1.-dxi/dx) * (1.-dyi/dy) * (1.-dzi/dz);
-    double wi1jk =   vol_m1 * (1.-dxi/dx) * (dyi/dy)    * (1.-dzi/dz);
-    double wij1k =   vol_m1 * (dxi/dx)    * (1.-dyi/dy) * (1.-dzi/dz);
-    double wi1j1k =  vol_m1 * (dxi/dx)    * (dyi/dy)    * (1.-dzi/dz);
-    double wijk1 =   vol_m1 * (1.-dxi/dx) * (1.-dyi/dy) * (dzi/dz);
-    double wi1jk1 =  vol_m1 * (1.-dxi/dx) * (dyi/dy)    * (dzi/dz);
-    double wij1k1 =  vol_m1 * (dxi/dx)    * (1.-dyi/dy) * (dzi/dz);
-    double wi1j1k1 = vol_m1 * (dxi/dx)    * (dyi/dy)    * (dzi/dz);
+    double wijk =    pwei * vol_m1 * (1.-dxi/dx) * (1.-dyi/dy) * (1.-dzi/dz);
+    double wi1jk =   pwei * vol_m1 * (1.-dxi/dx) * (dyi/dy)    * (1.-dzi/dz);
+    double wij1k =   pwei * vol_m1 * (dxi/dx)    * (1.-dyi/dy) * (1.-dzi/dz);
+    double wi1j1k =  pwei * vol_m1 * (dxi/dx)    * (dyi/dy)    * (1.-dzi/dz);
+    double wijk1 =   pwei * vol_m1 * (1.-dxi/dx) * (1.-dyi/dy) * (dzi/dz);
+    double wi1jk1 =  pwei * vol_m1 * (1.-dxi/dx) * (dyi/dy)    * (dzi/dz);
+    double wij1k1 =  pwei * vol_m1 * (dxi/dx)    * (1.-dyi/dy) * (dzi/dz);
+    double wi1j1k1 = pwei * vol_m1 * (dxi/dx)    * (dyi/dy)    * (dzi/dz);
 
     if (pidx < nparticles) {
         if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
