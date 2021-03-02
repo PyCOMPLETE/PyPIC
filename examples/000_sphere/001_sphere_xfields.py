@@ -33,7 +33,17 @@ dx = 0.02
 dy = 0.025
 dz = 0.03
 
-xg = np.arange(x_lim[0], x_lim[1]+0.1*dx, dx)
+theta_test = 70. * np.pi/360
+phi_test = 300 * np.pi/360.
+r_test = 2.5*radius*np.linspace(-1, 1., 1000)
+
+x0_test = r_test * np.sin(theta_test) * np.cos(phi_test)
+y0_test = r_test * np.sin(theta_test) * np.sin(phi_test)
+z0_test = r_test * np.cos(theta_test)
+
+x_test = center_xyz[0] + x0_test
+y_test = center_xyz[1] + y0_test
+z_test = center_xyz[2] + z0_test
 
 ###############
 # Actual test #
@@ -47,29 +57,32 @@ fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
 fmap.update_from_particles(x_p=x, y_p=y, z_p=z, ncharges_p=pweights, q0=1.)
 
 # Check on the x axis
-rho_xg, phi_xg, ex_xg, _, _ = fmap.get_values_at_points(x=xg+center_xyz[0],
-        y=0*xg+center_xyz[1], z=0*xg+center_xyz[2])
+rho_test, phi_test, dx_test, dy_test, dz_test = fmap.get_values_at_points(
+        x=x_test, y=y_test, z=z_test)
 
 
 ####################
 # Plots and checks #
 ####################
 
-ex_xg *= (-1.)
+ex_test = -dx_test
+ey_test = -dy_test
+ez_test = -dz_test
 
 plt.figure(100)
-plt.plot(xg, rho_xg)
+plt.plot(r_test, rho_test)
 plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
 
 plt.figure(101)
-plt.plot(xg, phi_xg)
+plt.plot(r_test, phi_test)
 
 e_ref = len(x)/(4*pi*epsilon_0) * (
-        xg/radius**3*(np.abs(xg)<radius)
-      + np.sign(xg)/xg**2*(np.abs(xg)>=radius))
+        r_test/radius**3*(np.abs(r_test)<radius)
+      + np.sign(r_test)/r_test**2*(np.abs(r_test)>=radius))
 plt.figure(102)
-plt.plot(xg, ex_xg)
-plt.plot(xg, e_ref)
+plt.plot(r_test, ex_test*x0_test/r_test
+        + ey_test*y0_test/r_test + ez_test*z0_test/r_test)
+plt.plot(r_test, e_ref)
 plt.grid(True)
 
 # Check integral
