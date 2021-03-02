@@ -61,20 +61,24 @@ dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])
 dphi_dy[:,1:ny-1,:] = 1/(2*dy)*(phi[:,2:,:]-phi[:,:-2,:])
 dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 
+
+# Build fieldmap object
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
     y_range=y_lim, dy=dy, z_range=z_lim, dz=dz, rho=rho, phi=phi)
 
 
 # Interpolation
 # Quick check on the x axis
-rho_xg= np.zeros_like(xg)
-phi_xg= np.zeros_like(xg)
-ex_xg= np.zeros_like(xg)
-li.m2p(xg+center_xyz[0],
-        0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
-        dx, dy, dz, nx, ny, nz,
-        [rho, phi, dphi_dx],
-        [rho_xg, phi_xg, ex_xg])
+# rho_xg= np.zeros_like(xg)
+# phi_xg= np.zeros_like(xg)
+# ex_xg= np.zeros_like(xg)
+# li.m2p(xg+center_xyz[0],
+#         0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
+#         dx, dy, dz, nx, ny, nz,
+#         [rho, phi, dphi_dx],
+#         [rho_xg, phi_xg, ex_xg])
+rho_xg, phi_xg, ex_xg, _, _ = fmap.get_values_at_points(x=xg+center_xyz[0],
+        y=0*xg+center_xyz[1], z=0*xg+center_xyz[2])
 ex_xg *= (-1.)
 
 plt.figure(100)

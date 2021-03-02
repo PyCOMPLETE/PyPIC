@@ -27,7 +27,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._dphi_dy = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
         self._dphi_dz = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
 
-        # Set phi
+        # Set rho
         self.update_rho(rho, force=True)
 
         # Set phi
@@ -70,14 +70,43 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         return self.z_grid[1] - self.z_grid[0]
 
     def get_values_at_points(self,
-            x, y, z=0,
-            return_rho=False,
-            return_phi=False,
-            return_dphi_dx=False,
-            return_dphi_dy=False,
-            return_dphi_dz=False):
-        pass
-        raise ValueError('To be implemented!')
+            x, y, z,
+            return_rho=True,
+            return_phi=True,
+            return_dphi_dx=True,
+            return_dphi_dy=True,
+            return_dphi_dz=True):
+
+        assert len(x) == len(y) == len(z)
+
+        mesh_quantities = []
+        particles_quantities = []
+
+        if return_rho:
+            mesh_quantities.append(self._rho)
+            particles_quantities.append(np.zeros_like(x))
+        if return_phi:
+            mesh_quantities.append(self._phi)
+            particles_quantities.append(np.zeros_like(x))
+        if return_dphi_dx:
+            mesh_quantities.append(self._dphi_dx)
+            particles_quantities.append(np.zeros_like(x))
+        if return_dphi_dy:
+            mesh_quantities.append(self._dphi_dy)
+            particles_quantities.append(np.zeros_like(x))
+        if return_dphi_dz:
+            mesh_quantities.append(self._dphi_dz)
+            particles_quantities.append(np.zeros_like(x))
+
+        if len(mesh_quantities)>0:
+            li.m2p(x, y, z,
+                self.x_grid[0], self.y_grid[0], self.z_grid[0],
+                self.dx, self.dy, self.dz,
+                self.nx, self.ny, self.nz,
+                mesh_quantities,
+                particles_quantities)
+
+        return particles_quantities
 
     def update_rho(self, rho, reset=True, force=False):
 
