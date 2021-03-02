@@ -1,12 +1,10 @@
-import sys
-sys.path.append('../../xfields/csrc')
-
 import numpy as np
 from numpy.random import rand
 from scipy.constants import epsilon_0
 from numpy import pi
 
-import p2m_cpu
+import xfields.fieldmaps.linear_interpolators as li
+
 import matplotlib.pyplot as plt
 plt.close('all')
 
@@ -99,7 +97,7 @@ gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
 gint_rep_transf = np.fft.fftn(gint_rep)
 
 # p2m
-p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
+li.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 # solve
 rho_rep[:,:,:] = 0. # reset
@@ -115,7 +113,7 @@ dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 
 # Quick check on the x axis - rho
 res = np.zeros_like(xg)
-p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
+li.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, [rho], [res])
 plt.figure(100)
 plt.plot(xg, res)
@@ -123,14 +121,14 @@ plt.axhline(y=len(x)/(4/3*np.pi*radius**3))
 
 # Quick check on the x axis - phi
 res = np.zeros_like(xg)
-p2m_cpu.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
+li.m2p(xg, 0*xg, 0*xg, xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, [phi], [res])
 plt.figure(101)
 plt.plot(xg, res)
 
 # Quick check on the x axis - phi
 ex= np.zeros_like(xg)
-p2m_cpu.m2p(xg+center_xyz[0],
+li.m2p(xg+center_xyz[0],
         0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz, [dphi_dx], [ex])
 ex *= (-1.)

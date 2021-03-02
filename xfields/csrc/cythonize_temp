@@ -1,3 +1,0 @@
-python 000_specialize_code.py
-cythonize -a -i  p2m_cpu.pyx
-

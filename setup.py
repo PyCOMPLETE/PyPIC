@@ -6,6 +6,20 @@ from setuptools import setup, find_packages, Extension
 
 extensions = []
 
+# C extension called via cython
+from Cython.Build import cythonize
+cython_extensions = [
+        Extension(
+            name='xfields.fieldmaps.linear_interpolators',
+            sources=['xfields/csrc/p2m_cpu.pyx'],
+            include_dirs=['xfields/csrc'],
+        ),
+        # Other cython extensions can be added here
+    ]
+# Cython extensions need to be cythonized before being added to the main
+# extension list:
+extensions += cythonize(cython_extensions)
+
 #########
 # Setup #
 #########

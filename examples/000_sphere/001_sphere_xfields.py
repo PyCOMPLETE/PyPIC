@@ -1,12 +1,10 @@
-import sys
-sys.path.append('../../xfields/csrc')
-import p2m_cpu
 
 import numpy as np
 from numpy.random import rand
 from scipy.constants import epsilon_0
 from numpy import pi
 
+import xfields.fieldmaps.linear_interpolators as li
 from xfields import FFTSolver3D
 
 import matplotlib.pyplot as plt
@@ -52,7 +50,7 @@ dphi_dy = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 dphi_dz = np.zeros((nx, ny, nz), dtype=np.float64, order='F')
 
 # p2m
-p2m_cpu.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
+li.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 # solve
 solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=nx, ny=ny, nz=nz)
@@ -68,7 +66,7 @@ dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 rho_xg= np.zeros_like(xg)
 phi_xg= np.zeros_like(xg)
 ex_xg= np.zeros_like(xg)
-p2m_cpu.m2p(xg+center_xyz[0],
+li.m2p(xg+center_xyz[0],
         0*xg+center_xyz[1], 0*xg+center_xyz[2], xg[0], yg[0], zg[0],
         dx, dy, dz, nx, ny, nz,
         [rho, phi, dphi_dx],
