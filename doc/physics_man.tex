@@ -95,12 +95,12 @@
 
 \newpage
 
+\tableofcontents
+
+\newpage
+
+
 \renewcommand*{\arraystretch}{1.4}
-
-
-\section{FFT method}
-
-We illustrate the method in a single dimension then extend to multiple dimensions.
 
 
 
@@ -190,12 +190,12 @@ Here we have dropped the ``$'$'' sign from $x$ and $y$ as these coordinates are 
 
 
 
-The quantities $\left( \frac{\phi}{c}, A_x, A_y, A_s\right)$ form a Lorentz 4-vector, we can show that the $s$ component of the vector potential in the lab frame vanishes:
+The quantities $\left( \frac{\phi}{c}, A_x, A_y, A_s\right)$ form a Lorentz 4-vector, so we can write:
 \begin{align}
 \phi &= \gamma_0 \left( {\phi'} +  \beta_0 c A'_s\right)\\
 A_s &= A'_s +\beta_0 \frac{\phi'}{c}
 \end{align}
-In the bunch frame the charges are at rest therefore $A'_x=A'_y=A'_z=0$ therefore:
+In the bunch frame the charges are at rest therefore $A'_x=A'_y=A'_s=0$ therefore:
 \begin{align}
 \phi &= \gamma_0 \phi'\label{phiphip}\\
 A_s &= \beta_0 \frac{\phi'}{c} =  \frac{\beta_0}{\gamma_0c}\phi
@@ -203,7 +203,8 @@ A_s &= \beta_0 \frac{\phi'}{c} =  \frac{\beta_0}{\gamma_0c}\phi
 
 Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation in $\phi$:
 \begin{equation}
-\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{modifpoiss_zeta}
+\boxed{
+\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2}+  \frac{1}{\gamma_0^2}\frac{\partial^2 \phi}{\partial \zeta^2}=  -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right)} \label{modifpoiss_zeta}
 \end{equation}
 
 
@@ -259,15 +260,13 @@ Combining Eq.\,\ref{phiphip} with Eq.\,\ref{modifpoiss} we obtain the equation i
 %\end{equation}
 
 
-\section{Lorentz force}
-
-
+We now compute the Lorentz force on the particles.
 We stay in the thin lens approximation so we approximate the velocity vector of the particle as:
 \begin{equation}
 \textbf{v} = \beta c\, \hat{\textbf{i}}_s
 \end{equation}
 
-We want to compute the Lorentz force acting on the particle:
+The Lorenz force can be written as:
 \begin{equation}
 \begin{split}
 \textbf{F} &=q \left( -\nabla \phi -\frac{\partial \textbf{A}}{\partial t}
@@ -321,21 +320,20 @@ Reorganizing:
 =  -q(1-\beta  \beta_0)\nabla \phi -\frac{\beta_0(\beta-\beta_0)}{\gamma_0}\frac{\partial \phi}{\partial \zeta}\hat{\textbf{i}}_s
 \end{equation}
 
-Explicit dependencies:
+Writing the dependencies explicitly:
 \begin{align}
 F_x(x, y, \zeta(t)) &=  -q(1-\beta  \beta_0) \frac{\partial \phi}{\partial x}(x, y, \zeta(t))\\
 F_y(x, y, \zeta(t)) &=  -q(1-\beta  \beta_0) \frac{\partial \phi}{\partial y}(x, y, \zeta(t))\\
 F_z(x, y, \zeta(t)) &=  -q\left(1-\beta  \beta_0 -\frac{\beta_0(\beta-\beta_0)}{\gamma_0}\right) \frac{\partial \phi}{\partial \zeta}(x, y, \zeta(t))
 \end{align}
 
-Over the single interaction we neglect the particle slippage:
+Over the single interaction we neglect the particle slippage\footnote{In any case one would need to take into account also the dispersion in order to have the right slippage.}:
 \begin{align}
 &\beta = \beta_0\\
 &\zeta(t) = \zeta
 \end{align}
-(in any case one would need to take into account also the dispersion in order to have the right slippage).
 
-gives the following simplification:
+This gives the following simplification:
 \begin{align}
 F_x(x, y, \zeta) &=  -q(1-\beta_0^2) \frac{\partial \phi}{\partial x}(x, y, \zeta)\\
 F_y(x, y, \zeta) &=  -q(1-\beta_0^2) \frac{\partial \phi}{\partial y}(x, y, \zeta)\\
@@ -347,23 +345,28 @@ In this way the force over the single interaction becomes independent on time an
 \Delta \textbf{P} = \frac{L}{\beta_0 c}\textbf{F} 
 \end{equation}
 
-from which we can compute the kicks on the normalized momenta ($P_0=m_0\beta_0\gamma_0c$):
+from which we can compute the kicks on the normalized momenta (recalling that $P_0=m_0\beta_0\gamma_0c$):
 
 \begin{align}
-\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)\label{dpx}\\
-\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)\label{dpy}\\
-\Delta \delta \simeq \Delta p_z = \frac{m_0}{m}\frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)\label{dpz}
+&\boxed{
+\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial x}\left(x, y,\zeta\right)}\label{dpx}\\
+&\boxed{
+\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial y}\left(x, y,\zeta\right)}\label{dpy}\\
+&\boxed{
+\Delta \delta \simeq \Delta p_z = \frac{m_0}{m}\frac{\Delta P_z} {P_0}= -\frac{qL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \frac{\partial \phi}{\partial \zeta}\left(x, y,\zeta\right)}
+\label{dpz}
 \end{align}
 
-Of your beam includes particles of different species (tracking of fragments), note that heree $q$ is the charge of the kicked particle while $m_0$ is the mass of the reference particle.
+If the beam includes particles of different species (tracking of fragments), note that here $q$ and $m$ refer to the individuak particle while $m_0$ is the mass of the reference particle.
 
 
 \subsection{2.5D approximation}
 For large enough values of $\gamma_0$, Eq.~\ref{modifpoiss} can be approximated by:
 \begin{equation}
-\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) \label{2dpoiss}
+\boxed{
+\frac{\partial^2 \phi}{\partial x^2} +  \frac{\partial^2 \phi}{\partial y^2} = -\frac{1}{\varepsilon_0}{\rho}_0 \left(x, y,\zeta\right) }\label{2dpoiss}
 \end{equation}
-which means that we can solve a simple 2D problem for each beam slice (identified by its $\zeta$).
+which means that we can solve a simple 2D problem for each beam slice (identified by its coordinate $\zeta$).
 
 
 \subsection{Modulated 2D}
@@ -389,13 +392,17 @@ where $\phi_\perp(x,y)$ is the solution of the following 2D Poisson equation:
 
 The kick can be expressed as:
 \begin{align}
-\Delta p_x &= \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)\label{dpx_mod}\\
-\Delta p_y &= \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)\label{dpy_mod}\\
-\Delta \delta \simeq \Delta p_z &= \frac{ m_0} {m}\frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)\label{dpz_mod}
+&\boxed{
+\Delta p_x = \frac{m_0}{m}\frac{\Delta P_x} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\,\frac{\partial \phi}{\partial x}\left(x, y\right)}\label{dpx_mod}\\
+&\boxed{
+\Delta p_y = \frac{m_0}{m}\frac{\Delta P_y} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\lambda_0(\zeta)\, \frac{\partial \phi}{\partial y}\left(x, y\right)}\label{dpy_mod}\\
+&\boxed{
+\Delta \delta \simeq \Delta p_z = \frac{ m_0} {m}\frac{\Delta P_z} {P_0}= -\frac{qq_0NL (1-\beta_0^2)}{ m\gamma_0\beta_0^2 c^2} \,\frac{d\lambda_0}{d\zeta}(\zeta)\,\phi\left(x, y\right)}\label{dpz_mod}
 \end{align}
 
-\section{FFT solver}
+\section{FFT Poisson solver}
 
+\subsection{Discrete Fourier Transform}
 We will use the following notation for the Discrete Fourier Transform of a sequence of length $M$:
 \begin{equation}
 \hat{a}_k = \text{DFT}_M(a_m) =  \sum_{m=0}^{M-1} a_m\, e^{-j2\pi  \frac{km}{M}}  \quad \text{for } k \in 0, ..., M
@@ -424,13 +431,8 @@ Multidimensional Discrete Fourier Transforms are obtained by applying sequential
 \end{split}
 \end{equation}
 
-
-
-We start from a 1D case for illustration and then we generalize.
-
-
-\subsection{1D case}
-We assume free space. The potential can be written as the convolution of a Green function with the charge distribution:
+\subsection{FFT convolution - 1D case}
+The potential can be written as the convolution of a Green function with the charge distribution:
 \begin{equation}
 \phi(x) = \int_{-\infty}^{+\infty} \rho(x')\,G(x-x') dx'
 \label{eq:conv}
@@ -460,16 +462,16 @@ We replace Eq.\,\eqref{eq:rholim} and Eq.\,\eqref{eq:philim} into Eq.\eqref{eq:c
 \begin{equation}
 \phi_L(x) = \Pi_{[0,L]}\left( x\right)
 \int_{-\infty}^{+\infty} 
-\Pi_{[0,L]}\left(x\right)
+\Pi_{[0,L]}\left(x'\right)
 \rho(x')\,G(x-x') dx'
 \end{equation}
-We change variable into $x'' = x - x'$:
+We apply the change of variable $x'' = x - x'$:
 \begin{equation}
 \phi_L(x) = 
 \int_{-\infty}^{+\infty} 
 \Pi_{[0,L]}\left({x}\right)
 \Pi_{[0,L]}\left({x-x''}\right)
-\rho(x-x'')\,G(x'') dx''
+\rho(x-x'')\,G(x'') \,dx''
 \label{eq:conv1}
 \end{equation}
 The integrand vanishes outside the set of the $(x, x'')$ defined by:
@@ -493,7 +495,7 @@ Combining the two equations we obtain:
 -L<-L + x < x'' <x<L
 \end{equation}
 i.e. the integrand is zero for $-L<x''<L$.
-Therefore in equation \eqref{eq:conv1} we can replace the $G(x'')$ with its truncated version:
+Therefore in Eq.\,\eqref{eq:conv1} we can replace $G(x'')$ with its truncated version:
 \begin{equation}
 G_{2L}(x'') = G(x'')\,\Pi_{[-L,L]}
 \left(
@@ -511,7 +513,7 @@ obtaining:
 \label{eq:conv2}
 \end{equation}
 
-Since the two window function force the integrand to zero outside the region $|x''|<L$ we can replace $G_{2L}(x'')$ with its replicated version:
+Since the two window functions force the integrand to zero outside the region $|x''|<L$ we can replace $G_{2L}(x'')$ with its replicated version:
 \begin{equation}
 G_{2LR}(x'') = \sum_{n=-\infty}^{+\infty}G_{2L}(x''-2nL) = \sum_{n=-\infty}^{+\infty}G(x'' -2nL)\,\Pi_{[-L,L]}
 \left(
@@ -536,25 +538,25 @@ We can go back to the initial coordinate by substituting $x'' = x-x'$:
 \rho(x')\,G_{2LR}(x-x') dx'
 \end{equation}
 
-This is a cyclic convolution, so we can proceed as followd. We split the integral:
+This is a cyclic convolution, so we can proceed as follows. We split the integral:
 \begin{equation}
 \phi_L(x) = 
 \Pi_{[0,L]}\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
 \int_{2nL}^{2(n+1)L} 
-\rho(x')\,G_{2LR}(x-x') dx'
+\rho(x')\,G_{2LR}(x-x') \,dx'
 \label{eq:conv3}
 \end{equation}
-In each term I replace $x''' = x'+2nL$:
+In each term we replace $x''' = x'+2nL$:
 \begin{equation}
 \phi_L(x) = 
 \Pi_{[0,L]}\left(\frac{x}{L}\right)
 \sum_{n=-\infty}^{+\infty}
 \int_{0 }^{2L} 
-\rho(x'''-2nL)\,G_{2LR}(x-x'''-2nL) dx'
+\rho(x'''-2nL)\,G_{2LR}(x-x'''-2nL) \,dx'''
 \label{eq:conv4}
 \end{equation}
-But $G_{2LR}$ is periodic:
+We use the fact that $G_{2LR}(x)$ is periodic:
 \begin{equation}
 \begin{split}
 \phi_L(x) &= 
@@ -571,7 +573,7 @@ But $G_{2LR}$ is periodic:
 \label{eq:conv5}
 \end{equation}
 
-I can define a replicated version of $\rho(x)$:
+We can define a replicated version of $\rho(x)$:
 \begin{equation}
 \rho_{2LR}(x)= \sum_{n=-\infty}^{+\infty}
 \rho(x-2nL)
@@ -607,13 +609,12 @@ is periodic of period $2L$. From it the potential of interest can be simply calc
 \label{eq:sel}
 \end{equation}
 
-We expand $\phi_{2LR}(x)$ in Fourier series:
+To compute the convolution in Eq.\,\ref{eq:confin} we expand $\phi_{2LR}(x)$ in Fourier series:
 \begin{equation}
 \phi_{2LR}(x) = \sum_{k=-\infty}^{+\infty} \tilde{\phi}_k\, e^{j2\pi k \frac{x}{2L}}
 \label{eq:phifour}
 \end{equation}
-where the Fourier coefficient are given by:
-
+where the Fourier coefficients are given by:
 \begin{equation}
 \tilde{\phi}_k = \frac{1}{2L}\int_0^{2L} \phi_{2LR}(x)\, e^{-j2\pi k \frac{x}{2L}} \, dx
 \label{eq:phik}
@@ -668,7 +669,7 @@ where we recognize the Discrete Fourier Transforms:
 
 
 
-Using Eq.\,\eqref{eq:phifour} we can obtained a sampled version of $\phi(x)$:
+Using Eq.\,\eqref{eq:phifour} we can obtain a sampled version of $\phi(x)$:
 \begin{equation}
 \phi_{2LR}(x_n) = 
 \sum_{n=0}^{M-1}  
@@ -678,7 +679,7 @@ Using Eq.\,\eqref{eq:phifour} we can obtained a sampled version of $\phi(x)$:
 where we have assumed that $\phi(x)$ is sufficiently smooth to allow truncating the sum.
 
 
-Using Eqs.\,\eqref{eq:rhokfft} and\,\eqref{eq:Gkfft} 
+Using Eqs.\,\eqref{eq:freqconv}, \eqref{eq:rhokfft} and\,\eqref{eq:Gkfft}  we obtain:
 \begin{equation}
 \phi_{2LR}(x_n) = 
 2L \sum_{n=0}^{M-1}  
@@ -715,12 +716,10 @@ we introduce the corresponding Fourier transform:
 \end{equation}
 Eq.\,\eqref{eq:phiknint} can be rewritten as:
 \begin{equation}
-\hat{\phi}_k =\hat{G}_k^\text{int} \, \hat{\rho}_k
+\boxed{
+\hat{\phi}_k =\hat{G}_k^\text{int} \, \hat{\rho}_k}
 \end{equation}
 
-
-
-\subsubsection{The algorithm (1D)}
 In summary the potential at the grid nodes can be computed as follows:
 \begin{enumerate}
 \item We compute the Integrated Green function at the grid points in the range $[0, L]$:
@@ -737,14 +736,14 @@ Note that for $x_n \in [L, 2L]$ we have that $2L-x_n \in [0, L]$ so we can reuse
 \begin{equation}
 \hat{G}^\text{int}_k = \text{DFT}_{2N}\left\{ G_{2LR}(x_n)\right\}
 \end{equation}
-\item We assume that we are given $\rho(x_n)$ in the interval $[0, L]$. From this we can obtaining $\rho_{2LR}(x_n)$ over the interval $[0, 2L]$ simply extending the sequence with zeros (see Eq.\,\eqref{eq:zeros}).
+\item We assume that we are given $\rho(x_n)$ in the interval $[0, L]$. From this we can obtain $\rho_{2LR}(x_n)$ over the interval $[0, 2L]$ simply extending the sequence with zeros (see Eq.\,\eqref{eq:zeros}).
 \item We transform it:
 \begin{equation}
 \hat{\rho}_k = \text{DFT}_{2N}\left\{ \rho_{2LR}(x_n)\right\}
 \end{equation}
 \item We compute the potential in the transformed domain:
 \begin{equation}
-\hat{\phi}_k = {G}^\text{int}_k {\rho}_k \quad \text{for } k\in [0, 2N]
+\hat{\phi}_k = \hat{G}^\text{int}_k \hat{\rho}_k \quad \text{for } k\in [0, 2N]
 \end{equation}
 \item We inverse-transform:
 \begin{equation}
@@ -759,7 +758,8 @@ which provides the physical potential in the range $[0, L]$:
 
 \subsection{Extension to multiple dimensionss}
 
-The procedure described can be extended to multiple dimensions by applying the same reasoning for all coordinates. Obtaining the following procedure:
+The procedure described above can be extended to multiple dimensions by applying the same reasoning for all coordinates. 
+This gives the following procedure:
 \begin{enumerate}
 \item We compute the Integrated Green function at the grid points in the volume $[0, L_x]\times[0, L_y]\times[0, L_z]$:
 \begin{equation}
@@ -788,7 +788,7 @@ This allows reusing the values computed at the previous step.
 \hat{G}^\text{int}_{k_x k_y k_z} = 
 \text{DFT}_{2N_x 2N_y 2N_z}\left\{ G_{2LR}(x_n, y_n, z_n)\right\}
 \end{equation}
-\item We assume that we are given $\rho(x_n, y_n, z_n)$ in the region $[0, L_x]\times[0, L_y]\times[0, L_z]$. From this we can obtaining $\rho_{2LR}(x_n)$ over the region $[0, 2L_x]\times[0, 2L_y]\times[0, 2L_z]$ simply extending the matrix with zeros (see Eq.\,\eqref{eq:zeros}).
+\item We assume that we are given $\rho(x_n, y_n, z_n)$ in the region $[0, L_x]\times[0, L_y]\times[0, L_z]$. From this we can obtain $\rho_{2LR}(x_n)$ over the region $[0, 2L_x]\times[0, 2L_y]\times[0, 2L_z]$ simply extending the matrix with zeros (see Eq.\,\eqref{eq:zeros}).
 \item We transform it:
 \begin{equation}
 \hat{\rho}^\text{int}_{k_x k_y k_z} = 
@@ -796,7 +796,7 @@ This allows reusing the values computed at the previous step.
 \end{equation}
 \item We compute the potential in the transformed domain:
 \begin{equation}
-\hat{\phi}_{k_x k_y k_z} = {G}^\text{int}_{k_x k_y k_z} {\rho}_{k_x k_y k_z} \quad \text{for } k_{x/y/z}\in [0, 2N_{x/y/z}]
+\hat{\phi}_{k_x k_y k_z} = \hat{G}^\text{int}_{k_x k_y k_z} \, \hat{\rho}_{k_x k_y k_z} \quad \text{for } k_{x/y/z}\in [0, 2N_{x/y/z}]
 \end{equation}
 \item We inverse-transform:
 \begin{equation}
@@ -811,7 +811,7 @@ which provides the physical potential in the region $[0, L_x]\times[0, L_y]\time
 \end{enumerate}
 
  
-\subsection{Green functions}
+\subsection{Green functions for 2D and 3D Poisson problems}
 
 \subsubsection{3D Poisson problem, free space boundary conditions}
 
@@ -861,7 +861,7 @@ F(x,y,z) =
 \int_{z_0}^{x} dz\,
 G(x,y,z)
 \end{equation}
-where $(x_0, y_0, z_0)$ is an arbitrary starting point.
+with $(x_0, y_0, z_0)$ being an arbitrary starting point.
 
 An expression for $F(x,y,z)$ is the following
 \begin{align}
@@ -927,37 +927,12 @@ F(x,y,z) &=-\frac{1}{4\pi\varepsilon_0}\iint \ln \left(x^{2}+y^{2}\right) dx/,dy
 Note that we need to choose the first cell center to be in (0,0) for evaluation of the integrated Green function. Therefore the cell edges have non zero coordinates and the denominators in the formula will always be non-vanishing.
 
 
-\begin{thebibliography}{99}
-
-\bibitem{benevento} G. Iadarola and G. Rumolo, ``Electron cloud effects`, proceedings of the ICFA Mini-Workshop on Impedances and Beam Instabilities in Particle Accelerators, Benevento, Italy, 2018.
-
-\bibitem{rumolo_ruggiero} G. Rumolo, F. Ruggiero, and F. Zimmermann, ``Simulation of the electron-cloud build up and its consequences on heat load, beam stability, and diagnostics'', Phys. Rev. ST Accel. Beams 4, 012801, 2001.
-
-\bibitem{jackson} J.D. Jackson, ``Classical electrodynamics'',  Wiley New York,  1999.
-
-\bibitem{griffith} D. Griffith, ``Introduction to electrodynamics'', Prentice Hall, 1999.
-
-\bibitem{zimmermann} F. Zimmermann, “A Simulation Study of Electron-Cloud Instability and Beam- Induced Multipacting in the LHC”, CERN LHC Project Report 95, SLAC-PUB- 7425 (1997).
-
-\bibitem{headtail} G. Rumolo and F. Zimmermann, ``Practical user guide for HEADTAIL'', SL-Note-2002-036-AP.
-
-\bibitem{gianni_thesis} G. Iadarola, ``Electron cloud studies for CERN particle accelerators and simulation code development'', CERN-THESIS-2014-047, 2014.
-
-\bibitem{Iadarola:IPAC17-THPAB043}
-	G.~Iadarola, E.~Belli, K.~S.~B.~Li, L.~Mether, A.~Romano, and G.~Rumolo,
-``Evolution of Python Tools for the Simulation of Electron Cloud Effects'' proceedings of the 8th International Particle Accelerator Conference (IPAC'17), Copenhagen, Denmark, May 2017.
-
-\bibitem{sixtrack} R. De Maria, A. Mereghetti, M. Fitterer, M. Fjellstrom, A. Patapenka, ``Sixtrack physics manual'', \url{http://sixtrack.web.cern.ch/SixTrack/docs/physics_manual.pdf}.
-
-\bibitem{maxwellpinch} G.~Iadarola, ``Properties of the electromagnetic fields generated by a circular-symmetric e-cloud pinch in the ultra-relativistic limit'', CERN-ACC-NOTE-2019-0017.
-
-
-
-%\bibitem{slides} G. Iadarola, R. De Maria, Y. Papaphilippou, ``Modelling and implementation of the ``6D'' beam-beam interaction'', CERN-ACC-SLIDES-2018-001, 2018 (version with animantions at \url{https://indico.cern.ch/event/684338/}).
-
-
-
-\end{thebibliography}
+%\begin{thebibliography}{99}
+%
+%
+%
+%
+%\end{thebibliography}
 
 
 
