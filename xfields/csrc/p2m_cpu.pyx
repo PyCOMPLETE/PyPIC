@@ -44,6 +44,11 @@ def m2p(
         mesh_quantities,
         particles_quantities):
 
+    for mmqq in mesh_quantities:
+        assert mmqq.flags['F_CONTIGUOUS']
+    for ppqq in particles_quantities:
+        assert ppqq.flags['F_CONTIGUOUS']
+
     assert len(mesh_quantities) == len(particles_quantities)
     cdef int n_maps = len(mesh_quantities)
 
