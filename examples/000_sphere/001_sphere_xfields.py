@@ -54,18 +54,13 @@ li.p2m(x, y, z, xg[0], yg[0], zg[0], dx, dy, dz, nx, ny, nz, rho)
 
 # solve
 solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=nx, ny=ny, nz=nz)
-phi[:,:,:] = solver.solve(rho)
-
-# Compute gradient
-dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])
-dphi_dy[:,1:ny-1,:] = 1/(2*dy)*(phi[:,2:,:]-phi[:,:-2,:])
-dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
 
 
 # Build fieldmap object
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
-    y_range=y_lim, dy=dy, z_range=z_lim, dz=dz, rho=rho, phi=phi)
-
+    y_range=y_lim, dy=dy, z_range=z_lim, dz=dz)
+fmap.update_rho(rho)
+fmap.update_phi_from_rho(solver)
 
 # Interpolation
 # Quick check on the x axis

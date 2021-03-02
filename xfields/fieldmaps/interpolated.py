@@ -28,10 +28,16 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._dphi_dz = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
 
         # Set rho
-        self.update_rho(rho, force=True)
+        if rho is not None:
+            self.update_rho(rho, force=True)
 
         # Set phi
-        self.update_phi(phi, force=True)
+        if phi is not None:
+            self.update_phi(phi, force=True)
+        else:
+            if solver is not None:
+                # One could use the solver to get the potential
+                raise ValueError('Not implemented!')
 
     @property
     def x_grid(self):
@@ -135,7 +141,6 @@ class TriLinearInterpolatedFieldMap(FieldMap):
 
     def update_phi_from_rho(self, solver=None):
 
-        raise ValueError('To be implemented!')
         self._assert_updatable()
 
         if solver is None:
@@ -143,6 +148,9 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                 solver = self.solver
             else:
                 raise ValueError('I have no solver to compute phi!')
+
+        new_phi = solver.solve(self._rho)
+        self.update_phi(new_phi)
 
     def update_rho_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True):
         '''
@@ -163,10 +171,11 @@ class TriLinearInterpolatedFieldMap(FieldMap):
 
         self.update_phi_from_rho(solver=solver)
 
-    def generate_solver(self, solver_type):
-        raise ValueError('To be implemented!')
-        return solver
-
+    def generate_solver(self, solver):
+        if solver == 'FFTSolver3D':
+            pass
+        else:
+            pass
 
 def _configure_grid(vname, v_grid, dv, v_range, nv):
 
