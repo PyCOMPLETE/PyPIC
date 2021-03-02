@@ -28,6 +28,11 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._dphi_dy = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
         self._dphi_dz = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
 
+        if isinstance(solver, str):
+            self.solver = self.generate_solver(solver)
+        else:
+            self.solver = solver
+
         # Set rho
         if rho is not None:
             self.update_rho(rho, force=True)
@@ -37,8 +42,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             self.update_phi(phi, force=True)
         else:
             if solver is not None:
-                # One could use the solver to get the potential
-                raise ValueError('Not implemented!')
+                self.update_phi_from_rho()
 
     @property
     def x_grid(self):

@@ -1,11 +1,9 @@
-
 import numpy as np
 from numpy.random import rand
 from scipy.constants import epsilon_0
 from numpy import pi
 
-import xfields.fieldmaps.linear_interpolators as li
-from xfields import FFTSolver3D, TriLinearInterpolatedFieldMap
+from xfields import TriLinearInterpolatedFieldMap
 
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -37,21 +35,26 @@ dz = 0.03
 
 xg = np.arange(x_lim[0], x_lim[1]+0.1*dx, dx)
 
-# solve
+###############
+# Actual test #
+###############
 
 # Build fieldmap object
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
-    y_range=y_lim, dy=dy, z_range=z_lim, dz=dz)
+    y_range=y_lim, dy=dy, z_range=z_lim, dz=dz, solver='FFTSolver3D')
 
 # Compute potential
-#solver = FFTSolver3D(dx=dx, dy=dy, dz=dz, nx=fmap.nx, ny=fmap.ny, nz=fmap.nz)
-solver = fmap.generate_solver('FFTSolver3D')
-fmap.update_from_particles(x_p=x, y_p=y, z_p=z, ncharges_p=pweights, q0=1.,
-                           solver=solver)
+fmap.update_from_particles(x_p=x, y_p=y, z_p=z, ncharges_p=pweights, q0=1.)
 
 # Check on the x axis
 rho_xg, phi_xg, ex_xg, _, _ = fmap.get_values_at_points(x=xg+center_xyz[0],
         y=0*xg+center_xyz[1], z=0*xg+center_xyz[2])
+
+
+####################
+# Plots and checks #
+####################
+
 ex_xg *= (-1.)
 
 plt.figure(100)
