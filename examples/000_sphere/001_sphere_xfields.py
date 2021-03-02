@@ -5,7 +5,7 @@ from scipy.constants import epsilon_0
 from numpy import pi
 
 import xfields.fieldmaps.linear_interpolators as li
-from xfields import FFTSolver3D
+from xfields import FFTSolver3D, TriLinearInterpolatedFieldMap
 
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -60,6 +60,10 @@ phi[:,:,:] = solver.solve(rho)
 dphi_dx[1:nx-1,:,:] = 1/(2*dx)*(phi[2:,:,:]-phi[:-2,:,:])
 dphi_dy[:,1:ny-1,:] = 1/(2*dy)*(phi[:,2:,:]-phi[:,:-2,:])
 dphi_dz[:,:,1:nz-1] = 1/(2*dz)*(phi[:,:,2:]-phi[:,:,:-2])
+
+fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
+    y_range=y_lim, dy=dy, z_range=z_lim, dz=dz, rho=rho, phi=phi)
+
 
 # Interpolation
 # Quick check on the x axis

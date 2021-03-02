@@ -1,6 +1,7 @@
 import numpy as np
 
 from .base import FieldMap
+from . import linear_interpolators as li
 
 class TriLinearInterpolatedFieldMap(FieldMap):
 
@@ -9,13 +10,28 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                  dx=None, dy=None, dz=None,
                  nx=None, ny=None, nz=None,
                  x_range=None, y_range=None, z_range=None,
-                 solver=None, solver_type=None,
+                 solver=None,
                  updatable=True,
                  context=None):
+
+        self.updatable = updatable
 
         self._x_grid = _configure_grid('x', x_grid, dx, x_range, nx)
         self._y_grid = _configure_grid('y', y_grid, dy, y_range, ny)
         self._z_grid = _configure_grid('z', z_grid, dz, z_range, nz)
+
+        # Prepare arrays
+        self._rho = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
+        self._phi = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
+        self._dphi_dx = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
+        self._dphi_dy = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
+        self._dphi_dz = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
+
+        # Set phi
+        self.update_rho(rho, force=True)
+
+        # Set phi
+        self.update_phi(phi, force=True)
 
     @property
     def x_grid(self):
@@ -53,14 +69,74 @@ class TriLinearInterpolatedFieldMap(FieldMap):
     def dz(self):
         return self.z_grid[1] - self.z_grid[0]
 
-    def generate_solver(self,):
+    def get_values_at_points(self,
+            x, y, z=0,
+            return_rho=False,
+            return_phi=False,
+            return_dphi_dx=False,
+            return_dphi_dy=False,
+            return_dphi_dz=False):
         pass
+        raise ValueError('To be implemented!')
 
-    def get_values_at_points(self,):
-        pass
+    def update_rho(self, rho, reset=True, force=False):
 
-    def update_rho_from_particles(self,):
-        pass
+        if not force:
+            self._assert_updatable()
+
+        if reset:
+            self._rho[:,:,:] = rho
+        else:
+            raise ValueError('Not implemented!')
+
+    def update_phi(self, phi, reset=True, force=False):
+
+        if not force:
+            self._assert_updatable()
+
+        if reset:
+            self._phi[:,:,:] = phi
+        else:
+            raise ValueError('Not implemented!')
+
+        # Compute gradient
+        self._dphi_dx[1:self.nx-1,:,:] = 1/(2*self.dx)*(self._phi[2:,:,:]-self._phi[:-2,:,:])
+        self._dphi_dy[:,1:self.ny-1,:] = 1/(2*self.dy)*(self._phi[:,2:,:]-self._phi[:,:-2,:])
+        self._dphi_dz[:,:,1:self.nz-1] = 1/(2*self.dz)*(self._phi[:,:,2:]-self._phi[:,:,:-2])
+
+    def update_phi_from_rho(self, solver=None):
+
+        raise ValueError('To be implemented!')
+        self._assert_updatable()
+
+        if solver is None:
+            if hasattr(self, 'solver'):
+                solver = self.solver
+            else:
+                raise ValueError('I have no solver to compute phi!')
+
+    def update_rho_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True):
+        '''
+        If reset is false charge density is added to the stored one
+        '''
+
+        raise ValueError('To be implemented!')
+        self._assert_updatable()
+
+    def update_all_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
+                                  solver=None):
+
+        raise ValueError('To be implemented!')
+        self._assert_updatable()
+
+        self.update_rho_from_particles(
+            x_p, y_p, z_p, ncharges_p, q0, reset=reset)
+
+        self.update_phi_from_rho(solver=solver)
+
+    def generate_solver(self, solver_type):
+        raise ValueError('To be implemented!')
+        return solver
 
 
 def _configure_grid(vname, v_grid, dv, v_range, nv):

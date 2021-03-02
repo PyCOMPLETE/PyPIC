@@ -40,12 +40,14 @@ class FieldMap(ABC):
             return_dphi_dz=False):
         pass
 
+    @abstractmethod
     def update_rho(self, rho, reset=True):
 
         self._assert_updatable()
 
-        self.rho = rho.copy()
+        self._rho = rho.copy()
 
+    @abstractmethod
     def update_phi(self, phi, reset=True):
 
         self._assert_updatable()
@@ -60,6 +62,7 @@ class FieldMap(ABC):
 
         self._assert_updatable()
 
+    @abstractmethod
     def update_phi_from_rho(self, solver=None):
 
         self._assert_updatable()
@@ -70,6 +73,7 @@ class FieldMap(ABC):
             else:
                 raise ValueError('I have no solver to compute phi!')
 
+    @abstractmethod
     def update_all_from_particles(x_p, y_p, z_p, ncharges_p, q0, reset=True,
                                   solver=None):
 
@@ -82,9 +86,4 @@ class FieldMap(ABC):
 
     def _assert_updatable(self):
         assert self.updatable, 'This FieldMap is not updatable!'
-
-
-
-
-
 
