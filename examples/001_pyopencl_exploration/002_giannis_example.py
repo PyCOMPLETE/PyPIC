@@ -17,20 +17,18 @@ data_host = np.zeros((nn, ), dtype = np.complex64)
 data_host[:] = x
 data_gpu = cla.to_device(queue, data_host)
 
-gfft = gpyfft.GpyFFT(debug=False)
-plan = gfft.create_plan(context, data_gpu.shape)
-plan.bake(queue)
+fftobj = gpyfft.fft.FFT(context, queue, data_gpu, axes = (0,))
 
-event1, = plan.enqueue_transform((queue,),
-               (data_gpu.data,))
+# gfft = gpyfft.GpyFFT(debug=False)
+# plan = gfft.create_plan(context, data_gpu.shape)
+# plan.bake(queue)
+
+event1, = fftobj.enqueue_arrays(data_gpu)
 event1.wait()
-
 transf_from_gpu = data_gpu.get()
 
-event2, = plan.enqueue_transform((queue,),
-               (data_gpu.data,), direction_forward=False)
+event2, = fftobj.enqueue_arrays(data_gpu, forward=False)
 event2.wait()
-
 x_from_gpu = data_gpu.get()
 
 import matplotlib.pyplot as plt
