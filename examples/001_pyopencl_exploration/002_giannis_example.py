@@ -19,10 +19,6 @@ data_gpu = cla.to_device(queue, data_host)
 
 fftobj = gpyfft.fft.FFT(context, queue, data_gpu, axes = (0,))
 
-# gfft = gpyfft.GpyFFT(debug=False)
-# plan = gfft.create_plan(context, data_gpu.shape)
-# plan.bake(queue)
-
 event1, = fftobj.enqueue_arrays(data_gpu)
 event1.wait()
 transf_from_gpu = data_gpu.get()
