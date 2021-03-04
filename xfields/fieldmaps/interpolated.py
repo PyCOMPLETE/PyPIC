@@ -21,13 +21,13 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._y_grid = _configure_grid('y', y_grid, dy, y_range, ny)
         self._z_grid = _configure_grid('z', z_grid, dz, z_range, nz)
 
-        # Prepare arrays
-        self._buffer = np.zeros((self.nx, self.ny, self.nz, 5), dtype=np.float64, order='F')
-        self._rho = self._buffer[:, :, :, 0]
-        self._phi = self._buffer[:, :, :, 1]
-        self._dphi_dx = self._buffer[:, :, :, 2]
-        self._dphi_dy = self._buffer[:, :, :, 3]
-        self._dphi_dz = self._buffer[:, :, :, 4]
+        # Prepare arrays (contiguous to use a single pointer in C/GPU)
+        self._maps_buffer = np.zeros((self.nx, self.ny, self.nz, 5), dtype=np.float64, order='F')
+        self._rho = self._maps_buffer[:, :, :, 0]
+        self._phi = self._maps_buffer[:, :, :, 1]
+        self._dphi_dx = self._maps_buffer[:, :, :, 2]
+        self._dphi_dy = self._maps_buffer[:, :, :, 3]
+        self._dphi_dz = self._maps_buffer[:, :, :, 4]
 
 
         if isinstance(solver, str):
@@ -101,24 +101,29 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         assert len(x) == len(y) == len(z)
 
         mesh_quantities = []
-        particles_quantities = []
 
+        pos_in_buffer_of_maps_to_interp = []
         if return_rho:
             mesh_quantities.append(self._rho)
-            particles_quantities.append(np.zeros_like(x))
+            pos_in_buffer_of_maps_to_interp.append(0)
         if return_phi:
             mesh_quantities.append(self._phi)
-            particles_quantities.append(np.zeros_like(x))
+            pos_in_buffer_of_maps_to_interp.append(1)
         if return_dphi_dx:
             mesh_quantities.append(self._dphi_dx)
-            particles_quantities.append(np.zeros_like(x))
+            pos_in_buffer_of_maps_to_interp.append(2)
         if return_dphi_dy:
             mesh_quantities.append(self._dphi_dy)
-            particles_quantities.append(np.zeros_like(x))
+            pos_in_buffer_of_maps_to_interp.append(3)
         if return_dphi_dz:
             mesh_quantities.append(self._dphi_dz)
-            particles_quantities.append(np.zeros_like(x))
+            pos_in_buffer_of_maps_to_interp.append(4)
 
+
+        nmaps_to_interp = len(pos_in_buffer_of_maps_to_interp)
+        buffer_out = np.zeros(nmaps_to_interp * len(x), dtype=np.float64)
+        particles_quantities = [buffer_out[ii*len(x):(ii+1)*len(x)]
+                                        for ii in range(nmaps_to_interp)]
         if len(mesh_quantities)>0:
             li.m2p(x, y, z,
                 self.x_grid[0], self.y_grid[0], self.z_grid[0],
