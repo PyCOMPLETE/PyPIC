@@ -49,8 +49,8 @@ def m2p(
         int nx, int ny, int nz,
         int n_maps,
         int[::1] offsets_mesh_quantities,
-        double[::1, :, :] mesh_quantities,
-        double[::1, :, :] particles_quantities):
+        double[::1, :, :, :] mesh_quantities,
+        double[::1] particles_quantities):
 
 
     m2p_rectmesh3d(
@@ -61,6 +61,6 @@ def m2p(
          nx, ny, nz,
          n_maps,
          &offsets_mesh_quantities[0],
-         &mesh_quantities[0,0,0],
-         &particles_quantities[0,0,0])
+         &mesh_quantities[0,0,0,0],
+         &particles_quantities[0])
 
