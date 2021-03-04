@@ -100,32 +100,22 @@ class TriLinearInterpolatedFieldMap(FieldMap):
 
         assert len(x) == len(y) == len(z)
 
-        mesh_quantities = []
-
         pos_in_buffer_of_maps_to_interp = []
         mapsize = self.nx*self.ny*self.nz
         if return_rho:
-            mesh_quantities.append(self._rho)
             pos_in_buffer_of_maps_to_interp.append(0*mapsize)
         if return_phi:
-            mesh_quantities.append(self._phi)
             pos_in_buffer_of_maps_to_interp.append(1*mapsize)
         if return_dphi_dx:
-            mesh_quantities.append(self._dphi_dx)
             pos_in_buffer_of_maps_to_interp.append(2*mapsize)
         if return_dphi_dy:
-            mesh_quantities.append(self._dphi_dy)
             pos_in_buffer_of_maps_to_interp.append(3*mapsize)
         if return_dphi_dz:
-            mesh_quantities.append(self._dphi_dz)
             pos_in_buffer_of_maps_to_interp.append(4*mapsize)
-
 
         nmaps_to_interp = len(pos_in_buffer_of_maps_to_interp)
         buffer_out = np.zeros(nmaps_to_interp * len(x), dtype=np.float64)
-        particles_quantities = [buffer_out[ii*len(x):(ii+1)*len(x)]
-                                        for ii in range(nmaps_to_interp)]
-        if len(mesh_quantities)>0:
+        if nmaps_to_interp > 0:
             li.m2p(x, y, z,
                 self.x_grid[0], self.y_grid[0], self.z_grid[0],
                 self.dx, self.dy, self.dz,
@@ -134,6 +124,10 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                 np.array(pos_in_buffer_of_maps_to_interp, dtype=np.int32),
                 self._maps_buffer,
                 buffer_out)
+
+        # Split buffer 
+        particles_quantities = [buffer_out[ii*len(x):(ii+1)*len(x)]
+                                        for ii in range(nmaps_to_interp)]
 
         return particles_quantities
 
