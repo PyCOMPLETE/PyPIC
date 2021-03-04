@@ -22,11 +22,13 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._z_grid = _configure_grid('z', z_grid, dz, z_range, nz)
 
         # Prepare arrays
-        self._rho = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
-        self._phi = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
-        self._dphi_dx = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
-        self._dphi_dy = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
-        self._dphi_dz = np.zeros((self.nx, self.ny, self.nz), dtype=np.float64, order='F')
+        self._buffer = np.zeros((self.nx, self.ny, self.nz, 5), dtype=np.float64, order='F')
+        self._rho = self._buffer[:, :, :, 0]
+        self._phi = self._buffer[:, :, :, 1]
+        self._dphi_dx = self._buffer[:, :, :, 2]
+        self._dphi_dy = self._buffer[:, :, :, 3]
+        self._dphi_dz = self._buffer[:, :, :, 4]
+
 
         if isinstance(solver, str):
             self.solver = self.generate_solver(solver)
