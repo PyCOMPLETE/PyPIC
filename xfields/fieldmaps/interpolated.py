@@ -103,21 +103,22 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         mesh_quantities = []
 
         pos_in_buffer_of_maps_to_interp = []
+        mapsize = self.nx*self.ny*self.nz
         if return_rho:
             mesh_quantities.append(self._rho)
-            pos_in_buffer_of_maps_to_interp.append(0)
+            pos_in_buffer_of_maps_to_interp.append(0*mapsize)
         if return_phi:
             mesh_quantities.append(self._phi)
-            pos_in_buffer_of_maps_to_interp.append(1)
+            pos_in_buffer_of_maps_to_interp.append(1*mapsize)
         if return_dphi_dx:
             mesh_quantities.append(self._dphi_dx)
-            pos_in_buffer_of_maps_to_interp.append(2)
+            pos_in_buffer_of_maps_to_interp.append(2*mapsize)
         if return_dphi_dy:
             mesh_quantities.append(self._dphi_dy)
-            pos_in_buffer_of_maps_to_interp.append(3)
+            pos_in_buffer_of_maps_to_interp.append(3*mapsize)
         if return_dphi_dz:
             mesh_quantities.append(self._dphi_dz)
-            pos_in_buffer_of_maps_to_interp.append(4)
+            pos_in_buffer_of_maps_to_interp.append(4*mapsize)
 
 
         nmaps_to_interp = len(pos_in_buffer_of_maps_to_interp)
@@ -129,8 +130,10 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                 self.x_grid[0], self.y_grid[0], self.z_grid[0],
                 self.dx, self.dy, self.dz,
                 self.nx, self.ny, self.nz,
-                mesh_quantities,
-                particles_quantities)
+                nmaps_to_interp,
+                np.array(pos_in_buffer_of_maps_to_interp, dtype=np.int32),
+                self._maps_buffer,
+                buffer_out)
 
         return particles_quantities
 

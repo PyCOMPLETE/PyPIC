@@ -16,8 +16,9 @@ cdef extern from "linear_interpolators_cpu.h" :
         const double dx, const double dy, const double dz,
         const int nx, const int ny, const int nz,
         const int n_quantities,
-        double** mesh_quantity,
-        double** particles_quantity
+        const int* offsets_mesh_quantities,
+        double* mesh_quantity,
+        double* particles_quantity
     );
 
 
@@ -46,29 +47,11 @@ def m2p(
         double x0, double y0, double z0,
         double dx, double dy, double dz,
         int nx, int ny, int nz,
-        mesh_quantities,
-        particles_quantities):
+        int n_maps,
+        int[::1] offsets_mesh_quantities,
+        double[::1, :, :] mesh_quantities,
+        double[::1, :, :] particles_quantities):
 
-    assert len(x) == len(y) == len(z)
-
-    for mmqq in mesh_quantities:
-        assert mmqq.flags['F_CONTIGUOUS']
-    for ppqq in particles_quantities:
-        assert ppqq.flags['F_CONTIGUOUS']
-
-    assert len(mesh_quantities) == len(particles_quantities)
-    cdef int n_maps = len(mesh_quantities)
-
-    cdef double** mq_pointers= \
-       <double**>malloc(n_maps * sizeof(double*))
-    cdef double** pq_pointers = \
-       <double**>malloc(n_maps * sizeof(double*))
-
-    for ii in range(n_maps):
-        mq_pointers[ii] = <double*>(
-                (<np.ndarray>mesh_quantities[ii]).data)
-        pq_pointers[ii] = <double*>(
-                (<np.ndarray>particles_quantities[ii]).data)
 
     m2p_rectmesh3d(
          len(x),
@@ -77,8 +60,7 @@ def m2p(
          dx, dy, dz,
          nx, ny, nz,
          n_maps,
-         mq_pointers,
-         pq_pointers)
+         &offsets_mesh_quantities[0],
+         &mesh_quantities[0,0,0],
+         &particles_quantities[0,0,0])
 
-    free(mq_pointers)
-    free(pq_pointers)

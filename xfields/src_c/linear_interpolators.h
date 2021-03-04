@@ -90,13 +90,17 @@ void m2p_rectmesh3d(
     const int nx, const int ny, const int nz,
       // number of quantities to be interpolated
     const int n_quantities,
+      // offset ofmesh quantities in array
+    const int* offsets_mesh_quantities,
       // scalar fields defined over mesh
-    double** mesh_quantity,
+    double* mesh_quantity,
     // OUTPUTS:
-    double** particles_quantity
+    double* particles_quantity
 ) {
 
-    int iq = 0;
+
+    int offset_mq; 
+    int iq;
 
     int pidx = 0; //vectorize_over pidx nparticles
 
@@ -124,19 +128,20 @@ void m2p_rectmesh3d(
         if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
         {
             for (iq=0; iq<n_quantities; iq++){
-		particles_quantity[iq][pidx] = ( 
-			wijk   * mesh_quantity[iq][jx   + ix*nx     + kx*nx*ny]
-                      + wij1k  * mesh_quantity[iq][jx+1 + ix*nx     + kx*nx*ny]
-                      + wi1jk  * mesh_quantity[iq][jx+  + (ix+1)*nx + kx*nx*ny]
-                      + wi1j1k * mesh_quantity[iq][jx+1 + (ix+1)*nx + kx*nx*ny]
-                      + wijk1  * mesh_quantity[iq][jx   + ix*nx     + (kx+1)*nx*ny]
-                      + wij1k1 * mesh_quantity[iq][jx+1 + ix*nx     + (kx+1)*nx*ny]
-                      + wi1jk1 * mesh_quantity[iq][jx+  + (ix+1)*nx + (kx+1)*nx*ny]
-                      + wi1j1k1* mesh_quantity[iq][jx+1 + (ix+1)*nx + (kx+1)*nx*ny]);
+		offset_mq = offsets_mesh_quantities[iq];
+		particles_quantity[iq*nparticles + pidx] = ( 
+			wijk   * mesh_quantity[offset_mq  +   jx   + ix*nx     + kx*nx*ny]
+                      + wij1k  * mesh_quantity[offset_mq  +   jx+1 + ix*nx     + kx*nx*ny]
+                      + wi1jk  * mesh_quantity[offset_mq  +   jx+  + (ix+1)*nx + kx*nx*ny]
+                      + wi1j1k * mesh_quantity[offset_mq  +   jx+1 + (ix+1)*nx + kx*nx*ny]
+                      + wijk1  * mesh_quantity[offset_mq  +   jx   + ix*nx     + (kx+1)*nx*ny]
+                      + wij1k1 * mesh_quantity[offset_mq  +   jx+1 + ix*nx     + (kx+1)*nx*ny]
+                      + wi1jk1 * mesh_quantity[offset_mq  +   jx+  + (ix+1)*nx + (kx+1)*nx*ny]
+                      + wi1j1k1* mesh_quantity[offset_mq  +   jx+1 + (ix+1)*nx + (kx+1)*nx*ny]);
 	    }
         } else {
             for (iq=0; iq<n_quantities; iq++){
-            	particles_quantity[iq][pidx] = 0;
+		particles_quantity[iq*nparticles + pidx] = 0; 
 		}
         }
     }
