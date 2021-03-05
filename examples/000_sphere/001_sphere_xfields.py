@@ -61,6 +61,16 @@ rho_test, phi_test, dx_test, dy_test, dz_test = fmap.get_values_at_points(
         x=x_test, y=y_test, z=z_test)
 
 
+# pickle for other tests
+import pickle
+with open('picsphere.pkl', 'wb') as fid:
+    pickle.dump({
+        'fmap': fmap,
+        'x_test': x_test,
+        'y_test': y_test,
+        'z_test': z_test,
+        }, fid)
+
 ####################
 # Plots and checks #
 ####################
