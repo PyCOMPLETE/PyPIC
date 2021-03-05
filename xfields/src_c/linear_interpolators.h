@@ -1,4 +1,4 @@
-#include <atomicadd.h> //cpu_only
+#include <atomicadd.h> //only_for_platform cpu
 
 /*gpukern*/ void p2m_rectmesh3d(
         // INPUTS:

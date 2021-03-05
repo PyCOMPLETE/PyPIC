@@ -49,6 +49,11 @@ for job in todo:
 
             inside_vect_block = False
         else:
+            if '//only_for_platform' in ll:
+                ptemp = ll.split(
+                    '//only_for_platform')[-1].split()[0].strip()
+                if platform != ptemp:
+                    ll = '//' + ll
             if indent and inside_vect_block:
                 new_lines.append('    ' + ll)
             else:

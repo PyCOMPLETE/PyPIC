@@ -1,0 +1,5 @@
+
+inline void atomicAdd(volatile __global double *addr, double val)
+{
+   *addr = *addr + val;
+}
