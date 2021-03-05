@@ -1,17 +1,10 @@
 import pyopencl as cl
 import pyopencl.array as cl_array
-import numpy
+import numpy as np
 import numpy.linalg as la
-
-a = numpy.random.rand(50000).astype(numpy.float32)
-b = numpy.random.rand(50000).astype(numpy.float32)
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
-
-a_dev = cl_array.to_device(queue, a)
-b_dev = cl_array.to_device(queue, b)
-dest_dev = cl_array.empty_like(a_dev)
 
 # Here he makes the sum of the two arrays 
 # with an explicit kernel                 
@@ -23,7 +16,58 @@ prg = cl.Program(ctx, src_content).build()
 knl_p2m_rectmesh3d = prg.p2m_rectmesh3d
 knl_m2p_rectmesh3d = prg.m2p_rectmesh3d
 
-prrr
+import pickle
+with open('../000_sphere/picsphere.pkl', 'rb') as fid:
+    ddd = pickle.load(fid)
+
+
+
+fmap = ddd['fmap']
+x0 = fmap.x_grid[0]
+y0 = fmap.y_grid[0]
+z0 = fmap.z_grid[0]
+
+dx = fmap.dx
+dy = fmap.dy
+dz = fmap.dz
+
+nx = fmap.nx
+ny = fmap.ny
+nz = fmap.nz
+
+
+pos_in_buffer_of_maps_to_interp = []
+mapsize = fmap.nx*fmap.ny*fmap.nz
+pos_in_buffer_of_maps_to_interp.append(0*mapsize)
+pos_in_buffer_of_maps_to_interp.append(1*mapsize)
+pos_in_buffer_of_maps_to_interp.append(2*mapsize)
+pos_in_buffer_of_maps_to_interp.append(3*mapsize)
+pos_in_buffer_of_maps_to_interp.append(4*mapsize)
+
+nmaps_to_interp = len(pos_in_buffer_of_maps_to_interp)
+
+x_dev = cl_array.to_device(queue, ddd['x_test'])
+y_dev = cl_array.to_device(queue, ddd['y_test'])
+z_dev = cl_array.to_device(queue, ddd['z_test'])
+n_particles = len(x_dev)
+dev_offsets = cl_array.to_device(queue,
+        np.array(pos_in_buffer_of_maps_to_interp, dtype=np.int32))
+dev_maps_buff = cl_array.to_device(queue, fmap._maps_buffer)
+dev_out_buff = cl_array.to_device(queue,
+        np.zeros(nmaps_to_interp*n_particles))
+n_threads = n_particles
+
+
+knl_m2p_rectmesh3d(queue, (n_threads,), None,
+        np.int32(n_particles),
+        x_dev.data, y_dev.data, z_dev.data,
+        x0, y0, z0, dx, dy, dz,
+        np.int32(nx), np.int32(ny), np.int32(nz),
+        np.int32(nmaps_to_interp),
+        dev_offsets.data, dev_maps_buff.data,
+        dev_out_buff.data)
+
+ppppppp
 
 knl = prg.sum  # Use this Kernel object for repeated calls
 knl(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
