@@ -25,8 +25,6 @@ import pickle
 with open('../000_sphere/picsphere.pkl', 'rb') as fid:
     ddd = pickle.load(fid)
 
-
-
 fmap = ddd['fmap']
 x0 = fmap.x_grid[0]
 y0 = fmap.y_grid[0]
