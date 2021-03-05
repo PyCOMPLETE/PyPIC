@@ -1,12 +1,14 @@
 
-void p2m_rectmesh3d(
+/*gpukern*/ void p2m_rectmesh3d(
         // INPUTS:
           // length of x, y, z arrays
         const int nparticles,
           // particle positions
-        double* x, double* y, double* z,
+        /*gpuglmem*/ double* x, 
+	/*gpuglmem*/ double* y, 
+	/*gpuglmem*/ double* z,
 	  // particle weights
-	double* part_weights,
+	/*gpuglmem*/ double* part_weights,
           // mesh origin
         const double x0, const double y0, const double z0,
           // mesh distances per cell
@@ -14,7 +16,7 @@ void p2m_rectmesh3d(
           // mesh dimension (number of cells)
         const int nx, const int ny, const int nz,
         // OUTPUTS:
-        double *grid1d
+        /*gpuglmem*/ double *grid1d
 ) {
 
     double vol_m1 = 1/(dx*dy*dz);
@@ -76,12 +78,14 @@ void p2m_rectmesh3d(
 }
 
 
-void m2p_rectmesh3d(
+/*gpukern*/ void m2p_rectmesh3d(
     // INPUTS:
       // length of x, y, z arrays
     const int nparticles,
       // particle positions
-    double* x, double* y, double* z,
+    /*gpuglmem*/ double* x,
+    /*gpuglmem*/ double* y,
+    /*gpuglmem*/ double* z,
       // mesh origin
     const double x0, const double y0, const double z0,
       // mesh distances per cell
@@ -91,11 +95,11 @@ void m2p_rectmesh3d(
       // number of quantities to be interpolated
     const int n_quantities,
       // offset ofmesh quantities in array
-    const int* offsets_mesh_quantities,
+    /*gpuglmem*/ const int* offsets_mesh_quantities,
       // scalar fields defined over mesh
-    double* mesh_quantity,
+    /*gpuglmem*/ double* mesh_quantity,
     // OUTPUTS:
-    double* particles_quantity
+    /*gpuglmem*/ double* particles_quantity
 ) {
 
 
