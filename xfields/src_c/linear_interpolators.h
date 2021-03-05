@@ -1,3 +1,4 @@
+#include <atomicadd.h> //cpu_only
 
 /*gpukern*/ void p2m_rectmesh3d(
         // INPUTS:
@@ -48,30 +49,30 @@
     if (pidx < nparticles) {
         if (jx >= 0 && jx < nx - 1 && ix >= 0 && ix < ny - 1 && kx >= 0 && kx < nz - 1)
         {
-            //atomicAdd(&grid1d[jx   + ix*nx     + kx*nx*ny],     wijk);
-            //atomicAdd(&grid1d[jx+1 + ix*nx     + kx*nx*ny],     wij1k);
-            //atomicAdd(&grid1d[jx   + (ix+1)*nx + kx*nx*ny],     wi1jk);
-            //atomicAdd(&grid1d[jx+1 + (ix+1)*nx + kx*nx*ny],     wi1j1k);
-            //atomicAdd(&grid1d[jx   + ix*nx     + (kx+1)*nx*ny], wijk1);
-            //atomicAdd(&grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny], wij1k1);
-            //atomicAdd(&grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny], wi1jk1);
-            //atomicAdd(&grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny], wi1j1k1);
-            grid1d[jx   + ix*nx     + kx*nx*ny] = 
-		    grid1d[jx   + ix*nx     + kx*nx*ny] +    wijk;
-            grid1d[jx+1 + ix*nx     + kx*nx*ny] = 
-		    grid1d[jx+1 + ix*nx     + kx*nx*ny] +    wij1k;
-            grid1d[jx   + (ix+1)*nx + kx*nx*ny] = 
-		    grid1d[jx   + (ix+1)*nx + kx*nx*ny] +    wi1jk;
-            grid1d[jx+1 + (ix+1)*nx + kx*nx*ny] = 
-		    grid1d[jx+1 + (ix+1)*nx + kx*nx*ny] +    wi1j1k;
-            grid1d[jx   + ix*nx     + (kx+1)*nx*ny] = 
-		    grid1d[jx   + ix*nx     + (kx+1)*nx*ny] +wijk1;
-            grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny] = 
-		    grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny] +wij1k1;
-            grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny] = 
-		    grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny] +wi1jk1;
-            grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny] = 
-		    grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny] +wi1j1k1;
+            atomicAdd(&grid1d[jx   + ix*nx     + kx*nx*ny],     wijk);
+            atomicAdd(&grid1d[jx+1 + ix*nx     + kx*nx*ny],     wij1k);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx + kx*nx*ny],     wi1jk);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx + kx*nx*ny],     wi1j1k);
+            atomicAdd(&grid1d[jx   + ix*nx     + (kx+1)*nx*ny], wijk1);
+            atomicAdd(&grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny], wij1k1);
+            atomicAdd(&grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny], wi1jk1);
+            atomicAdd(&grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny], wi1j1k1);
+            // grid1d[jx   + ix*nx     + kx*nx*ny] = 
+	    //         grid1d[jx   + ix*nx     + kx*nx*ny] +    wijk;
+            // grid1d[jx+1 + ix*nx     + kx*nx*ny] = 
+	    //         grid1d[jx+1 + ix*nx     + kx*nx*ny] +    wij1k;
+            // grid1d[jx   + (ix+1)*nx + kx*nx*ny] = 
+	    //         grid1d[jx   + (ix+1)*nx + kx*nx*ny] +    wi1jk;
+            // grid1d[jx+1 + (ix+1)*nx + kx*nx*ny] = 
+	    //         grid1d[jx+1 + (ix+1)*nx + kx*nx*ny] +    wi1j1k;
+            // grid1d[jx   + ix*nx     + (kx+1)*nx*ny] = 
+	    //         grid1d[jx   + ix*nx     + (kx+1)*nx*ny] +wijk1;
+            // grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny] = 
+	    //         grid1d[jx+1 + ix*nx     + (kx+1)*nx*ny] +wij1k1;
+            // grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny] = 
+	    //         grid1d[jx   + (ix+1)*nx + (kx+1)*nx*ny] +wi1jk1;
+            // grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny] = 
+            //	       grid1d[jx+1 + (ix+1)*nx + (kx+1)*nx*ny] +wi1j1k1;
         }
     }
     //end_vectorize

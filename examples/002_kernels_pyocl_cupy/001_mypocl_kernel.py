@@ -67,12 +67,3 @@ knl_m2p_rectmesh3d(queue, (n_threads,), None,
         dev_offsets.data, dev_maps_buff.data,
         dev_out_buff.data)
 
-ppppppp
-
-knl = prg.sum  # Use this Kernel object for repeated calls
-knl(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
-# The second argument gives the size od the computing grid (number of threads)
-# See here: https://documen.tician.de/pyopencl/runtime_program.html#pyopencl.Kernel.__call__
-
-# Here he compares the result with the operation done with the numpy syntax
-print(la.norm((dest_dev - (a_dev+b_dev)).get()))
