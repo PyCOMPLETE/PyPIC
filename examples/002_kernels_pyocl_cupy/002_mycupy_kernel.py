@@ -53,16 +53,20 @@ dev_offsets = cp.array(np.array(pos_in_buffer_of_maps_to_interp,
 dev_maps_buff = cp.array(fmap._maps_buffer)
 dev_out_buff = cp.array(np.zeros(nmaps_to_interp*n_particles))
 n_threads = n_particles
-prrrrr
 
-knl_m2p_rectmesh3d(queue, (n_threads,), None,
+block_size = 256
+grid_size = int(np.ceil(n_particles/block_size))
+
+knl_m2p_rectmesh3d((grid_size, ), (block_size, ), (
         np.int32(n_particles),
         x_dev.data, y_dev.data, z_dev.data,
         x0, y0, z0, dx, dy, dz,
         np.int32(nx), np.int32(ny), np.int32(nz),
         np.int32(nmaps_to_interp),
         dev_offsets.data, dev_maps_buff.data,
-        dev_out_buff.data)
+        dev_out_buff.data))
+
+prrrr
 
 # Test p2m
 n_gen = 1000000
