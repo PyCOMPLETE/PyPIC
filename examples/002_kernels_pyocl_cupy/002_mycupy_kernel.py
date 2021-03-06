@@ -66,23 +66,30 @@ knl_m2p_rectmesh3d((grid_size, ), (block_size, ), (
         dev_offsets.data, dev_maps_buff.data,
         dev_out_buff.data))
 
-prrrr
-
 # Test p2m
 n_gen = 1000000
-x_gen_dev = cl_array.to_device(queue,
+x_gen_dev = cp.array(
         np.zeros([n_gen], dtype=np.float64)+fmap.x_grid[10])
-y_gen_dev = cl_array.to_device(queue,
+y_gen_dev = cp.array(
         np.zeros([n_gen], dtype=np.float64)+fmap.y_grid[10])
-z_gen_dev = cl_array.to_device(queue,
+z_gen_dev = cp.array(
         np.zeros([n_gen], dtype=np.float64)+fmap.z_grid[10])
-part_weights_dev = cl_array.to_device(queue,
+part_weights_dev = cp.array(
         np.zeros([n_gen], dtype=np.float64)+1.)
-dev_rho = cl_array.to_device(queue, 0*fmap._rho)
-knl_p2m_rectmesh3d(queue, (n_gen,), None,
+dev_rho = cp.array(0*fmap._rho)
+
+
+block_size = 256
+grid_size = int(np.ceil(n_gen/block_size))
+
+import time
+t1 = time.time()
+knl_p2m_rectmesh3d((grid_size, ), (block_size, ), (
         np.int32(n_gen),
         x_gen_dev.data, y_gen_dev.data, z_gen_dev.data,
         part_weights_dev.data,
         x0, y0, z0, dx, dy, dz,
         np.int32(nx), np.int32(ny), np.int32(nz),
-        dev_rho.data)
+        dev_rho.data))
+t2 = time.time()
+print(f't = {t2-t1:.2e}')
