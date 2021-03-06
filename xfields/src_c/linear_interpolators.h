@@ -5,11 +5,11 @@
           // length of x, y, z arrays
         const int nparticles,
           // particle positions
-        /*gpuglmem*/ double* x, 
-	/*gpuglmem*/ double* y, 
-	/*gpuglmem*/ double* z,
+        /*gpuglmem*/ const double* x, 
+	/*gpuglmem*/ const double* y, 
+	/*gpuglmem*/ const double* z,
 	  // particle weights
-	/*gpuglmem*/ double* part_weights,
+	/*gpuglmem*/ const double* part_weights,
           // mesh origin
         const double x0, const double y0, const double z0,
           // mesh distances per cell
@@ -84,9 +84,9 @@
       // length of x, y, z arrays
     const int nparticles,
       // particle positions
-    /*gpuglmem*/ double* x,
-    /*gpuglmem*/ double* y,
-    /*gpuglmem*/ double* z,
+    /*gpuglmem*/ const double* x,
+    /*gpuglmem*/ const double* y,
+    /*gpuglmem*/ const double* z,
       // mesh origin
     const double x0, const double y0, const double z0,
       // mesh distances per cell
@@ -98,7 +98,7 @@
       // offset ofmesh quantities in array
     /*gpuglmem*/ const int* offsets_mesh_quantities,
       // scalar fields defined over mesh
-    /*gpuglmem*/ double* mesh_quantity,
+    /*gpuglmem*/ const double* mesh_quantity,
     // OUTPUTS:
     /*gpuglmem*/ double* particles_quantity
 ) {
