@@ -79,12 +79,33 @@ y_gen_dev = cl_array.to_device(queue,
 z_gen_dev = cl_array.to_device(queue,
         np.zeros([n_gen], dtype=np.float64)+fmap.z_grid[10])
 part_weights_dev = cl_array.to_device(queue,
-        np.zeros([n_gen], dtype=np.float64)+1.)
+        np.arange(0, 1000000, 1,  dtype=np.float64))
 dev_rho = cl_array.to_device(queue, 0*fmap._rho)
-knl_p2m_rectmesh3d(queue, (n_gen,), None,
-        np.int32(n_gen),
-        x_gen_dev.data, y_gen_dev.data, z_gen_dev.data,
-        part_weights_dev.data,
-        x0, y0, z0, dx, dy, dz,
-        np.int32(nx), np.int32(ny), np.int32(nz),
-        dev_rho.data)
+batch_size = 1000
+n_batches = int(np.ceil(n_gen/batch_size))
+import time
+t1 = time.time()
+for bb in range(n_batches):
+    i_0 = bb * batch_size
+    i_1 = (bb + 1) * batch_size
+    if i_1 > n_gen:
+        i_1 = n_gen
+
+    if i_1-i_0 <=0:
+        break
+
+    event = knl_p2m_rectmesh3d(queue, (i_1-i_0,), None,
+            np.int32(i_1-i_0),
+            x_gen_dev[i_0:i_1].data,
+            y_gen_dev[i_0:i_1].data,
+            z_gen_dev[i_0:i_1].data,
+            part_weights_dev[i_0:i_1].data,
+            x0, y0, z0, dx, dy, dz,
+            np.int32(nx), np.int32(ny), np.int32(nz),
+            dev_rho.data)
+event.wait()
+t2 = time.time()
+print(f't = {t2-t1:.2e}')
+
+assert(np.isclose(np.sum(dev_rho.get())*dx*dy*dz,
+    np.sum(part_weights_dev.get())))
