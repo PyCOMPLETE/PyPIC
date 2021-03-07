@@ -74,16 +74,19 @@ knl_m2p_rectmesh3d(queue, (n_threads,), None,
 n_gen = 1000000
 x_gen_dev = cl_array.to_device(queue,
         np.zeros([n_gen], dtype=np.float64)+fmap.x_grid[10]
-        + 20*dx* np.random.rand(n_gen))
+        + 20* dx* np.linspace(0, 1., n_gen))
 y_gen_dev = cl_array.to_device(queue,
         np.zeros([n_gen], dtype=np.float64)+fmap.y_grid[10]
-        + 20*dy* np.random.rand(n_gen))
+        + 20*dy* np.linspace(0, 1., n_gen))
 z_gen_dev = cl_array.to_device(queue,
         np.zeros([n_gen], dtype=np.float64)+fmap.z_grid[10]
-        + 20*dy* np.random.rand(n_gen))
+        + 20*dz* np.linspace(0, 1., n_gen))
 part_weights_dev = cl_array.to_device(queue,
         np.arange(0, n_gen, 1,  dtype=np.float64))
-dev_rho = cl_array.to_device(queue, 0*fmap._rho)
+dev_buff = cl_array.to_device(queue, 0*fmap._maps_buffer)
+dev_rho = dev_buff[:,:,:,1] # This does not support .data
+#dev_rho = dev_buff[:,:,:,0]
+
 import time
 t1 = time.time()
 
@@ -95,7 +98,7 @@ event = knl_p2m_rectmesh3d(queue, (n_gen,), None,
         part_weights_dev.data,
         x0, y0, z0, dx, dy, dz,
         np.int32(nx), np.int32(ny), np.int32(nz),
-        dev_rho.data)
+        dev_rho.base_data[dev_rho.offset:])
 event.wait()
 t2 = time.time()
 print(f't = {t2-t1:.2e}')
