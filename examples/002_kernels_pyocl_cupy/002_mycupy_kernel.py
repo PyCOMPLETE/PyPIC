@@ -76,8 +76,8 @@ z_gen_dev = cp.array(
         np.zeros([n_gen], dtype=np.float64)+fmap.z_grid[10])
 part_weights_dev = cp.array(
         np.zeros([n_gen], dtype=np.float64)+1.)
-dev_rho = cp.array(0*fmap._rho)
-
+maps_buff = cp.array(0*fmap._maps_buffer)
+dev_rho = maps_buff[:,:,:,1]
 
 block_size = 256
 grid_size = int(np.ceil(n_gen/block_size))
@@ -91,5 +91,6 @@ knl_p2m_rectmesh3d((grid_size, ), (block_size, ), (
         x0, y0, z0, dx, dy, dz,
         np.int32(nx), np.int32(ny), np.int32(nz),
         dev_rho.data))
+a = dev_rho[10,10,10]
 t2 = time.time()
 print(f't = {t2-t1:.2e}')
