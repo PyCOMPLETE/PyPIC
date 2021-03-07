@@ -62,13 +62,21 @@ class XfPoclKernel(object):
     def context(self):
         return self.pocl_kernel.context
 
-    def __call__(**kwargs):
-        assert len(kwags.keys()) == self.num_args
-        arg_list = [kwags[nn] for nn in self.arg_names]
+    def __call__(self, **kwargs):
+        assert len(kwargs.keys()) == self.num_args
+        arg_list = []
+        for nn, tt in zip(self.arg_names, self.arg_types):
+            vv = kwargs[nn]
+            if np.issctype(tt):
+                assert np.isscalar(vv)
+                arg_list.append(tt(vv))
+            else:
+                assert isinstance(vv, cla.Array)
+                arg_list.append(vv.base_data[vv.offset:])
 
         event = self.pocl_kernel(self.command_queue,
                 (kwargs[self.num_threads_from_arg],),
-                None, arg_list)
+                None, *arg_list)
 
         if self.wait_on_call:
             event.wait()
@@ -99,3 +107,36 @@ p2mk = XfPoclKernel(pocl_kernel=knl_p2m_rectmesh3d,
     num_threads_from_arg='nparticles', command_queue=queue)
 
 
+# Test p2m
+n_gen = 1000000
+x_gen_dev = cla.to_device(queue,
+        np.zeros([n_gen], dtype=np.float64)+fmap.x_grid[10]
+        + 20* dx* np.linspace(0, 1., n_gen))
+y_gen_dev = cla.to_device(queue,
+        np.zeros([n_gen], dtype=np.float64)+fmap.y_grid[10]
+        + 20*dy* np.linspace(0, 1., n_gen))
+z_gen_dev = cla.to_device(queue,
+        np.zeros([n_gen], dtype=np.float64)+fmap.z_grid[10]
+        + 20*dz* np.linspace(0, 1., n_gen))
+part_weights_dev = cla.to_device(queue,
+        np.arange(0, n_gen, 1,  dtype=np.float64))
+dev_buff = cla.to_device(queue, 0*fmap._maps_buffer)
+dev_rho = dev_buff[:,:,:,1] # This does not support .data
+#dev_rho = dev_buff[:,:,:,0]
+
+import time
+t1 = time.time()
+event = p2mk(nparticles=n_gen,
+    x=x_gen_dev,
+    y=y_gen_dev,
+    z=z_gen_dev,
+    part_weights=part_weights_dev,
+    x0=x0, y0=y0, z0=z0, dx=dx, dy=dy, dz=dz,
+    nx=nx, ny=ny, nz=nz,
+    grid1d=dev_rho)
+event.wait()
+t2 = time.time()
+print(f't = {t2-t1:.2e}')
+
+assert(np.isclose(np.sum(dev_rho.get())*dx*dy*dz,
+    np.sum(part_weights_dev.get())))
