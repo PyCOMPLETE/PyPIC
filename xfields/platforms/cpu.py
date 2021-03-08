@@ -18,12 +18,14 @@ class XfCpuPlatform(object):
             self.add_kernels(lib_file=cpu_default_kernels['lib_file'],
                     kernel_descriptions=cpu_default_kernels['kernel_descriptions'])
 
-
     def nparray_to_platform_mem(self, arr):
         return arr
 
     def nparray_from_platform_mem(self, dev_arr):
         return dev_arr
+
+    def plan_FFT(self, data, axes):
+        return XfCpuFFT(data, axes)
 
     def add_kernels(self, lib_file, kernel_descriptions={}):
 
@@ -75,3 +77,20 @@ class XfCpuKernel(object):
                 raise ValueError(f'Type {tt} not recognized')
 
         event = self.ctypes_kernel(*arg_list)
+
+
+class XfCpuFFT(object):
+    def __init__(self, data, axes):
+
+        self.axes = axes
+
+        # I perform one fft to have numpy cache the plan
+        _ = np.fft.ifftn(np.fft.fftn(data, axes=axes), axes=axes)
+
+    def transform(self, data):
+        """The transform is done inplace"""
+        data[:] = np.fft.fftn(data, axes=self.axes)[:]
+
+    def itransform(self, data):
+        """The transform is done inplace"""
+        data[:] = np.fft.ifftn(data, axes=self.axes)[:]
