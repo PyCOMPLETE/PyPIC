@@ -3,13 +3,15 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array as cla
 
+from .default_kernels import pocl_default_kernels
+
 class MinimalDotDict(dict):
     def __getattr__(self, attr):
         return self.get(attr)
 
 class XfPoclPlatform(object):
 
-    def __init__(self, pocl_context=None, command_queue=None):
+    def __init__(self, pocl_context=None, command_queue=None, default_kernels=True):
 
         if pocl_context is None:
             pocl_context = cl.create_some_context()
@@ -22,6 +24,11 @@ class XfPoclPlatform(object):
         self.pocl_context = pocl_context
         self.command_queue = command_queue
         self.kernels = MinimalDotDict()
+
+        if default_kernels:
+            self.add_kernels(src_files=pocl_default_kernels['src_files'],
+                    kernel_descriptions=pocl_default_kernels['kernel_descriptions'])
+
 
     def nparray_to_platform_mem(self, arr):
         dev_arr = cla.to_device(self.command_queue, arr)
