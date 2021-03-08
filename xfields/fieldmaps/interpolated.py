@@ -120,17 +120,22 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         if return_dphi_dz:
             pos_in_buffer_of_maps_to_interp.append(4*mapsize)
 
+        pos_in_buffer_of_maps_to_interp = self.platform.nparray_to_platform_mem(
+                        np.array(pos_in_buffer_of_maps_to_interp, dtype=np.int32))
         nmaps_to_interp = len(pos_in_buffer_of_maps_to_interp)
-        buffer_out = np.zeros(nmaps_to_interp * len(x), dtype=np.float64)
+        buffer_out = self.platform.nparray_to_platform_mem(
+                np.zeros(nmaps_to_interp * len(x), dtype=np.float64))
         if nmaps_to_interp > 0:
-            li.m2p(x, y, z,
-                self.x_grid[0], self.y_grid[0], self.z_grid[0],
-                self.dx, self.dy, self.dz,
-                self.nx, self.ny, self.nz,
-                nmaps_to_interp,
-                np.array(pos_in_buffer_of_maps_to_interp, dtype=np.int32),
-                self._maps_buffer,
-                buffer_out)
+            self.platform.kernels.m2p_rectmesh3d(
+                    nparticles=len(x),
+                    x=x, y=y, z=z,
+                    x0=self.x_grid[0], y0=self.y_grid[0], z0=self.z_grid[0],
+                    dx=self.dx, dy=self.dy, dz=self.dz,
+                    nx=self.nx, ny=self.ny, nz=self.nz,
+                    n_quantities=nmaps_to_interp,
+                    offsets_mesh_quantities=pos_in_buffer_of_maps_to_interp,
+                    mesh_quantity=self._maps_buffer,
+                    particles_quantity=buffer_out)
 
         # Split buffer 
         particles_quantities = [buffer_out[ii*len(x):(ii+1)*len(x)]
