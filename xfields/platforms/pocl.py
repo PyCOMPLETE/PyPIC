@@ -100,3 +100,25 @@ class XfPoclKernel(object):
             event.wait()
 
         return event
+
+class XfPoclFFT(object):
+    def __init__(self, platform, data, axes):
+
+        self.platform = platform
+        self.axes = axes
+
+        import gpyfft
+        self._fftobj = gpyfft.fft.FFT(platform.pocl_context,
+                platform.command_queue, data, axes)
+
+    def transform(self, data):
+        """The transform is done inplace"""
+
+        event, = fftobj.enqueue_arrays(data)
+        event.wait()
+
+    def itransform(self, data):
+        """The transform is done inplace"""
+
+        event, = fftobj.enqueue_arrays(data, forward=False)
+        event.wait()
