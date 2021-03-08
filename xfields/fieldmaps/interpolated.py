@@ -189,12 +189,16 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         if reset:
             self._rho[:,:,:] = 0.
 
-        li.p2m(x_p, y_p, z_p,
-                q0*ncharges_p,
-                self.x_grid[0], self.y_grid[0], self.z_grid[0],
-                self.dx, self.dy, self.dz,
-                self.nx, self.ny, self.nz,
-                self._rho)
+        assert len(x_p) == len(y_p) == len(z_p) == len(ncharges_p)
+
+        self.platform.kernels.p2m_rectmesh3d(
+                nparticles=len(x_p),
+                x=x_p, y=y_p, z=z_p,
+                part_weights=q0*ncharges_p,
+                x0=self.x_grid[0], y0=self.y_grid[0], z0=self.z_grid[0],
+                dx=self.dx, dy=self.dy, dz=self.dz,
+                nx=self.nx, ny=self.ny, nz=self.nz,
+                grid1d=self._rho)
 
         if update_phi:
             self.update_phi_from_rho(solver=solver)
