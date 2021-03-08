@@ -1,7 +1,11 @@
-import numpy as np
+import sysconfig
 from pathlib import Path
+
+import numpy as np
+
 thisfolder = Path(__file__).parent.absolute()
 pkg_root = thisfolder.parent.absolute()
+so_suffix = sysconfig.get_config_var('EXT_SUFFIX')
 
 shared_kernel_descriptions = {
     'p2m_rectmesh3d':{
@@ -25,8 +29,6 @@ shared_kernel_descriptions = {
         }
     }
 
-
-
 pocl_default_kernels = {
     'kernel_descriptions': shared_kernel_descriptions,
     'src_files': [
@@ -35,3 +37,7 @@ pocl_default_kernels = {
         ]
     }
 
+cpu_default_kernels = {
+    'kernel_descriptions': shared_kernel_descriptions,
+    'lib_file': pkg_root.joinpath('fieldmaps/lin_interpolators'+so_suffix),
+    }
