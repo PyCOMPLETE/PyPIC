@@ -11,6 +11,7 @@ class MinimalDotDict(dict):
 
 class XfPoclPlatform(object):
 
+
     def __init__(self, pocl_context=None, command_queue=None, default_kernels=True):
 
         if pocl_context is None:
@@ -24,6 +25,7 @@ class XfPoclPlatform(object):
         self.pocl_context = pocl_context
         self.command_queue = command_queue
         self.kernels = MinimalDotDict()
+        self.FFTClass = XfPoclFFT
 
         if default_kernels:
             self.add_kernels(src_files=pocl_default_kernels['src_files'],
