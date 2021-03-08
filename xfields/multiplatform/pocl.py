@@ -23,6 +23,10 @@ class XfPoclPlatform(object):
         self.command_queue = command_queue
         self.kernels = MinimalDotDict()
 
+    def nparray_to_platform_mem(self, arr):
+        dev_arr = cla.to_device(self.command_queue, arr)
+        return dev_arr
+
     def add_kernels(self, src_code='', src_files=[], kernel_descriptions={}):
 
         src_content = src_code
@@ -42,10 +46,6 @@ class XfPoclPlatform(object):
                 arg_names=aa_names, arg_types=aa_types,
                 num_threads_from_arg=nt_from,
                 command_queue=self.command_queue)
-
-
-
-
 
 class XfPoclKernel(object):
 

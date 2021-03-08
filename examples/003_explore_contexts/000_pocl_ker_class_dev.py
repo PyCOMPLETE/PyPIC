@@ -1,13 +1,9 @@
-import pyopencl as cl
-import pyopencl.array as cla
 import numpy as np
 import numpy.linalg as la
 
 from xfields.multiplatform.pocl import XfPoclPlatform, XfPoclKernel
 
 platform = XfPoclPlatform()
-ctx = platform.pocl_context
-queue = platform.command_queue
 
 # Here he makes the sum of the two arrays 
 # with an explicit kernel                 
@@ -19,10 +15,10 @@ kernel_descriptions = {
     'p2m_rectmesh3d':{
         'args':(
             (np.int32, 'nparticles',),
-            (cla.Array, 'x',),
-            (cla.Array, 'y',),
-            (cla.Array, 'z',),
-            (cla.Array, 'part_weights'),
+            ('Array', 'x',),
+            ('Array', 'y',),
+            ('Array', 'z',),
+            ('Array', 'part_weights'),
             (np.float64, 'x0',),
             (np.float64, 'y0',),
             (np.float64, 'z0',),
@@ -32,7 +28,7 @@ kernel_descriptions = {
             (np.int32, 'nx',),
             (np.int32, 'ny',),
             (np.int32, 'nz',),
-            (cla.Array, 'grid1d'),),
+            ('Array', 'grid1d'),),
         'num_threads_from_arg': 'nparticles'
         }
     }
@@ -61,22 +57,20 @@ ny = fmap.ny
 nz = fmap.nz
 
 
-
-
 # Test p2m
 n_gen = 1000000
-x_gen_dev = cla.to_device(queue,
+x_gen_dev = platform.nparray_to_platform_mem(
         np.zeros([n_gen], dtype=np.float64)+fmap.x_grid[10]
         + 20* dx* np.linspace(0, 1., n_gen))
-y_gen_dev = cla.to_device(queue,
+y_gen_dev = platform.nparray_to_platform_mem(
         np.zeros([n_gen], dtype=np.float64)+fmap.y_grid[10]
         + 20*dy* np.linspace(0, 1., n_gen))
-z_gen_dev = cla.to_device(queue,
+z_gen_dev = platform.nparray_to_platform_mem(
         np.zeros([n_gen], dtype=np.float64)+fmap.z_grid[10]
         + 20*dz* np.linspace(0, 1., n_gen))
-part_weights_dev = cla.to_device(queue,
+part_weights_dev = platform.nparray_to_platform_mem(
         np.arange(0, n_gen, 1,  dtype=np.float64))
-dev_buff = cla.to_device(queue, 0*fmap._maps_buffer)
+dev_buff = platform.nparray_to_platform_mem(0*fmap._maps_buffer)
 dev_rho = dev_buff[:,:,:,1] # This does not support .data
 #dev_rho = dev_buff[:,:,:,0]
 
