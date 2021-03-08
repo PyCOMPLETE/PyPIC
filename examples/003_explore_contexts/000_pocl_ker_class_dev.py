@@ -1,13 +1,13 @@
 import numpy as np
 import numpy.linalg as la
 
-# # Pocl platform
-# from xfields.platforms.pocl import XfPoclPlatform # , XfPoclKernel
-# platform = XfPoclPlatform()
+# Pocl platform
+from xfields.platforms.pocl import XfPoclPlatform # , XfPoclKernel
+platform = XfPoclPlatform()
 
-# CPU platform
-from xfields.platforms.cpu import XfCpuPlatform
-platform = XfCpuPlatform()
+# # CPU platform
+# from xfields.platforms.cpu import XfCpuPlatform
+# platform = XfCpuPlatform()
 
 p2mk = platform.kernels.p2m_rectmesh3d
 
@@ -59,5 +59,6 @@ event = p2mk(nparticles=n_gen,
 t2 = time.time()
 print(f't = {t2-t1:.2e}')
 
-assert(np.isclose(np.sum(dev_rho)*dx*dy*dz,
-    np.sum(part_weights_dev)))
+get = platform.nparray_from_platform_mem
+assert(np.isclose(np.sum(get(dev_rho))*dx*dy*dz,
+    np.sum(get(part_weights_dev))))

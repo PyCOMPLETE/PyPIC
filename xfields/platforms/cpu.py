@@ -22,6 +22,9 @@ class XfCpuPlatform(object):
     def nparray_to_platform_mem(self, arr):
         return arr
 
+    def nparray_from_platform_mem(self, dev_arr):
+        return dev_arr
+
     def add_kernels(self, lib_file, kernel_descriptions={}):
 
         lib = ctypes.CDLL(lib_file)

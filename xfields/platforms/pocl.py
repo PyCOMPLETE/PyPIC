@@ -34,6 +34,9 @@ class XfPoclPlatform(object):
         dev_arr = cla.to_device(self.command_queue, arr)
         return dev_arr
 
+    def nparray_from_platform_mem(self, dev_arr):
+        return dev_arr.get()
+
     def add_kernels(self, src_code='', src_files=[], kernel_descriptions={}):
 
         src_content = src_code
