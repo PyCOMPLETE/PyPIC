@@ -79,13 +79,15 @@ class XfPoclKernel(object):
         arg_list = []
         for nn, tt in zip(self.arg_names, self.arg_types):
             vv = kwargs[nn]
-            if np.issctype(tt):
+            if tt[0] == 'scalar':
                 assert np.isscalar(vv)
-                arg_list.append(tt(vv))
-            else:
+                arg_list.append(tt[1](vv))
+            elif tt[0] == 'array':
                 assert isinstance(vv, cla.Array)
                 assert vv.context == self.pocl_kernel.context
                 arg_list.append(vv.base_data[vv.offset:])
+            else:
+                raise ValueError(f'Type {tt} not recognized')
 
         event = self.pocl_kernel(self.command_queue,
                 (kwargs[self.num_threads_from_arg],),

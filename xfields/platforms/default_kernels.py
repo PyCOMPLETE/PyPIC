@@ -6,21 +6,21 @@ pkg_root = thisfolder.parent.absolute()
 shared_kernel_descriptions = {
     'p2m_rectmesh3d':{
         'args':(
-            (np.int32, 'nparticles',),
-            ('Array', 'x',),
-            ('Array', 'y',),
-            ('Array', 'z',),
-            ('Array', 'part_weights'),
-            (np.float64, 'x0',),
-            (np.float64, 'y0',),
-            (np.float64, 'z0',),
-            (np.float64, 'dx',),
-            (np.float64, 'dy',),
-            (np.float64, 'dz',),
-            (np.int32, 'nx',),
-            (np.int32, 'ny',),
-            (np.int32, 'nz',),
-            ('Array', 'grid1d'),),
+            (('scalar', np.int32),   'nparticles',),
+            (('array',  np.float64), 'x',),
+            (('array',  np.float64), 'y',),
+            (('array',  np.float64), 'z',),
+            (('array',  np.float64), 'part_weights'),
+            (('scalar', np.float64), 'x0',),
+            (('scalar', np.float64), 'y0',),
+            (('scalar', np.float64), 'z0',),
+            (('scalar', np.float64), 'dx',),
+            (('scalar', np.float64), 'dy',),
+            (('scalar', np.float64), 'dz',),
+            (('scalar', np.int32),   'nx',),
+            (('scalar', np.int32),   'ny',),
+            (('scalar', np.int32),   'nz',),
+            (('array',  np.float64), 'grid1d'),),
         'num_threads_from_arg': 'nparticles'
         }
     }
