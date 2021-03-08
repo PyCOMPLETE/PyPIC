@@ -1,7 +1,6 @@
 import numpy as np
 
 from .base import FieldMap
-from . import linear_interpolators as li
 from ..solvers.fftsolvers import FFTSolver3D
 from ..platforms import XfCpuPlatform
 
