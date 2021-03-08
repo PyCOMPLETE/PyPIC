@@ -21,10 +21,6 @@ class XfPoclKernel(object):
     def num_args(self):
         return len(self.arg_names)
 
-    @property
-    def context(self):
-        return self.pocl_kernel.context
-
     def __call__(self, **kwargs):
         assert len(kwargs.keys()) == self.num_args
         arg_list = []
@@ -35,6 +31,7 @@ class XfPoclKernel(object):
                 arg_list.append(tt(vv))
             else:
                 assert isinstance(vv, cla.Array)
+                assert vv.context == self.pocl_kernel.context
                 arg_list.append(vv.base_data[vv.offset:])
 
         event = self.pocl_kernel(self.command_queue,
