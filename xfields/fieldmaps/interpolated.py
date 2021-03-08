@@ -3,6 +3,7 @@ import numpy as np
 from .base import FieldMap
 from . import linear_interpolators as li
 from ..solvers.fftsolvers import FFTSolver3D
+from ..platforms import XfCpuPlatform
 
 class TriLinearInterpolatedFieldMap(FieldMap):
 
@@ -13,16 +14,22 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                  x_range=None, y_range=None, z_range=None,
                  solver=None,
                  updatable=True,
-                 context=None):
+                 platform=XfCpuPlatform()):
 
         self.updatable = updatable
+
+        self.platform = platform
 
         self._x_grid = _configure_grid('x', x_grid, dx, x_range, nx)
         self._y_grid = _configure_grid('y', y_grid, dy, y_range, ny)
         self._z_grid = _configure_grid('z', z_grid, dz, z_range, nz)
 
         # Prepare arrays (contiguous to use a single pointer in C/GPU)
-        self._maps_buffer = np.zeros((self.nx, self.ny, self.nz, 5), dtype=np.float64, order='F')
+        self._maps_buffer = platform.nparray_to_platform_mem(
+                np.zeros((self.nx, self.ny, self.nz, 5),
+                         dtype=np.float64, order='F'))
+
+        # These are slices (they are are on the platform)
         self._rho = self._maps_buffer[:, :, :, 0]
         self._phi = self._maps_buffer[:, :, :, 1]
         self._dphi_dx = self._maps_buffer[:, :, :, 2]
