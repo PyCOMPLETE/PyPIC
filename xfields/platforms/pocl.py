@@ -11,7 +11,6 @@ class MinimalDotDict(dict):
 
 class XfPoclPlatform(object):
 
-
     def __init__(self, pocl_context=None, command_queue=None, default_kernels=True):
 
         if pocl_context is None:
@@ -25,7 +24,6 @@ class XfPoclPlatform(object):
         self.pocl_context = pocl_context
         self.command_queue = command_queue
         self.kernels = MinimalDotDict()
-        self.FFTClass = XfPoclFFT
 
         if default_kernels:
             self.add_kernels(src_files=pocl_default_kernels['src_files'],
@@ -38,6 +36,9 @@ class XfPoclPlatform(object):
 
     def nparray_from_platform_mem(self, dev_arr):
         return dev_arr.get()
+
+    def plan_FFT(self, data, axes, wait_on_call=True):
+        return XfPoclFFT(self, data, axes, wait_on_call)
 
     def add_kernels(self, src_code='', src_files=[], kernel_descriptions={}):
 
@@ -104,23 +105,28 @@ class XfPoclKernel(object):
         return event
 
 class XfPoclFFT(object):
-    def __init__(self, platform, data, axes):
+    def __init__(self, platform, data, axes, wait_on_call=True):
 
         self.platform = platform
         self.axes = axes
+        self.wait_on_call = wait_on_call
 
         import gpyfft
         self._fftobj = gpyfft.fft.FFT(platform.pocl_context,
-                platform.command_queue, data, axes)
+                platform.command_queue, data, axes=axes)
 
     def transform(self, data):
         """The transform is done inplace"""
 
-        event, = fftobj.enqueue_arrays(data)
-        event.wait()
+        event, = self._fftobj.enqueue_arrays(data)
+        if self.wait_on_call:
+            event.wait()
+        return event
 
     def itransform(self, data):
         """The transform is done inplace"""
 
-        event, = fftobj.enqueue_arrays(data, forward=False)
-        event.wait()
+        event, = self._fftobj.enqueue_arrays(data, forward=False)
+        if self.wait_on_call:
+            event.wait()
+        return event
