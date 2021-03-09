@@ -117,10 +117,10 @@ class FFTSolver2p5D(Solver):
         gint_rep_dev = platform.nparray_to_platform_mem(gint_rep)
 
         # Prepare fft plan
-        fftplan = platform.plan_FFT(gint_rep_dev, axes=(0,1))
+        fftplan = platform.plan_FFT(workspace_dev, axes=(0,1))
 
         # Transform the green function (in place)
-        fftplan.transform(gint_rep_dev)
+        gint_rep_transf = np.fft.fftn(gint_rep_dev, axes=(0,1))
 
         self.dx = dx
         self.dy = dy
@@ -129,7 +129,7 @@ class FFTSolver2p5D(Solver):
         self.ny = ny
         self.nz = nz
         self._workspace_dev = workspace_dev
-        self._gint_rep_transf_dev = gint_rep_dev
+        self._gint_rep_transf_dev = platform.nparray_to_platform_mem(gint_rep_transf)
         self.fftplan = fftplan
 
     #@profile
