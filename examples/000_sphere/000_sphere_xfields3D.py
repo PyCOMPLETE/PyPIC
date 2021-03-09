@@ -70,7 +70,7 @@ z_test_dev = np2platf(z_test)
 
 # Build fieldmap object
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, nx=nx,
-    y_range=y_lim, ny=ny, z_range=z_lim, nz=nz, solver='FFTSolver3D',
+    y_range=y_lim, ny=ny, z_range=z_lim, nz=nz, solver='FFTSolver2p5D',
     platform=platform)
 
 

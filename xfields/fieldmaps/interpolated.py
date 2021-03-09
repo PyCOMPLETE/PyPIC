@@ -1,7 +1,7 @@
 import numpy as np
 
 from .base import FieldMap
-from ..solvers.fftsolvers import FFTSolver3D
+from ..solvers.fftsolvers import FFTSolver3D, FFTSolver2p5D
 from ..platforms import XfCpuPlatform
 
 class TriLinearInterpolatedFieldMap(FieldMap):
@@ -214,6 +214,11 @@ class TriLinearInterpolatedFieldMap(FieldMap):
 
         if solver == 'FFTSolver3D':
             solver = FFTSolver3D(
+                    dx=self.dx, dy=self.dy, dz=self.dz,
+                    nx=self.nx, ny=self.ny, nz=self.nz,
+                    platform=self.platform)
+        elif solver == 'FFTSolver2p5D':
+            solver = FFTSolver2p5D(
                     dx=self.dx, dy=self.dy, dz=self.dz,
                     nx=self.nx, ny=self.ny, nz=self.nz,
                     platform=self.platform)
