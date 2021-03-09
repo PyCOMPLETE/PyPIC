@@ -16,11 +16,9 @@ class FFTSolver3D(Solver):
 
         # Prepare arrays
         gint_rep_dev = platform.nparray_to_platform_mem(
-                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F'))
-        rho_rep_dev = platform.nparray_to_platform_mem(
-                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F'))
-        phi_rep_dev = platform.nparray_to_platform_mem(
-                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F'))
+                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.complex128, order='F'))
+        workspace_dev = platform.nparray_to_platform_mem(
+                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.complex128, order='F'))
 
 
         # Build grid for primitive function
@@ -33,7 +31,7 @@ class FFTSolver3D(Solver):
         F_temp = primitive_func_3d(XX_F, YY_F, ZZ_F)
         F_temp_dev = platform.nparray_to_platform_mem(F_temp)
 
-        # Integrated Green Function
+        # Integrated Green Function (I will transform inplace)
         gint_rep_dev[:nx+1, :ny+1, :nz+1] = (F_temp_dev[ 1:,  1:,  1:]
                                            - F_temp_dev[:-1,  1:,  1:]
                                            - F_temp_dev[ 1:, :-1,  1:]
@@ -53,10 +51,13 @@ class FFTSolver3D(Solver):
         gint_rep_dev[:nx, :ny, nz+1:] = gint_rep_dev[:nx, :ny, nz-1:0:-1]
         gint_rep_dev[nx+1:, :ny, nz+1:] = gint_rep_dev[nx-1:0:-1,  :ny, nz-1:0:-1]
         gint_rep_dev[:nx, ny+1:, nz+1:] = gint_rep_dev[:nx, ny-1:0:-1, nz-1:0:-1]
-        gint_rep_dev[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
+        gint_rep_dev[nx+1:, ny+1:, nz+1:] = gint_rep_dev[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
 
-        # Transform the green function
-        gint_rep_transf = np.fft.fftn(gint_rep)
+        # Prepare fft plan
+        fftplan = platform.plan_FFT(gint_rep_dev, axes=(0,1,2))
+
+        # Transform the green function (in place)
+        fftplan.transform(gint_rep_dev)
 
         self.dx = dx
         self.dy = dy
@@ -64,16 +65,19 @@ class FFTSolver3D(Solver):
         self.nx = nx
         self.ny = ny
         self.nz = nz
-        self._rho_rep = rho_rep
-        self._phi_rep = phi_rep
-        self._gint_rep_transf = gint_rep_transf
+        self._workspace_dev = workspace_dev
+        self._gint_rep_transf_dev = gint_rep_dev
+        self.fftplan = fftplan
 
     def solve(self, rho):
-        self._rho_rep[:,:,:] = 0. # reset
-        self._rho_rep[:self.nx, :self.ny, :self.nz] = rho
-        self._phi_rep = np.fft.ifftn(
-                np.fft.fftn(self._rho_rep) * self._gint_rep_transf)
-        return np.real(self._phi_rep)[:self.nx, :self.ny, :self.nz]
+        #The transforms are done in place
+        self._workspace_dev[:,:,:] = 0. # reset
+        self._workspace_dev[:self.nx, :self.ny, :self.nz] = rho
+        self.fftplan.transform(self._workspace_dev) # rho_rep_hat
+        self._workspace_dev[:,:,:] = (self._workspace_dev
+                        * self._gint_rep_transf_dev) # phi_rep_hat
+        self.fftplan.itransform(self._workspace_dev) #phi_rep
+        return self._workspace_dev.real[:self.nx, :self.ny, :self.nz]
 
 def primitive_func_3d(x,y,z):
     abs_r = np.sqrt(x * x + y * y + z * z)

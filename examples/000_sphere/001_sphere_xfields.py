@@ -53,6 +53,7 @@ z_test = center_xyz[2] + z0_test
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
     y_range=y_lim, dy=dy, z_range=z_lim, dz=dz, solver='FFTSolver3D')
 
+
 # Compute potential
 fmap.update_from_particles(x_p=x, y_p=y, z_p=z, ncharges_p=pweights, q0=1.)
 
