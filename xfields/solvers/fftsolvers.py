@@ -70,6 +70,7 @@ class FFTSolver3D(Solver):
         self._gint_rep_transf_dev = gint_rep_dev
         self.fftplan = fftplan
 
+    #@profile
     def solve(self, rho):
         #The transforms are done in place
         self._workspace_dev[:,:,:] = 0. # reset

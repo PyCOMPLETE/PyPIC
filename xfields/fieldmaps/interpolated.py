@@ -96,6 +96,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
     def phi(self):
         return self._phi_dev
 
+    #@profile
     def get_values_at_points(self,
             x, y, z,
             return_rho=True,
@@ -152,6 +153,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         else:
             raise ValueError('Not implemented!')
 
+    #@profile
     def update_phi(self, phi, reset=True, force=False):
 
         if not force:
@@ -170,6 +172,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._dphi_dz_dev[:,:,1:self.nz-1] = 1/(2*self.dz)*(
                 self._phi_dev[:,:,2:]-self._phi_dev[:,:,:-2])
 
+    #@profile
     def update_phi_from_rho(self, solver=None):
 
         self._assert_updatable()
@@ -183,7 +186,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         new_phi = solver.solve(self._rho_dev)
         self.update_phi(new_phi)
 
-
+    #@profile
     def update_from_particles(self, x_p, y_p, z_p, ncharges_p, q0, reset=True,
                             update_phi=True, solver=None, force=False):
 
