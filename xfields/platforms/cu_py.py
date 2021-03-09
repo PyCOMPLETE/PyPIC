@@ -1,77 +1,71 @@
 import numpy as np
 
+import cupy
+
 from .default_kernels import cupy_default_kernels
 
 class MinimalDotDict(dict):
     def __getattr__(self, attr):
         return self.get(attr)
 
-class XfPoclPlatform(object):
+class XfCupyPlatform(object):
 
-    def __init__(self, pocl_context=None, command_queue=None, default_kernels=True):
+    def __init__(self, default_kernels=True, default_block_size=256):
 
-        if pocl_context is None:
-            pocl_context = cl.create_some_context()
+        'The device can be selected globally using cupy.cuda.Device'
 
-        if command_queue is None:
-            command_queue = cl.CommandQueue(pocl_context)
-
-        assert command_queue.context == pocl_context
-
-        self.pocl_context = pocl_context
-        self.command_queue = command_queue
+        self.default_block_size = default_block_size
         self.kernels = MinimalDotDict()
 
         if default_kernels:
-            self.add_kernels(src_files=pocl_default_kernels['src_files'],
-                    kernel_descriptions=pocl_default_kernels['kernel_descriptions'])
+            self.add_kernels(src_files=cupy_default_kernels['src_files'],
+                    kernel_descriptions=cupy_default_kernels['kernel_descriptions'])
 
 
     def nparray_to_platform_mem(self, arr):
-        dev_arr = cla.to_device(self.command_queue, arr)
+        dev_arr = cupy.array(arr)
         return dev_arr
 
     def nparray_from_platform_mem(self, dev_arr):
         return dev_arr.get()
 
-    def plan_FFT(self, data, axes, wait_on_call=True):
-        return XfPoclFFT(self, data, axes, wait_on_call)
+    def plan_FFT(self, data, axes, ):
+        return XfPoclFFT(self, data, axes)
 
     def add_kernels(self, src_code='', src_files=[], kernel_descriptions={}):
 
-        src_content = src_code
+        src_content = 'extern "C"{'
         for ff in src_files:
             with open(ff, 'r') as fid:
                 src_content += ('\n\n' + fid.read())
+        src_content += "}"
 
-        prg = cl.Program(self.pocl_context, src_content).build()
+        module = cupy.RawModule(code=src_content)
 
         ker_names = kernel_descriptions.keys()
         for nn in ker_names:
-            kk = getattr(prg, nn)
+            kk = module.get_function(nn)
             aa = kernel_descriptions[nn]['args']
             nt_from = kernel_descriptions[nn]['num_threads_from_arg']
             aa_types, aa_names = zip(*aa)
-            self.kernels[nn] = XfPoclKernel(pocl_kernel=kk,
+            self.kernels[nn] = XfCupyKernel(cupy_kernel=kk,
                 arg_names=aa_names, arg_types=aa_types,
                 num_threads_from_arg=nt_from,
-                command_queue=self.command_queue)
+                block_size=self.default_block_size)
 
-class XfPoclKernel(object):
+class XfCupyKernel(object):
 
-    def __init__(self, pocl_kernel, arg_names, arg_types,
-                 num_threads_from_arg, command_queue,
-                 wait_on_call=True):
+    def __init__(self, cupy_kernel, arg_names, arg_types,
+                 num_threads_from_arg, block_size):
 
-        assert (len(arg_names) == len(arg_types) == pocl_kernel.num_args)
+        assert (len(arg_names) == len(arg_types))
         assert num_threads_from_arg in arg_names
 
-        self.pocl_kernel = pocl_kernel
+        self.cupy_kernel = cupy_kernel
         self.arg_names = arg_names
         self.arg_types = arg_types
         self.num_threads_from_arg = num_threads_from_arg
-        self.command_queue = command_queue
-        self.wait_on_call = wait_on_call
+        self.block_size = block_size
 
     @property
     def num_args(self):
@@ -86,22 +80,17 @@ class XfPoclKernel(object):
                 assert np.isscalar(vv)
                 arg_list.append(tt[1](vv))
             elif tt[0] == 'array':
-                assert isinstance(vv, cla.Array)
-                assert vv.context == self.pocl_kernel.context
-                arg_list.append(vv.base_data[vv.offset:])
+                assert isinstance(vv, cupy.ndarray)
+                arg_list.append(vv.data)
             else:
                 raise ValueError(f'Type {tt} not recognized')
 
-        event = self.pocl_kernel(self.command_queue,
-                (kwargs[self.num_threads_from_arg],),
-                None, *arg_list)
+        n_threads = kwargs[self.num_threads_from_arg]
+        grid_size = int(np.ceil(n_threads/self.block_size))
+        self.cupy_kernel((grid_size, ), (block_size, ), arg_list)
 
-        if self.wait_on_call:
-            event.wait()
 
-        return event
-
-class XfPoclFFT(object):
+class XfCupyFFT(object):
     def __init__(self, platform, data, axes, wait_on_call=True):
 
         self.platform = platform
