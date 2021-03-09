@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from numpy.random import rand
 from scipy.constants import epsilon_0
@@ -8,8 +10,8 @@ from xfields import TriLinearInterpolatedFieldMap
 from xfields.platforms import XfCpuPlatform
 platform = XfCpuPlatform()
 
-from xfields.platforms import XfCupyPlatform
-platform = XfCupyPlatform(default_block_size=256)
+#from xfields.platforms import XfCupyPlatform
+#platform = XfCupyPlatform(default_block_size=256)
 
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -73,6 +75,7 @@ fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, nx=nx,
 
 
 # Compute potential
+t1 = time.time()
 fmap.update_from_particles(x_p=x_dev, y_p=y_dev, z_p=z_dev,
         ncharges_p=pweights_dev, q0=1.)
 
@@ -80,6 +83,8 @@ fmap.update_from_particles(x_p=x_dev, y_p=y_dev, z_p=z_dev,
 (rho_test_dev, phi_test_dev, dx_test_dev, dy_test_dev,
         dz_test_dev) = fmap.get_values_at_points(
             x=x_test_dev, y=y_test_dev, z=z_test_dev)
+t2 = time.time()
+print(f'Time: {t2-t1:.2e}')
 
 # Copy back for plotting
 platf2np = platform.nparray_from_platform_mem
