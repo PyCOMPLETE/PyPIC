@@ -24,16 +24,16 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         self._z_grid = _configure_grid('z', z_grid, dz, z_range, nz)
 
         # Prepare arrays (contiguous to use a single pointer in C/GPU)
-        self._maps_buffer = platform.nparray_to_platform_mem(
+        self._maps_buffer_dev = platform.nparray_to_platform_mem(
                 np.zeros((self.nx, self.ny, self.nz, 5),
                          dtype=np.float64, order='F'))
 
         # These are slices (they are are on the platform)
-        self._rho = self._maps_buffer[:, :, :, 0]
-        self._phi = self._maps_buffer[:, :, :, 1]
-        self._dphi_dx = self._maps_buffer[:, :, :, 2]
-        self._dphi_dy = self._maps_buffer[:, :, :, 3]
-        self._dphi_dz = self._maps_buffer[:, :, :, 4]
+        self._rho_dev = self._maps_buffer_dev[:, :, :, 0]
+        self._phi_dev = self._maps_buffer_dev[:, :, :, 1]
+        self._dphi_dx_dev = self._maps_buffer_dev[:, :, :, 2]
+        self._dphi_dy_dev = self._maps_buffer_dev[:, :, :, 3]
+        self._dphi_dz_dev = self._maps_buffer_dev[:, :, :, 4]
 
 
         if isinstance(solver, str):
@@ -90,11 +90,11 @@ class TriLinearInterpolatedFieldMap(FieldMap):
 
     @property
     def rho(self):
-        return self._rho
+        return self._rho_dev
 
     @property
     def phi(self):
-        return self._phi
+        return self._phi_dev
 
     def get_values_at_points(self,
             x, y, z,
@@ -133,7 +133,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                     nx=self.nx, ny=self.ny, nz=self.nz,
                     n_quantities=nmaps_to_interp,
                     offsets_mesh_quantities=pos_in_buffer_of_maps_to_interp,
-                    mesh_quantity=self._maps_buffer,
+                    mesh_quantity=self._maps_buffer_dev,
                     particles_quantity=buffer_out)
 
         # Split buffer 
@@ -148,7 +148,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             self._assert_updatable()
 
         if reset:
-            self._rho[:,:,:] = rho
+            self._rho_dev[:,:,:] = rho
         else:
             raise ValueError('Not implemented!')
 
@@ -158,17 +158,17 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             self._assert_updatable()
 
         if reset:
-            self._phi[:,:,:] = phi
+            self._phi_dev[:,:,:] = phi
         else:
             raise ValueError('Not implemented!')
 
         # Compute gradient
-        self._dphi_dx[1:self.nx-1,:,:] = 1/(2*self.dx)*(
-                self._phi[2:,:,:]-self._phi[:-2,:,:])
-        self._dphi_dy[:,1:self.ny-1,:] = 1/(2*self.dy)*(
-                self._phi[:,2:,:]-self._phi[:,:-2,:])
-        self._dphi_dz[:,:,1:self.nz-1] = 1/(2*self.dz)*(
-                self._phi[:,:,2:]-self._phi[:,:,:-2])
+        self._dphi_dx_dev[1:self.nx-1,:,:] = 1/(2*self.dx)*(
+                self._phi_dev[2:,:,:]-self._phi_dev[:-2,:,:])
+        self._dphi_dy_dev[:,1:self.ny-1,:] = 1/(2*self.dy)*(
+                self._phi_dev[:,2:,:]-self._phi_dev[:,:-2,:])
+        self._dphi_dz_dev[:,:,1:self.nz-1] = 1/(2*self.dz)*(
+                self._phi_dev[:,:,2:]-self._phi_dev[:,:,:-2])
 
     def update_phi_from_rho(self, solver=None):
 
@@ -180,7 +180,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             else:
                 raise ValueError('I have no solver to compute phi!')
 
-        new_phi = solver.solve(self._rho)
+        new_phi = solver.solve(self._rho_dev)
         self.update_phi(new_phi)
 
 
@@ -191,7 +191,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
             self._assert_updatable()
 
         if reset:
-            self._rho[:,:,:] = 0.
+            self._rho_dev[:,:,:] = 0.
 
         assert len(x_p) == len(y_p) == len(z_p) == len(ncharges_p)
 
@@ -202,7 +202,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                 x0=self.x_grid[0], y0=self.y_grid[0], z0=self.z_grid[0],
                 dx=self.dx, dy=self.dy, dz=self.dz,
                 nx=self.nx, ny=self.ny, nz=self.nz,
-                grid1d=self._rho)
+                grid1d=self._rho_dev)
 
         if update_phi:
             self.update_phi_from_rho(solver=solver)
