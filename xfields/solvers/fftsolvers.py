@@ -113,14 +113,21 @@ class FFTSolver2p5D(Solver):
         gint_rep[:nx, ny+1:] = gint_rep[:nx, ny-1:0:-1]
         gint_rep[nx+1:, ny+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1]
 
-        # Tranasfer to device
-        gint_rep_dev = platform.nparray_to_platform_mem(gint_rep)
 
         # Prepare fft plan
         fftplan = platform.plan_FFT(workspace_dev, axes=(0,1))
 
-        # Transform the green function (in place)
-        gint_rep_transf = np.fft.fftn(gint_rep_dev, axes=(0,1))
+        # Transform the green function
+        gint_rep_transf = np.fft.fftn(gint_rep, axes=(0,1))
+
+        # Replicate for all z
+        gint_rep_transf_3D = np.zeros((2*nx, 2*ny, 2*nz),
+                                dtype=np.complex128, order='F')
+        for iz in range(nz):
+            gint_rep_transf_3D[:,:,iz] = gint_rep_transf
+
+        # Transfer to GPU (if needed)
+        gint_rep_transf_dev = platform.nparray_to_platform_mem(gint_rep_transf_3D)
 
         self.dx = dx
         self.dy = dy
@@ -129,20 +136,19 @@ class FFTSolver2p5D(Solver):
         self.ny = ny
         self.nz = nz
         self._workspace_dev = workspace_dev
-        self._gint_rep_transf_dev = platform.nparray_to_platform_mem(gint_rep_transf)
+        self._gint_rep_transf_dev = gint_rep_transf_dev 
         self.fftplan = fftplan
 
-    #@profile
     def solve(self, rho):
         #The transforms are done in place
         self._workspace_dev[:,:,:] = 0. # reset
         self._workspace_dev[:self.nx, :self.ny, :self.nz] = rho
         self.fftplan.transform(self._workspace_dev) # rho_rep_hat
-        for iz in range(self.nz):
-            self._workspace_dev[:,:,iz] = (self._workspace_dev[:,:,iz]
+        self._workspace_dev[:,:,:] = (self._workspace_dev
                         * self._gint_rep_transf_dev) # phi_rep_hat
         self.fftplan.itransform(self._workspace_dev) #phi_rep
         return self._workspace_dev.real[:self.nx, :self.ny, :self.nz]
+
 
 def primitive_func_3d(x,y,z):
     abs_r = np.sqrt(x * x + y * y + z * z)
