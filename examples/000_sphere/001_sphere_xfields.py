@@ -8,8 +8,8 @@ from xfields import TriLinearInterpolatedFieldMap
 from xfields.platforms import XfCpuPlatform
 platform = XfCpuPlatform()
 
-#from xfields.platforms import XfPoclPlatform
-#platform = XfPoclPlatform()
+from xfields.platforms import XfPoclPlatform
+platform = XfPoclPlatform()
 
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -35,7 +35,7 @@ x_lim = (-1.1, 1.)
 y_lim = (-1.2, 1.)
 z_lim = (-1.3, 1.)
 
-nx = 128
+nx = 127
 ny = 64
 nz = 50
 

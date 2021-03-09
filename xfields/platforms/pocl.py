@@ -111,6 +111,15 @@ class XfPoclFFT(object):
         self.axes = axes
         self.wait_on_call = wait_on_call
 
+        assert len(data.shape) > max(axes)
+
+        # Check internal dimensions are powers of two
+        for ii in axes[:-1]:
+            nn = data.shape[ii]
+            frac_part, _ = np.modf(np.log(nn)/np.log(2))
+            assert np.isclose(frac_part, 0) , ('PyOpenCL FFT requires'
+                    ' all dimensions apart from the last to be powers of two!')
+
         import gpyfft
         self._fftobj = gpyfft.fft.FFT(platform.pocl_context,
                 platform.command_queue, data, axes=axes)
