@@ -10,8 +10,10 @@ from xfields import TriLinearInterpolatedFieldMap
 from xfields.platforms import XfCpuPlatform
 platform = XfCpuPlatform()
 
-#from xfields.platforms import XfCupyPlatform
-#platform = XfCupyPlatform(default_block_size=256)
+from xfields.platforms import XfCupyPlatform
+platform = XfCupyPlatform(default_block_size=256)
+
+print(repr(platform))
 
 import matplotlib.pyplot as plt
 plt.close('all')
@@ -70,7 +72,7 @@ z_test_dev = np2platf(z_test)
 
 # Build fieldmap object
 fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, nx=nx,
-    y_range=y_lim, ny=ny, z_range=z_lim, nz=nz, solver='FFTSolver2p5D',
+    y_range=y_lim, ny=ny, z_range=z_lim, nz=nz, solver='FFTSolver3D',
     platform=platform)
 
 
