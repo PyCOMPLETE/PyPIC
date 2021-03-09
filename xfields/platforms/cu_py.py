@@ -1,6 +1,8 @@
 import numpy as np
 
 import cupy
+from cupyx.scipy import fftpack as cufftp
+
 
 from .default_kernels import cupy_default_kernels
 
@@ -30,7 +32,7 @@ class XfCupyPlatform(object):
         return dev_arr.get()
 
     def plan_FFT(self, data, axes, ):
-        return XfPoclFFT(self, data, axes)
+        return XfCupyFFT(self, data, axes)
 
     def add_kernels(self, src_code='', src_files=[], kernel_descriptions={}):
 
@@ -87,41 +89,27 @@ class XfCupyKernel(object):
 
         n_threads = kwargs[self.num_threads_from_arg]
         grid_size = int(np.ceil(n_threads/self.block_size))
-        self.cupy_kernel((grid_size, ), (block_size, ), arg_list)
+        self.cupy_kernel((grid_size, ), (self.block_size, ), arg_list)
 
 
 class XfCupyFFT(object):
-    def __init__(self, platform, data, axes, wait_on_call=True):
+    def __init__(self, platform, data, axes):
 
         self.platform = platform
         self.axes = axes
-        self.wait_on_call = wait_on_call
 
         assert len(data.shape) > max(axes)
 
-        # Check internal dimensions are powers of two
-        for ii in axes[:-1]:
-            nn = data.shape[ii]
-            frac_part, _ = np.modf(np.log(nn)/np.log(2))
-            assert np.isclose(frac_part, 0) , ('PyOpenCL FFT requires'
-                    ' all dimensions apart from the last to be powers of two!')
-
-        import gpyfft
-        self._fftobj = gpyfft.fft.FFT(platform.pocl_context,
-                platform.command_queue, data, axes=axes)
+        from cupyx.scipy import fftpack as cufftp
+        self._fftplan = cufftp.get_fft_plan(
+                data, axes=self.axes, value_type='C2C')
 
     def transform(self, data):
+        data[:] = cufftp.fftn(data, axes=self.axes, plan=self._fftplan)[:]
         """The transform is done inplace"""
 
-        event, = self._fftobj.enqueue_arrays(data)
-        if self.wait_on_call:
-            event.wait()
-        return event
 
     def itransform(self, data):
         """The transform is done inplace"""
+        data[:] = cufftp.ifftn(data, axes=self.axes, plan=self._fftplan)[:]
 
-        event, = self._fftobj.enqueue_arrays(data, forward=False)
-        if self.wait_on_call:
-            event.wait()
-        return event

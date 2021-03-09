@@ -11,8 +11,6 @@ platform = XfCpuPlatform()
 from xfields.platforms import XfCupyPlatform
 platform = XfCupyPlatform(default_block_size=256)
 
-prrrr
-
 import matplotlib.pyplot as plt
 plt.close('all')
 
@@ -31,6 +29,7 @@ x = x_cube[mask_sphere]
 y = y_cube[mask_sphere]
 z = z_cube[mask_sphere]
 pweights = 1. + 0*x
+
 
 # PIC
 x_lim = (-1.1, 1.)
@@ -53,6 +52,16 @@ x_test = center_xyz[0] + x0_test
 y_test = center_xyz[1] + y0_test
 z_test = center_xyz[2] + z0_test
 
+# Moving particles and test coordinates to GPU (if needed)
+np2platf = platform.nparray_to_platform_mem
+x_dev = np2platf(x)
+y_dev = np2platf(y)
+z_dev = np2platf(z)
+pweights_dev = np2platf(pweights)
+x_test_dev = np2platf(x_test)
+y_test_dev = np2platf(y_test)
+z_test_dev = np2platf(z_test)
+
 ###############
 # Actual test #
 ###############
@@ -64,12 +73,21 @@ fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, nx=nx,
 
 
 # Compute potential
-fmap.update_from_particles(x_p=x, y_p=y, z_p=z, ncharges_p=pweights, q0=1.)
+fmap.update_from_particles(x_p=x_dev, y_p=y_dev, z_p=z_dev,
+        ncharges_p=pweights_dev, q0=1.)
 
 # Check on the x axis
-rho_test, phi_test, dx_test, dy_test, dz_test = fmap.get_values_at_points(
-        x=x_test, y=y_test, z=z_test)
+(rho_test_dev, phi_test_dev, dx_test_dev, dy_test_dev,
+        dz_test_dev) = fmap.get_values_at_points(
+            x=x_test_dev, y=y_test_dev, z=z_test_dev)
 
+# Copy back for plotting
+platf2np = platform.nparray_from_platform_mem
+rho_test =  platf2np(rho_test_dev)
+phi_test = platf2np(phi_test_dev)
+dx_test = platf2np(dx_test_dev)
+dy_test = platf2np(dy_test_dev)
+dz_test = platf2np(dz_test_dev)
 
 # pickle for other tests
 import pickle
@@ -112,7 +130,8 @@ assert np.isclose(int_rho, len(x))
 
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111)
-ax1.pcolormesh(fmap.x_grid, fmap.y_grid, np.sum(fmap.rho, axis=2).T, shading='gouraud')
+ax1.pcolormesh(fmap.x_grid, fmap.y_grid,
+        np.sum(platf2np(fmap.rho), axis=2).T, shading='gouraud')
 ax1.set_aspect('equal')
 ax1.add_patch(plt.Circle((center_xyz[0], center_xyz[1]), radius,
                          color='w', fill=False))
@@ -121,7 +140,8 @@ ax1.set_ylabel('y')
 
 fig2 = plt.figure(2)
 ax2 = fig2.add_subplot(111)
-ax2.pcolormesh(fmap.y_grid, fmap.z_grid, np.sum(fmap.rho, axis=0).T, shading='gouraud')
+ax2.pcolormesh(fmap.y_grid, fmap.z_grid,
+        np.sum(platf2np(fmap.rho), axis=0).T, shading='gouraud')
 ax2.set_aspect('equal')
 ax2.add_patch(plt.Circle((center_xyz[1], center_xyz[2]), radius,
                          color='w', fill=False))
