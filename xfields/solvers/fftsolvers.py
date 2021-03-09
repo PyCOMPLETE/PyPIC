@@ -15,8 +15,6 @@ class FFTSolver3D(Solver):
     def __init__(self, dx, dy, dz, nx, ny, nz, platform=XfCpuPlatform()):
 
         # Prepare arrays
-        gint_rep_dev = platform.nparray_to_platform_mem(
-                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.complex128, order='F'))
         workspace_dev = platform.nparray_to_platform_mem(
                     np.zeros((2*nx, 2*ny, 2*nz), dtype=np.complex128, order='F'))
 
@@ -29,29 +27,32 @@ class FFTSolver3D(Solver):
 
         # Compute primitive
         F_temp = primitive_func_3d(XX_F, YY_F, ZZ_F)
-        F_temp_dev = platform.nparray_to_platform_mem(F_temp)
 
         # Integrated Green Function (I will transform inplace)
-        gint_rep_dev[:nx+1, :ny+1, :nz+1] = (F_temp_dev[ 1:,  1:,  1:]
-                                           - F_temp_dev[:-1,  1:,  1:]
-                                           - F_temp_dev[ 1:, :-1,  1:]
-                                           + F_temp_dev[:-1, :-1,  1:]
-                                           - F_temp_dev[ 1:,  1:, :-1]
-                                           + F_temp_dev[:-1,  1:, :-1]
-                                           + F_temp_dev[ 1:, :-1, :-1]
-                                           - F_temp_dev[:-1, :-1, :-1])
+        gint_rep= np.zeros((2*nx, 2*ny, 2*nz), dtype=np.complex128, order='F')
+        gint_rep[:nx+1, :ny+1, :nz+1] = (F_temp[ 1:,  1:,  1:]
+                                       - F_temp[:-1,  1:,  1:]
+                                       - F_temp[ 1:, :-1,  1:]
+                                       + F_temp[:-1, :-1,  1:]
+                                       - F_temp[ 1:,  1:, :-1]
+                                       + F_temp[:-1,  1:, :-1]
+                                       + F_temp[ 1:, :-1, :-1]
+                                       - F_temp[:-1, :-1, :-1])
 
         # Replicate
         # To define how to make the replicas I have a look at:
         # np.abs(np.fft.fftfreq(10))*10
         # = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
-        gint_rep_dev[nx+1:, :ny, :nz] = gint_rep_dev[nx-1:0:-1, :ny, :nz]
-        gint_rep_dev[:nx, ny+1:, :nz] = gint_rep_dev[:nx, ny-1:0:-1, :nz]
-        gint_rep_dev[nx+1:, ny+1:, :nz] = gint_rep_dev[nx-1:0:-1, ny-1:0:-1, :nz]
-        gint_rep_dev[:nx, :ny, nz+1:] = gint_rep_dev[:nx, :ny, nz-1:0:-1]
-        gint_rep_dev[nx+1:, :ny, nz+1:] = gint_rep_dev[nx-1:0:-1,  :ny, nz-1:0:-1]
-        gint_rep_dev[:nx, ny+1:, nz+1:] = gint_rep_dev[:nx, ny-1:0:-1, nz-1:0:-1]
-        gint_rep_dev[nx+1:, ny+1:, nz+1:] = gint_rep_dev[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
+        gint_rep[nx+1:, :ny, :nz] = gint_rep[nx-1:0:-1, :ny, :nz]
+        gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx, ny-1:0:-1, :nz]
+        gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx-1:0:-1, ny-1:0:-1, :nz]
+        gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx, :ny, nz-1:0:-1]
+        gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx-1:0:-1,  :ny, nz-1:0:-1]
+        gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx, ny-1:0:-1, nz-1:0:-1]
+        gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
+
+        # Tranasfer to device
+        gint_rep_dev = platform.nparray_to_platform_mem(gint_rep)
 
         # Prepare fft plan
         fftplan = platform.plan_FFT(gint_rep_dev, axes=(0,1,2))

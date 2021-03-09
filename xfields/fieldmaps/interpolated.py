@@ -212,7 +212,8 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         if solver == 'FFTSolver3D':
             solver = FFTSolver3D(
                     dx=self.dx, dy=self.dy, dz=self.dz,
-                    nx=self.nx, ny=self.ny, nz=self.nz)
+                    nx=self.nx, ny=self.ny, nz=self.nz,
+                    platform=self.platform)
         else:
             raise ValueError(f'solver name {solver} not recognized')
 

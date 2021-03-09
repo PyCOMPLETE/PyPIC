@@ -5,6 +5,12 @@ from numpy import pi
 
 from xfields import TriLinearInterpolatedFieldMap
 
+from xfields.platforms import XfCpuPlatform
+platform = XfCpuPlatform()
+
+#from xfields.platforms import XfPoclPlatform
+#platform = XfPoclPlatform()
+
 import matplotlib.pyplot as plt
 plt.close('all')
 
@@ -29,9 +35,9 @@ x_lim = (-1.1, 1.)
 y_lim = (-1.2, 1.)
 z_lim = (-1.3, 1.)
 
-dx = 0.02
-dy = 0.025
-dz = 0.03
+nx = 128
+ny = 64
+nz = 50
 
 theta_test = 70. * np.pi/360
 phi_test = 300 * np.pi/360.
@@ -50,8 +56,9 @@ z_test = center_xyz[2] + z0_test
 ###############
 
 # Build fieldmap object
-fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, dx=dx,
-    y_range=y_lim, dy=dy, z_range=z_lim, dz=dz, solver='FFTSolver3D')
+fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, nx=nx,
+    y_range=y_lim, ny=ny, z_range=z_lim, nz=nz, solver='FFTSolver3D',
+    platform=platform)
 
 
 # Compute potential
@@ -97,7 +104,7 @@ plt.plot(r_test, e_ref)
 plt.grid(True)
 
 # Check integral
-int_rho = np.sum(fmap.rho)*dx*dy*dz
+int_rho = np.sum(fmap.rho)*fmap.dx*fmap.dy*fmap.dz
 assert np.isclose(int_rho, len(x))
 
 
