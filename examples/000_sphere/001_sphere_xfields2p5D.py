@@ -40,9 +40,9 @@ x_lim = (-1.1, 1.)
 y_lim = (-1.2, 1.)
 z_lim = (-1.3, 1.)
 
-nx = 128
-ny = 128
-nz = 200
+nx = 256
+ny = 256
+nz = 50
 
 theta_test = 70. * np.pi/360
 r_test = 2.5*radius*np.linspace(-1, 1., 1000)
@@ -77,16 +77,18 @@ fmap = TriLinearInterpolatedFieldMap(x_range=x_lim, nx=nx,
 
 
 # Compute potential
-t1 = time.time()
-fmap.update_from_particles(x_p=x_dev, y_p=y_dev, z_p=z_dev,
-        ncharges_p=pweights_dev, q0=1.)
+n_rep = 10
+for _ in range(n_rep):
+    t1 = time.time()
+    fmap.update_from_particles(x_p=x_dev, y_p=y_dev, z_p=z_dev,
+            ncharges_p=pweights_dev, q0=1.)
 
-# Check on the x axis
-(rho_test_dev, phi_test_dev, dx_test_dev, dy_test_dev,
-        dz_test_dev) = fmap.get_values_at_points(
-            x=x_test_dev, y=y_test_dev, z=z_test_dev)
-t2 = time.time()
-print(f'Time: {t2-t1:.2e}')
+    # Check on the x axis
+    (rho_test_dev, phi_test_dev, dx_test_dev, dy_test_dev,
+            dz_test_dev) = fmap.get_values_at_points(
+                x=x_test_dev, y=y_test_dev, z=z_test_dev)
+    t2 = time.time()
+    print(f'Time: {t2-t1:.2e}')
 
 # Copy back for plotting
 platf2np = platform.nparray_from_platform_mem
