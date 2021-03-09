@@ -3,6 +3,7 @@ from scipy.constants import epsilon_0
 from numpy import pi
 
 from .base import Solver
+from ..platforms import XfCpuPlatform
 
 class FFTSolver2D(Solver):
 
@@ -11,12 +12,16 @@ class FFTSolver2D(Solver):
 
 class FFTSolver3D(Solver):
 
-    def __init__(self, dx, dy, dz, nx, ny, nz):
+    def __init__(self, dx, dy, dz, nx, ny, nz, platform=XfCpuPlatform()):
 
         # Prepare arrays
-        gint_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
-        rho_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
-        phi_rep = np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F')
+        gint_rep_dev = platform.nparray_to_platform_mem(
+                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F'))
+        rho_rep_dev = platform.nparray_to_platform_mem(
+                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F'))
+        phi_rep_dev = platform.nparray_to_platform_mem(
+                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.float64, order='F'))
+
 
         # Build grid for primitive function
         xg_F = np.arange(0, nx+2) * dx - dx/2
@@ -26,28 +31,29 @@ class FFTSolver3D(Solver):
 
         # Compute primitive
         F_temp = primitive_func_3d(XX_F, YY_F, ZZ_F)
+        F_temp_dev = platform.nparray_to_platform_mem(F_temp)
 
         # Integrated Green Function
-        gint_rep[:nx+1, :ny+1, :nz+1] = (F_temp[ 1:,  1:,  1:]
-                                       - F_temp[:-1,  1:,  1:]
-                                       - F_temp[ 1:, :-1,  1:]
-                                       + F_temp[:-1, :-1,  1:]
-                                       - F_temp[ 1:,  1:, :-1]
-                                       + F_temp[:-1,  1:, :-1]
-                                       + F_temp[ 1:, :-1, :-1]
-                                       - F_temp[:-1, :-1, :-1])
+        gint_rep_dev[:nx+1, :ny+1, :nz+1] = (F_temp_dev[ 1:,  1:,  1:]
+                                           - F_temp_dev[:-1,  1:,  1:]
+                                           - F_temp_dev[ 1:, :-1,  1:]
+                                           + F_temp_dev[:-1, :-1,  1:]
+                                           - F_temp_dev[ 1:,  1:, :-1]
+                                           + F_temp_dev[:-1,  1:, :-1]
+                                           + F_temp_dev[ 1:, :-1, :-1]
+                                           - F_temp_dev[:-1, :-1, :-1])
 
         # Replicate
         # To define how to make the replicas I have a look at:
         # np.abs(np.fft.fftfreq(10))*10
         # = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
-        gint_rep[nx+1:, :ny, :nz] = gint_rep[nx-1:0:-1, :ny, :nz]
-        gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx, ny-1:0:-1, :nz]
-        gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx-1:0:-1, ny-1:0:-1, :nz]
-        gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx, :ny, nz-1:0:-1]
-        gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx-1:0:-1,  :ny, nz-1:0:-1]
-        gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx, ny-1:0:-1, nz-1:0:-1]
-        gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
+        gint_rep_dev[nx+1:, :ny, :nz] = gint_rep_dev[nx-1:0:-1, :ny, :nz]
+        gint_rep_dev[:nx, ny+1:, :nz] = gint_rep_dev[:nx, ny-1:0:-1, :nz]
+        gint_rep_dev[nx+1:, ny+1:, :nz] = gint_rep_dev[nx-1:0:-1, ny-1:0:-1, :nz]
+        gint_rep_dev[:nx, :ny, nz+1:] = gint_rep_dev[:nx, :ny, nz-1:0:-1]
+        gint_rep_dev[nx+1:, :ny, nz+1:] = gint_rep_dev[nx-1:0:-1,  :ny, nz-1:0:-1]
+        gint_rep_dev[:nx, ny+1:, nz+1:] = gint_rep_dev[:nx, ny-1:0:-1, nz-1:0:-1]
+        gint_rep_dev[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
 
         # Transform the green function
         gint_rep_transf = np.fft.fftn(gint_rep)
