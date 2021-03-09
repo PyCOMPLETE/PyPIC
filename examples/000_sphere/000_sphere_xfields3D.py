@@ -41,8 +41,8 @@ y_lim = (-1.2, 1.)
 z_lim = (-1.3, 1.)
 
 nx = 128
-ny = 64
-nz = 50
+ny = 128
+nz = 200
 
 theta_test = 70. * np.pi/360
 phi_test = 300 * np.pi/360.

@@ -136,7 +136,7 @@ class FFTSolver2p5D(Solver):
         self.ny = ny
         self.nz = nz
         self._workspace_dev = workspace_dev
-        self._gint_rep_transf_dev = gint_rep_transf_dev 
+        self._gint_rep_transf_dev = gint_rep_transf_dev
         self.fftplan = fftplan
 
     def solve(self, rho):
