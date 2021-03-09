@@ -8,8 +8,10 @@ from xfields import TriLinearInterpolatedFieldMap
 from xfields.platforms import XfCpuPlatform
 platform = XfCpuPlatform()
 
-from xfields.platforms import XfPoclPlatform
-platform = XfPoclPlatform()
+from xfields.platforms import XfCupyPlatform
+platform = XfCupyPlatform(default_block_size=256)
+
+prrrr
 
 import matplotlib.pyplot as plt
 plt.close('all')
