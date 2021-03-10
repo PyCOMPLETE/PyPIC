@@ -8,9 +8,9 @@ from cupyx.scipy import fftpack as cufftp
 
 n_time = 3
 
-nn_x = 256
-nn_y = 512
-nn_z = 100
+nn_x = 256*2
+nn_y = 256*2
+nn_z = 50
 
 x = np.linspace(0, 1, nn_x)
 y = np.linspace(0, 1, nn_y)

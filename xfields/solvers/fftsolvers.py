@@ -87,7 +87,7 @@ class FFTSolver2p5D(FFTSolver3D):
 
         # Prepare arrays
         workspace_dev = platform.nparray_to_platform_mem(
-                    np.zeros((2*nx, 2*ny, 2*nz), dtype=np.complex128, order='F'))
+                    np.zeros((2*nx, 2*ny, nz), dtype=np.complex128, order='F'))
 
 
         # Build grid for primitive function
@@ -121,7 +121,7 @@ class FFTSolver2p5D(FFTSolver3D):
         gint_rep_transf = np.fft.fftn(gint_rep, axes=(0,1))
 
         # Replicate for all z
-        gint_rep_transf_3D = np.zeros((2*nx, 2*ny, 2*nz),
+        gint_rep_transf_3D = np.zeros((2*nx, 2*ny, nz),
                                 dtype=np.complex128, order='F')
         for iz in range(nz):
             gint_rep_transf_3D[:,:,iz] = gint_rep_transf
