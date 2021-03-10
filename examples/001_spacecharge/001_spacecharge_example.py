@@ -19,8 +19,9 @@ sigma_y = 2e-3
 sigma_z = 30e-2
 p0c = 25.92e9
 mass = Particles.pmass,
-theta_probes = 0.
+theta_probes = 30 * np.pi/180
 r_max_probes = 2e-2
+z_probes = 15e-2
 n_probes = 1000
 
 from temp_makepart import generate_particles_object
@@ -35,6 +36,7 @@ from temp_makepart import generate_particles_object
                             mass,
                             n_probes,
                             r_max_probes,
+                            z_probes,
                             theta_probes)
 
 x_range = 5.*sigma_x*np.array([-1, 1])
@@ -80,7 +82,12 @@ scpyst.track(p_pyst)
 import matplotlib.pyplot as plt
 plt.close('all')
 plt.figure()
-plt.plot(r_probes, p2np(particles.px[:n_probes]), '.-')
-plt.plot(r_probes, p_pyst.px, '.-')
-plt.plot(r_probes, p2np(particles.py[:n_probes]))
+plt.subplot(211)
+plt.plot(r_probes, p_pyst.px, color='red')
+plt.plot(r_probes, p2np(particles.px[:n_probes]), color='blue',
+        linestyle='--')
+plt.subplot(212)
+plt.plot(r_probes, p_pyst.py, color='red')
+plt.plot(r_probes, p2np(particles.py[:n_probes]), color='blue',
+        linestyle='--')
 plt.show()
