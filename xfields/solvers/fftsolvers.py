@@ -81,7 +81,7 @@ class FFTSolver3D(Solver):
         self.fftplan.itransform(self._workspace_dev) #phi_rep
         return self._workspace_dev.real[:self.nx, :self.ny, :self.nz]
 
-class FFTSolver2p5D(Solver):
+class FFTSolver2p5D(FFTSolver3D):
 
     def __init__(self, dx, dy, dz, nx, ny, nz, platform=XfCpuPlatform()):
 
@@ -138,16 +138,6 @@ class FFTSolver2p5D(Solver):
         self._workspace_dev = workspace_dev
         self._gint_rep_transf_dev = gint_rep_transf_dev
         self.fftplan = fftplan
-
-    def solve(self, rho):
-        #The transforms are done in place
-        self._workspace_dev[:,:,:] = 0. # reset
-        self._workspace_dev[:self.nx, :self.ny, :self.nz] = rho
-        self.fftplan.transform(self._workspace_dev) # rho_rep_hat
-        self._workspace_dev[:,:,:] = (self._workspace_dev
-                        * self._gint_rep_transf_dev) # phi_rep_hat
-        self.fftplan.itransform(self._workspace_dev) #phi_rep
-        return self._workspace_dev.real[:self.nx, :self.ny, :self.nz]
 
 
 def primitive_func_3d(x,y,z):
