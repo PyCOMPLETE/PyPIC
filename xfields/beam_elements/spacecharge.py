@@ -7,7 +7,7 @@ class SpaceCharge2D(object):
                  apply_z_kick=True,
                  transverse_field_map=None,
                  longitudinal_profile=None,
-                 context=None,
+                 platform=None,
                  ):
         pass
 
@@ -21,7 +21,7 @@ class SpaceCharge2DBiGaussian(SpaceCharge2D):
                  sigma_z=None,
                  z_grid=None, dz=None,
                  z_interp_method='linear',
-                 context=None,
+                 platform=None,
                  ):
         pass
 
@@ -39,7 +39,7 @@ class SpaceCharge2DInterpMap(SpaceCharge2D):
                  sigma_z=None,
                  z_grid=None, dz=None,
                  z_interp_method='linear',
-                 contex=None,
+                 context=None,
                  ):
         pass
 
@@ -55,7 +55,7 @@ class SpaceCharge3D(object):
                  x_range=None, y_range=None, z_range=None,
                  xy_interp_method='linear',
                  z_interp_method='linear',
-                 context=None,
+                 platform=None,
                  ):
         '''
         Needed when transverse normalized distribution changes along z.
