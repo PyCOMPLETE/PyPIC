@@ -50,8 +50,9 @@ class SpaceCharge3D(object):
 
         #Build factor
         beta0 = particles.beta0
-        charge_mass_ratio = particles.chi*particles.echarge/particles.mass0
         clight = float(particles.clight)
+        charge_mass_ratio = (particles.chi*particles.echarge*particles.q0
+                                /(particles.mass0*particles.echarge/(clight*clight)))
         gamma0 = particles.gamma0
         beta0 = particles.beta0
         factor = -(charge_mass_ratio*self.length*(1.-beta0*beta0)

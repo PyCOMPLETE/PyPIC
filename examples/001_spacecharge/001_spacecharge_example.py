@@ -8,7 +8,7 @@ from xfields.platforms import XfCpuPlatform, XfCupyPlatform
 ###################
 
 platform = XfCpuPlatform()
-#platform = XfCupyPlatform(default_block_size=256)
+platform = XfCupyPlatform(default_block_size=256)
 
 print(repr(platform))
 
@@ -24,7 +24,8 @@ r_max_probes = 2e-2
 n_probes = 1000
 
 from temp_makepart import generate_particles_object
-particles, r_probes = generate_particles_object(platform,
+(particles, r_probes, x_probes,
+        y_probes, z_probes) = generate_particles_object(platform,
                             n_macroparticles,
                             bunch_intensity,
                             sigma_x,
@@ -57,10 +58,29 @@ spcharge.track(particles)
 
 p2np = platform.nparray_from_platform_mem
 
+
+from pysixtrack.elements import SpaceChargeBunched
+scpyst = SpaceChargeBunched(
+        number_of_particles = bunch_intensity,
+        bunchlength_rms=sigma_z,
+        sigma_x=sigma_x,
+        sigma_y=sigma_y,
+        length=spcharge.length,
+        x_co=0.,
+        y_co=0.)
+
+p_pyst = Particles(p0c=p0c,
+        mass=mass,
+        x=x_probes.copy(),
+        y=y_probes.copy(),
+        zeta=z_probes.copy())
+
+scpyst.track(p_pyst)
+
 import matplotlib.pyplot as plt
 plt.close('all')
 plt.figure()
 plt.plot(r_probes, p2np(particles.px[:n_probes]), '.-')
+plt.plot(r_probes, p_pyst.px, '.-')
 plt.plot(r_probes, p2np(particles.py[:n_probes]))
 plt.show()
-
