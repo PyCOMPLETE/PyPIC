@@ -5,8 +5,8 @@ from pysixtrack.particles import Particles
 from xfields.platforms import XfCpuPlatform
 platform = XfCpuPlatform()
 
-#from xfields.platforms import XfCupyPlatform
-#platform = XfCupyPlatform(default_block_size=256)
+from xfields.platforms import XfCupyPlatform
+platform = XfCupyPlatform(default_block_size=256)
 
 from xfields import SpaceCharge3D
 
