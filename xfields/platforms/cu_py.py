@@ -23,6 +23,9 @@ class XfCupyPlatform(object):
             self.add_kernels(src_files=cupy_default_kernels['src_files'],
                     kernel_descriptions=cupy_default_kernels['kernel_descriptions'])
 
+    @property
+    def nplike_lib(self):
+        return cupy
 
     def nparray_to_platform_mem(self, arr):
         dev_arr = cupy.array(arr)

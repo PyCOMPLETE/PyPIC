@@ -18,6 +18,10 @@ class XfCpuPlatform(object):
             self.add_kernels(lib_file=cpu_default_kernels['lib_file'],
                     kernel_descriptions=cpu_default_kernels['kernel_descriptions'])
 
+    @property
+    def nplike_lib(self):
+        return np
+
     def nparray_to_platform_mem(self, arr):
         return arr
 

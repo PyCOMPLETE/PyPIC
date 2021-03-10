@@ -4,8 +4,6 @@ from .base import FieldMap
 from ..solvers.fftsolvers import FFTSolver3D, FFTSolver2p5D
 from ..platforms import XfCpuPlatform
 
-import cupy
-
 
 class TriLinearInterpolatedFieldMap(FieldMap):
 
@@ -126,9 +124,8 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         pos_in_buffer_of_maps_to_interp = self.platform.nparray_to_platform_mem(
                         np.array(pos_in_buffer_of_maps_to_interp, dtype=np.int32))
         nmaps_to_interp = len(pos_in_buffer_of_maps_to_interp)
-        #buffer_out = self.platform.nparray_to_platform_mem(
-        #        np.zeros(nmaps_to_interp * len(x), dtype=np.float64))
-        buffer_out = cupy.zeros(nmaps_to_interp * len(x), dtype=np.float64)
+        buffer_out = self.platform.nplike_lib.zeros(
+                nmaps_to_interp * len(x), dtype=np.float64)
         if nmaps_to_interp > 0:
             self.platform.kernels.m2p_rectmesh3d(
                     nparticles=len(x),

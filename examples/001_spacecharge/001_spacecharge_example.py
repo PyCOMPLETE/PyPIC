@@ -10,7 +10,7 @@ from xfields.platforms import XfCpuPlatform, XfCupyPlatform
 ###################
 
 platform = XfCpuPlatform()
-platform = XfCupyPlatform(default_block_size=256)
+#platform = XfCupyPlatform(default_block_size=256)
 
 print(repr(platform))
 

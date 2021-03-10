@@ -29,6 +29,9 @@ class XfPoclPlatform(object):
             self.add_kernels(src_files=pocl_default_kernels['src_files'],
                     kernel_descriptions=pocl_default_kernels['kernel_descriptions'])
 
+    @property
+    def nplike_lib(self):
+        return cla
 
     def nparray_to_platform_mem(self, arr):
         dev_arr = cla.to_device(self.command_queue, arr)
