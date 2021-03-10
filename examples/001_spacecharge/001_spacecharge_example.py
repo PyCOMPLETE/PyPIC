@@ -1,8 +1,10 @@
+import time
+
 import numpy as np
 
 from pysixtrack.particles import Particles
-
 from xfields.platforms import XfCpuPlatform, XfCupyPlatform
+
 ###################
 # Choose platform #
 ###################
@@ -11,6 +13,10 @@ platform = XfCpuPlatform()
 platform = XfCupyPlatform(default_block_size=256)
 
 print(repr(platform))
+
+#################################
+# Generate particles and probes #
+#################################
 
 n_macroparticles = int(1e6)
 bunch_intensity = 2.5e11
@@ -39,27 +45,33 @@ from temp_makepart import generate_particles_object
                             z_probes,
                             theta_probes)
 
-x_range = 5.*sigma_x*np.array([-1, 1])
-y_range = 5.*sigma_y*np.array([-1, 1])
-z_range = 5.*sigma_z*np.array([-1, 1])
-
-nx = 256
-ny = 256
-nz = 50
+######################
+# Space charge (PIC) #
+######################
+x_lim = 5.*sigma_x
+y_lim = 5.*sigma_y
+z_lim = 5.*sigma_z
 
 from xfields import SpaceCharge3D
 
 spcharge = SpaceCharge3D(
-        length=1, update_on_track=True, apply_z_kick=True,
-        x_range=x_range, y_range=y_range, z_range=z_range,
-        nx=nx, ny=ny, nz=nz,
+        length=1, update_on_track=True, apply_z_kick=False,
+        x_range=(-x_lim, x_lim),
+        y_range=(-y_lim, y_lim),
+        z_range=(-z_lim, z_lim),
+        nx=256, ny=256, nz=50,
         solver='FFTSolver2p5D',
         platform=platform)
 
 spcharge.track(particles)
 
-p2np = platform.nparray_from_platform_mem
 
+##############################
+# Compare against pysixtrack #
+##############################
+
+
+p2np = platform.nparray_from_platform_mem
 
 from pysixtrack.elements import SpaceChargeBunched
 scpyst = SpaceChargeBunched(
@@ -90,4 +102,16 @@ plt.subplot(212)
 plt.plot(r_probes, p_pyst.py, color='red')
 plt.plot(r_probes, p2np(particles.py[:n_probes]), color='blue',
         linestyle='--')
+
+###########
+# Time it #
+###########
+
+n_rep = 10
+for _ in range(n_rep):
+    t1 = time.time()
+    spcharge.track(particles)
+    t2 = time.time()
+    print(f'Time: {t2-t1:.2e}')
+
 plt.show()
