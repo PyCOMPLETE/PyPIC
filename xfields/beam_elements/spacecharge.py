@@ -46,9 +46,11 @@ class SpaceCharge3D(object):
                     q0=particles.q0*particles.echarge)
 
 
-        dphi_dx, dphi_dy, dphi_dz = self.fieldmap.get_values_at_points(
+        res = self.fieldmap.get_values_at_points(
                             x=particles.x, y=particles.y, z=particles.zeta,
-                            return_rho=False, return_phi=False)
+                            return_rho=False, return_phi=False,
+                            return_dphi_dz=self.apply_z_kick)
+        # res = [dphi_dx, dphi_dy, (dphi_z)]
 
         #Build factor
         beta0 = particles.beta0
@@ -61,10 +63,10 @@ class SpaceCharge3D(object):
                     /(gamma0*beta0*beta0*clight*clight))
 
         # Kick particles
-        particles.px += factor*dphi_dx
-        particles.py += factor*dphi_dy
+        particles.px += factor*res[0]
+        particles.py += factor*res[1]
         if self.apply_z_kick:
-            particles.delta += factor*dphi_dz
+            particles.delta += factor*res[2]
 
 
 

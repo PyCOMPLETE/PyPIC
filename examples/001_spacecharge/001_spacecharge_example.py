@@ -48,6 +48,7 @@ from temp_makepart import generate_particles_object
 ######################
 # Space charge (PIC) #
 ######################
+
 x_lim = 5.*sigma_x
 y_lim = 5.*sigma_y
 z_lim = 5.*sigma_z
@@ -112,6 +113,6 @@ for _ in range(n_rep):
     t1 = time.time()
     spcharge.track(particles)
     t2 = time.time()
-    print(f'Time: {t2-t1:.2e}')
+    print(f'Time: {(t2-t1)*1e3:.2f} ms')
 
 plt.show()
