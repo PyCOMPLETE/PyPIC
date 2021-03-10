@@ -26,7 +26,7 @@ class SpaceCharge3D(object):
         fieldmap = TriLinearInterpolatedFieldMap(
                         rho=rho, phi=phi,
                         x_grid=z_grid, y_grid=y_grid, z_grid=z_grid,
-                        x_range=z_range, y_range=y_range, z_range=z_range,
+                        x_range=x_range, y_range=y_range, z_range=z_range,
                         dx=dx, dy=dy, dz=dz,
                         nx=nx, ny=ny, nz=nz,
                         solver=solver,

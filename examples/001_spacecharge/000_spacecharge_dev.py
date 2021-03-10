@@ -34,10 +34,24 @@ mass = Particles.pmass,
 x_part = sigma_x * np.random.normal(size=(n_macroparticles,))
 y_part = sigma_y * np.random.normal(size=(n_macroparticles,))
 z_part = sigma_z * np.random.normal(size=(n_macroparticles,))
+weights_part = 0*x_part + bunch_intensity/n_macroparticles
+
+# insert probes
+n_probes = 1000
+r_probes = np.linspace(-2e-2, 2e-2, n_probes)
+theta_probes = 0.
+x_probes = r_probes * np.cos(theta_probes)
+y_probes = r_probes * np.sin(theta_probes)
+z_probes = 0 * x_probes
+
+x_part = np.concatenate([x_probes, x_part])
+y_part = np.concatenate([y_probes, y_part])
+z_part = np.concatenate([z_probes, z_part])
+weights_part = np.concatenate([0*x_probes, weights_part])
+
 px_part = 0*x_part
 py_part = 0*x_part
 pt_part = 0*x_part
-weights_part = 0*x_part + bunch_intensity/n_macroparticles
 
 # Move to platform
 np2platf = platform.nparray_to_platform_mem
@@ -62,9 +76,9 @@ particles = Particles(
 particles.weight = weights_part_dev
 
 
-x_range = 2.*sigma_x*np.array([-1, 1])
-y_range = 2.*sigma_y*np.array([-1, 1])
-z_range = 2.*sigma_z*np.array([-1, 1])
+x_range = 5.*sigma_x*np.array([-1, 1])
+y_range = 5.*sigma_y*np.array([-1, 1])
+z_range = 5.*sigma_z*np.array([-1, 1])
 
 nx = 256
 ny = 256
@@ -78,3 +92,13 @@ spcharge = SpaceCharge3D(
         platform=platform)
 
 spcharge.track(particles)
+
+p2np = platform.nparray_from_platform_mem
+
+import matplotlib.pyplot as plt
+plt.close('all')
+plt.figure()
+plt.plot(r_probes, p2np(particles.px[:n_probes]), '.-')
+plt.plot(r_probes, p2np(particles.py[:n_probes]))
+plt.show()
+
