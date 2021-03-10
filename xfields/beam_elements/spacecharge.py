@@ -35,6 +35,34 @@ class SpaceCharge3D(object):
 
         self.fieldmap = fieldmap
 
+    def track(self, particles):
+
+        if self.update_on_track:
+            self.fieldmap.update_from_particles(
+                    x_p=particles.x,
+                    y_p=particles.y,
+                    z_p=particles.zeta,
+                    ncharges_p=particles.weight,
+                    q0=particles.q0*particles.echarge)
+        dphi_dx, dphi_dy, dphi_dz = self.fieldmap.get_values_at_points(
+                            x=particles.x, y=particles.y, z=particles.zeta,
+                            return_rho=False, return_phi=False)
+
+        #Build factor
+        beta0 = particles.beta0
+        charge_mass_ratio = particles.chi*particles.echarge/particles.mass0
+        clight = float(particles.clight)
+        gamma0 = particles.gamma0
+        beta0 = particles.beta0
+        factor = -(charge_mass_ratio*self.length*(1.-beta0*beta0)
+                    /(gamma0*beta0*beta0*clight*clight))
+
+        # Kick particles
+        particles.px += factor*dphi_dx
+        particles.py += factor*dphi_dy
+        if self.apply_z_kick:
+            particles.delta += factor*dphi_dz
+
 
 
 class SpaceCharge2D(object):
