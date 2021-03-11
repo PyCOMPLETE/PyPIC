@@ -13,12 +13,13 @@ class TriLinearInterpolatedFieldMap(FieldMap):
                  nx=None, ny=None, nz=None,
                  x_range=None, y_range=None, z_range=None,
                  solver=None,
+                 scale_coordinates_in_solver=(1.,1.,1.),
                  updatable=True,
                  platform=XfCpuPlatform()):
 
         self.updatable = updatable
-
         self.platform = platform
+        self.scale_coordinates_in_solver = scale_coordinates_in_solver
 
         self._x_grid = _configure_grid('x', x_grid, dx, x_range, nx)
         self._y_grid = _configure_grid('y', y_grid, dy, y_range, ny)
@@ -40,6 +41,7 @@ class TriLinearInterpolatedFieldMap(FieldMap):
         if isinstance(solver, str):
             self.solver = self.generate_solver(solver)
         else:
+            #TODO: consistency check to be added
             self.solver = solver
 
         # Set rho
@@ -213,14 +215,20 @@ class TriLinearInterpolatedFieldMap(FieldMap):
 
     def generate_solver(self, solver):
 
+        scale_dx, scale_dy, scale_dz = self.scale_coordinates_in_solver
+
         if solver == 'FFTSolver3D':
             solver = FFTSolver3D(
-                    dx=self.dx, dy=self.dy, dz=self.dz,
+                    dx=self.dx*scale_dx,
+                    dy=self.dy*scale_dy,
+                    dz=self.dz*scale_dz,
                     nx=self.nx, ny=self.ny, nz=self.nz,
                     platform=self.platform)
         elif solver == 'FFTSolver2p5D':
             solver = FFTSolver2p5D(
-                    dx=self.dx, dy=self.dy, dz=self.dz,
+                    dx=self.dx*scale_dx,
+                    dy=self.dy*scale_dy,
+                    dz=self.dz*scale_dz,
                     nx=self.nx, ny=self.ny, nz=self.nz,
                     platform=self.platform)
         else:

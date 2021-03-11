@@ -61,7 +61,8 @@ spcharge = SpaceCharge3D(
         y_range=(-y_lim, y_lim),
         z_range=(-z_lim, z_lim),
         nx=256, ny=256, nz=50,
-        solver='FFTSolver2p5D',
+        solver='FFTSolver3D',
+        gamma0=1e5,#particles.gamma0,
         platform=platform)
 
 spcharge.track(particles)
