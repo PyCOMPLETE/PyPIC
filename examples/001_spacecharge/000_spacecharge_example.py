@@ -22,12 +22,12 @@ n_macroparticles = int(1e6)
 bunch_intensity = 2.5e11
 sigma_x = 3e-3
 sigma_y = 2e-3
-sigma_z = 30e-2
+sigma_z = 3e-3
 p0c = 25.92e9
 mass = Particles.pmass,
 theta_probes = 30 * np.pi/180
 r_max_probes = 2e-2
-z_probes = 15e-2
+z_probes = 1.2*sigma_z
 n_probes = 1000
 
 from temp_makepart import generate_particles_object
@@ -61,7 +61,7 @@ spcharge = SpaceCharge3D(
         y_range=(-y_lim, y_lim),
         z_range=(-z_lim, z_lim),
         nx=256, ny=256, nz=50,
-        solver='FFTSolver2p5D',
+        solver='FFTSolver3D',
         platform=platform)
 
 spcharge.track(particles)
