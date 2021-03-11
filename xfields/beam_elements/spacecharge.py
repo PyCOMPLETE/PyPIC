@@ -13,6 +13,7 @@ class SpaceCharge3D(object):
                  nx=None, ny=None, nz=None,
                  x_range=None, y_range=None, z_range=None,
                  solver=None,
+                 gamma0=None,
                  platform=XfCpuPlatform()):
         '''
         Needed when transverse normalized distribution changes along z.
@@ -23,15 +24,25 @@ class SpaceCharge3D(object):
         self.update_on_track = update_on_track
         self.apply_z_kick = apply_z_kick
 
+        if solver=='FFTSolver3D':
+            assert gamma0 is not None, ('To use FFTSolver3D '
+                                        'gamma0 must be provided')
+
+        if gamma0 is not None:
+            scale_coordinates_in_solver=(1.,1., float(gamma0))
+        else:
+            scale_coordinates_in_solver=(1.,1.,1.)
+
         fieldmap = TriLinearInterpolatedFieldMap(
-                        rho=rho, phi=phi,
-                        x_grid=x_grid, y_grid=y_grid, z_grid=z_grid,
-                        x_range=x_range, y_range=y_range, z_range=z_range,
-                        dx=dx, dy=dy, dz=dz,
-                        nx=nx, ny=ny, nz=nz,
-                        solver=solver,
-                        updatable=update_on_track,
-                        platform=platform)
+                    rho=rho, phi=phi,
+                    x_grid=z_grid, y_grid=y_grid, z_grid=z_grid,
+                    x_range=x_range, y_range=y_range, z_range=z_range,
+                    dx=dx, dy=dy, dz=dz,
+                    nx=nx, ny=ny, nz=nz,
+                    solver=solver,
+                    scale_coordinates_in_solver=scale_coordinates_in_solver,
+                    updatable=update_on_track,
+                    platform=platform)
 
         self.fieldmap = fieldmap
 
