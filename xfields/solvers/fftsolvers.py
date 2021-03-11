@@ -43,13 +43,15 @@ class FFTSolver3D(Solver):
         # To define how to make the replicas I have a look at:
         # np.abs(np.fft.fftfreq(10))*10
         # = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
-        gint_rep[nx+1:, :ny, :nz] = gint_rep[nx-1:0:-1, :ny, :nz]
-        gint_rep[:nx, ny+1:, :nz] = gint_rep[:nx, ny-1:0:-1, :nz]
-        gint_rep[nx+1:, ny+1:, :nz] = gint_rep[nx-1:0:-1, ny-1:0:-1, :nz]
-        gint_rep[:nx, :ny, nz+1:] = gint_rep[:nx, :ny, nz-1:0:-1]
-        gint_rep[nx+1:, :ny, nz+1:] = gint_rep[nx-1:0:-1,  :ny, nz-1:0:-1]
-        gint_rep[:nx, ny+1:, nz+1:] = gint_rep[:nx, ny-1:0:-1, nz-1:0:-1]
-        gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1,nz:1:-1]
+        gint_rep[nx+1:, :ny+1, :nz+1] = gint_rep[nx-1:0:-1, :ny+1,     :nz+1    ]
+        gint_rep[:nx+1, ny+1:, :nz+1] = gint_rep[:nx+1,     ny-1:0:-1, :nz+1    ]
+        gint_rep[nx+1:, ny+1:, :nz+1] = gint_rep[nx-1:0:-1, ny-1:0:-1, :nz+1    ]
+        gint_rep[:nx+1, :ny+1, nz+1:] = gint_rep[:nx+1,     :ny+1,     nz-1:0:-1]
+        gint_rep[nx+1:, :ny+1, nz+1:] = gint_rep[nx-1:0:-1, :ny+1,     nz-1:0:-1]
+        gint_rep[:nx+1, ny+1:, nz+1:] = gint_rep[:nx+1,     ny-1:0:-1, nz-1:0:-1]
+        gint_rep[nx+1:, ny+1:, nz+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1, nz-1:0:-1]
+
+        self._gint_rep = gint_rep.copy()
 
         # Tranasfer to device
         gint_rep_dev = platform.nparray_to_platform_mem(gint_rep)
@@ -109,8 +111,8 @@ class FFTSolver2p5D(FFTSolver3D):
         # To define how to make the replicas I have a look at:
         # np.abs(np.fft.fftfreq(10))*10
         # = [0., 1., 2., 3., 4., 5., 4., 3., 2., 1.]
-        gint_rep[nx+1:, :ny] = gint_rep[nx-1:0:-1, :ny]
-        gint_rep[:nx, ny+1:] = gint_rep[:nx, ny-1:0:-1]
+        gint_rep[nx+1:, :ny+1] = gint_rep[nx-1:0:-1, :ny+1]
+        gint_rep[:nx+1, ny+1:] = gint_rep[:nx+1, ny-1:0:-1]
         gint_rep[nx+1:, ny+1:] = gint_rep[nx-1:0:-1, ny-1:0:-1]
 
 
