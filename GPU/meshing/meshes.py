@@ -273,7 +273,7 @@ class RectMesh3D(Mesh):
                 weight_ijk1, weight_i1jk1, weight_ij1k1, weight_i1j1k1)
 
 
-class RectMesh25D(RectMesh3D):
+class SlicingMesh25D(RectMesh3D):
     '''Rectangular three-dimensional mesh with dimension-wise uniformly
     spaced nodes. The only difference to RectMesh3D is the distance
     function in the longitudinal employing zero-order Nearest-Grid-Point
