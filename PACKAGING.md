@@ -60,3 +60,13 @@ not release archives. Neither tests nor examples are installed in wheels.
 
 The manual release workflow does not run merely because a branch is pushed.
 No artifacts have been uploaded by the local packaging implementation.
+
+## Local validation completed (2026-09-24)
+
+Linux wheel builds and installed tests pass on CPython 3.10–3.14 (12 PyPIC and
+14 PyECLOUD tests per version). Isolated sdist-to-wheel builds, metadata,
+editable installs, compiler-free wheel installs, KLU execution, and declared
+minimum dependencies passed. Published PyHEADTAIL installation and tracking
+imports also passed on all five Linux Python versions.
+MacOS and release workflows have not been run. Local wheels require glibc 2.31;
+CI targets manylinux_2_28 using its older build image. Nothing was published.
