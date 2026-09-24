@@ -66,7 +66,8 @@ class PyPIC_Scatter_Gather(object):
     def __init__(self, x_aper=None, y_aper=None, dx=None, dy=None, xg=None, yg=None, 
                 x_min=None, x_max=None, y_min=None, y_max=None, *args, **kwargs):
 
-        print('PyPIC Version 2.4.5')
+        from ._version import __version__
+        print('PyPIC Version ' + __version__)
         
         if xg is not None and yg is not None:
             assert(x_aper is None and y_aper is None and dx is None and dy is None)

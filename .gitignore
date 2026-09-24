@@ -7,3 +7,10 @@ norepository_*
 *~
 build
 CyFPPS.cpp
+
+# Python packaging outputs
+dist/
+.mesonpy-*/
+build/
+__pycache__/
+*.egg-info/
