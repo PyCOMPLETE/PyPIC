@@ -29,4 +29,4 @@ int_field_for_border_src = custom_target('int_field_for_border_wrappers',
 py.extension_module('int_field_for_border', ['interp_field_for_with_border.f', int_field_for_border_src, f2py_inc / 'fortranobject.c'],
   include_directories: incs, install: true, subdir: 'PyPIC')
 
-meson.add_dist_script(py, 'tools/prepare_sdist.py')
+meson.add_dist_script(py, files('tools/prepare_sdist.py'))
