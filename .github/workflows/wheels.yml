@@ -1,0 +1,57 @@
+name: Build and test distributions
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  wheels:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: macos-15-intel
+            arch: x86_64
+          - os: macos-14
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select macOS Fortran compiler
+        if: runner.os == 'macOS'
+        run: |
+          brew install gcc
+          python tools/macos_compiler.py >> "$GITHUB_ENV"
+      - run: python -m pip install 'cibuildwheel>=3.2,<4'
+      - run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_ARCHS: ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y gfortran
+      - run: python -m pip install build twine
+      - name: Build wheel from sdist in isolation
+        run: python -m build
+      - run: python -m twine check dist/*
+      - run: python -m pip install dist/*.whl pytest
+      - name: Test installation including required KLU
+        run: python tools/test_installed.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/*.tar.gz
