@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pylab as pl
 
@@ -9,10 +11,18 @@ Dh_mm = .5
 linew = 2.
 mksz = 10
 
+# Run 008a first, using the same working directory and grid spacing.
+for solver in ('BE', 'FDSW', 'FDSC'):
+    filename = Path(f'norepository_{solver}_Dh{Dh_mm:.1f}mm.mat')
+    if not filename.is_file():
+        raise FileNotFoundError(
+            f'{filename} is missing. Run 008a_check_interpolation_near_borders.py '
+            'from this working directory first.')
+
 label_plots = 'ellip_gaussian_'
 ob_ref = mlo.myloadmat_to_obj('norepository_BE_Dh%.1fmm.mat'%Dh_mm)
 ob_new = mlo.myloadmat_to_obj('norepository_FDSW_Dh%.1fmm.mat'%Dh_mm)
-ob_old= mlo.myloadmat_to_obj('norepository_FDSWextrap_Dh%.1fmm.mat'%Dh_mm)
+ob_old= mlo.myloadmat_to_obj('norepository_FDSC_Dh%.1fmm.mat'%Dh_mm)
 
 
 
@@ -56,7 +66,7 @@ for ii in range(N_points):
 
 na = np.array
 pl.close('all')
-ms.mystyle_arial(fontsz=16, dist_tick_lab=10)
+ms.mystyle(fontsz=16)
 pl.figure(1)
 pl.plot(1000*ob_ref.xmax_test_list, err_abs_list)
 pl.xlim(0,1000*ob_ref.x_aper)
@@ -73,8 +83,8 @@ pl.grid(True)
 pl.xlim(0,None)
 
 pl.figure(30)
-pl.plot(1000*(ob_ref.x_aper-ob_ref.xmax_test_list), 100*na(err_rel_list_old), '.-r', label = 'Old SC routine', linewidth = linew, markersize=mksz)
-pl.plot(1000*(ob_ref.x_aper-ob_ref.xmax_test_list), 100*na(err_rel_list), '.-', label = 'New SC routine', linewidth = linew, markersize=mksz)
+pl.plot(1000*(ob_ref.x_aper-ob_ref.xmax_test_list), 100*na(err_rel_list_old), '.-r', label = 'Staircase', linewidth = linew, markersize=mksz)
+pl.plot(1000*(ob_ref.x_aper-ob_ref.xmax_test_list), 100*na(err_rel_list), '.-', label = 'Shortley-Weller', linewidth = linew, markersize=mksz)
 pl.grid(True)
 pl.xlim(0,3)
 pl.ylim(0,20)
@@ -178,4 +188,3 @@ for dist_from_bou in dist_from_bou_list:
     pl.savefig(fname+'.png', dpi=200)
 
 pl.show()
-

@@ -1,5 +1,5 @@
 include README.md Makefile
 recursive-include PyPIC *.py *.f
 recursive-include tests *.py
-recursive-include examples *.py
+recursive-include examples *.py *.md
 global-exclude *.so *.pyd *.pyc

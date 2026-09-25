@@ -3,7 +3,9 @@ import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.geom_impact_ellip as ell
 import pylab as pl
 import numpy as np
-from scipy import rand
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 from scipy.constants import e, epsilon_0
 from PyPIC.MultiGrid import AddInternalGrid
 
@@ -47,8 +49,8 @@ pic_SW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber,
 #~ # generate beam
 N_part = 100000
 r_charge=4e-3
-x_part = r_charge*(2.*rand(N_part)-1.)
-y_part = r_charge*(2.*rand(N_part)-1.)
+x_part = r_charge*(2.*rng.random(N_part)-1.)
+y_part = r_charge*(2.*rng.random(N_part)-1.)
 mask_keep  = x_part**2+y_part**2<r_charge**2
 x_part = x_part[mask_keep]
 y_part = y_part[mask_keep]

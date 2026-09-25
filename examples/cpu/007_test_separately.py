@@ -3,7 +3,9 @@ import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
 import PyPIC.geom_impact_ellip as ell
 
-from scipy import rand
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 import numpy as np
 
 R_cham = 1e-1
@@ -19,11 +21,11 @@ eps0 = epsilon_0
 
 chamber = ell.ellip_cham_geom_object(x_aper = R_cham, y_aper = R_cham)
 
-picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib = 'pyfftw')
+picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib = 'numpy')
 
 # generate particles
-x_part = R_charge*(2.*rand(N_part_gen)-1.)
-y_part = R_charge*(2.*rand(N_part_gen)-1.)
+x_part = R_charge*(2.*rng.random(N_part_gen)-1.)
+y_part = R_charge*(2.*rng.random(N_part_gen)-1.)
 mask_keep  = x_part**2+y_part**2<R_charge**2
 x_part = x_part[mask_keep]
 y_part = y_part[mask_keep]
@@ -42,7 +44,7 @@ y_probes = 0.*x_probes
 #pic gather
 Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
 
-E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) for x in x_probes]
+E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) if x != 0 else 0. for x in x_probes]
 
 
 import pylab as pl
@@ -55,6 +57,8 @@ pl.legend()
 pl.ylabel('Ex on the x axis [V/m]')
 pl.xlabel('x [m]')
 
+efx_reference = picFFT.efx.copy()
+efy_reference = picFFT.efy.copy()
 self = picFFT
 tmprho = 0.*self.fgreen
 tmprho[:self.ny, :self.nx] = self.rho.T
@@ -89,9 +93,12 @@ self.efx[1:self.Nxg-1,:] = self.phi[0:self.Nxg-2,:] - self.phi[2:self.Nxg,:];  #
 self.efy[:,1:self.Nyg-1] = self.phi[:,0:self.Nyg-2] - self.phi[:,2:self.Nyg];  #central difference on internal nodes
 
 
-self.efy = self.efy/(2*self.Dh)
-self.efx = self.efx/(2*self.Dh)
+self.efy = self.efy/(2*self.dy)
+self.efx = self.efx/(2*self.dx)
 
+
+np.testing.assert_allclose(self.efx, efx_reference, atol=1e-18)
+np.testing.assert_allclose(self.efy, efy_reference, atol=1e-18)
 
 pl.show()
 

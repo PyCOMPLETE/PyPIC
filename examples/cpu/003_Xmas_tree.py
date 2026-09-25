@@ -1,6 +1,8 @@
 import pylab as pl
 import numpy as np
-from scipy import rand
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 import PyPIC.geom_impact_poly as poly
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
@@ -35,8 +37,8 @@ x_tree = np.array([0.]+ list(x_tree)+[0.])
 y_tree = np.array([-y_aper]+ list(y_tree)+[y_aper])
 
 
-x_part = x_aper*(2.*rand(N_part_gen)-1.)
-y_part = y_aper*(2.*rand(N_part_gen)-1.)
+x_part = x_aper*(2.*rng.random(N_part_gen)-1.)
+y_part = y_aper*(2.*rng.random(N_part_gen)-1.)
 
 x_on_tree = np.interp(y_part, y_tree, x_tree)
 
@@ -53,8 +55,8 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
                                        'y_sem_ellip_insc':0.99*y_aper})
 
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
-picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
-picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
+picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='numpy')
+picFFT = PIC_FFT.FFT_OpenBoundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='numpy')
 R_cham = np.sqrt((chamber.x_aper/2)**2 + (chamber.y_aper/2)**2 )
 
 picFDSW.scatter(x_part, y_part, nel_part)

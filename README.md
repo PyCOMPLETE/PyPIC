@@ -37,7 +37,8 @@ sources, rerun the installation command to rebuild the extensions. Use
 - `python -m pip install -e '.[fftw]'` installs the Python FFTW interface used by
   FFT solvers.
 - `python -m pip install -e '.[examples]'` adds matplotlib for the example scripts.
-  Some legacy examples need additional packages or modernization.
+  See [the CPU examples guide](examples/cpu/README.md) for optional dependencies
+  and instructions.
 
 ## Development and validation
 

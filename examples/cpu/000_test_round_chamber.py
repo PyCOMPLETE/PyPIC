@@ -4,7 +4,9 @@ import PyPIC.FFT_OpenBoundary as PIC_FFT
 from PyPIC.MultiGrid import AddInternalGrid
 
 import PyPIC.geom_impact_ellip as ell
-from scipy import rand
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 import numpy as np
 
 R_cham = 1e-1
@@ -32,16 +34,16 @@ chamber = ell.ellip_cham_geom_object(x_aper = R_cham, y_aper = R_cham)
 
 picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh)
 picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh)
-picFFT = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, dx = Dh/2., dy = Dh, fftlib='pyfftw')
-picFFTSq = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='pyfftw')
+picFFT = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, dx = Dh/2., dy = Dh, fftlib='numpy')
+picFFTSq = PIC_FFT.FFT_OpenBoundary(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='numpy')
 # build dual grid
 pic_main = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_main)
 pic_dualgrid = AddInternalGrid(pic_main, x_min_internal, x_max_internal, y_min_internal,
                                 y_max_internal, Dh_internal, N_nodes_discard)
 
 # generate particles
-x_part = R_charge*(2.*rand(N_part_gen)-1.)
-y_part = R_charge*(2.*rand(N_part_gen)-1.)
+x_part = R_charge*(2.*rng.random(N_part_gen)-1.)
+y_part = R_charge*(2.*rng.random(N_part_gen)-1.)
 mask_keep  = x_part**2+y_part**2<R_charge**2
 x_part = x_part[mask_keep]
 y_part = y_part[mask_keep]
@@ -71,7 +73,7 @@ Ex_FDSW, Ey_FDSW = picFDSW.gather(x_probes, y_probes)
 Ex_FFT, Ey_FFT = picFFT.gather(x_probes, y_probes)
 Ex_FFTSq, Ey_FFTSq = picFFTSq.gather(x_probes, y_probes)
 Ex_dualgrid, Ey_dualgrid = pic_dualgrid.gather(x_probes, y_probes)
-E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) for x in x_probes]
+E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) if x != 0 else 0. for x in x_probes]
 
 
 import pylab as pl

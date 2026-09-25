@@ -1,4 +1,17 @@
-from LHC import LHC
+import argparse
+
+parser = argparse.ArgumentParser(description="Time the CPU Poisson solvers")
+parser.add_argument('--repetitions', type=int, default=10)
+args = parser.parse_args()
+if args.repetitions < 1:
+    parser.error('--repetitions must be positive')
+
+try:
+    from LHC import LHC
+except ModuleNotFoundError as exc:
+    if exc.name == 'PyHEADTAIL':
+        raise SystemExit('This LHC example additionally requires PyHEADTAIL.') from exc
+    raise
 import PyPIC.geom_impact_ellip as ell
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.Bassetti_Erskine as PIC_BE
@@ -23,12 +36,13 @@ sigma_z=7e-2
 
 n_macroparticles=1000000
 
-sparse_solver = 'PyKLU'
+sparse_solver = 'scipy_slu'
 
 machine = LHC(machine_configuration = machine_configuration, optics_mode = 'smooth', n_segments = 1, p0=p0_GeV*1e9*e/c)
 
 
 # generate beam
+np.random.seed(12345)  # PyHEADTAIL uses NumPy's global random generator.
 bunch = machine.generate_6D_Gaussian_bunch(n_macroparticles = n_macroparticles, intensity = intensity,
                             epsn_x = epsn_x, epsn_y = epsn_y, sigma_z = sigma_z)
 
@@ -74,21 +88,21 @@ pic_multigrid.scatter(bunch.x, bunch.y, bunch.particlenumber_per_mp+bunch.y*0., 
 #scatter and solve     
 #pic solve timing
 import time
-N_rep_test_single = 1000
+N_rep_test_single = args.repetitions
 print('Solving PIC single %d times'%N_rep_test_single)
-t_start = time.mktime(time.localtime())
+t_start = time.perf_counter()
 for _ in range(N_rep_test_single):
     pic_singlegrid.solve()
-t_stop = time.mktime(time.localtime())
+t_stop = time.perf_counter()
 t_sw_single = (t_stop-t_start)/N_rep_test_single
 print('solving time singlegrid ', t_sw_single)
 
-N_rep_test_multi = 10000
+N_rep_test_multi = args.repetitions
 print('Solving PIC multi %d times'%N_rep_test_multi)
-t_start = time.mktime(time.localtime())
+t_start = time.perf_counter()
 for _ in range(N_rep_test_multi):
     pic_multigrid.solve()
-t_stop = time.mktime(time.localtime())
+t_stop = time.perf_counter()
 t_sw_multi = (t_stop-t_start)/N_rep_test_multi
 print('solving time multigrid ', t_sw_multi)
 
@@ -107,7 +121,7 @@ Ex_multigrid, Ey_multigrid = pic_multigrid.gather(x_probes, y_probes)
 
 #plots
 pl.close('all')
-ms.mystyle_arial(fontsz=12)
+ms.mystyle(fontsz=12)
 
 #electric field at probes
 pl.figure(1, figsize=(18,6)).patch.set_facecolor('w')
@@ -172,7 +186,7 @@ pl.loglog(r_probes_val, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
 pl.loglog(r_probes_val, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
 pl.xlabel('r [m]')
 pl.ylabel('RMS error')
-pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
+pl.title('$\\sigma_x$ = %.2e [m]\n $\\sigma_y$ = %.2e [m]  \n $\\Delta h_{single}$ = %.2e [m]\n $\\Delta h_{multi}$ = %.2e [m]\n $\\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
@@ -182,7 +196,8 @@ pl.legend(loc='best')
 # plot RMS error vs sigma
 n_probes = 100
 n_sigma_min = 0.1
-n_sigma_max = 100
+# Keep every probe inside the chamber and the field maps.
+n_sigma_max = min(100., 0.99*x_aper/bunch.sigma_x(), 0.99*y_aper/bunch.sigma_y())
 n_sigma_probes = np.logspace(np.log10(n_sigma_min), np.log10(n_sigma_max), n_probes)
 RMSE_singlegrid = []
 RMSE_multigrid = []
@@ -200,9 +215,9 @@ for n_sigma_probe in n_sigma_probes:
 pl.figure(3).patch.set_facecolor('w')
 pl.loglog(n_sigma_probes, RMSE_singlegrid, '.-m', label = 'Singlegrid vs BE ')
 pl.loglog(n_sigma_probes, RMSE_multigrid, '.-g', label = 'Multigrid vs BE ')
-pl.xlabel('$\sigma$')
+pl.xlabel('$\\sigma$')
 pl.ylabel('RMS error')
-pl.title('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
+pl.title('$\\sigma_x$ = %.2e [m]\n $\\sigma_y$ = %.2e [m]  \n $\\Delta h_{single}$ = %.2e [m]\n $\\Delta h_{multi}$ = %.2e [m]\n $\\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 pl.subplots_adjust(bottom = .13, top = .70)
 pl.grid()
@@ -231,10 +246,22 @@ Ex_multigrid_n, Ey_multigrid_n = pic_multigrid.gather(xn, yn)
 Ex_multigrid_matrix=np.reshape(Ex_multigrid_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 Ey_multigrid_matrix=np.reshape(Ey_multigrid_n,(len(y_grid_probes),len(x_grid_probes)), 'F').T
 
+# Relative error is undefined where the reference vanishes or outside the chamber.
+reference_squared = Ex_BE_matrix**2 + Ey_BE_matrix**2
+xx, yy = np.meshgrid(x_grid_probes, y_grid_probes, indexing='ij')
+valid = (~chamber.is_outside(xx, yy)) & (reference_squared > 0)
+
+def log_relative_error(ex, ey):
+    error_squared = (ex-Ex_BE_matrix)**2 + (ey-Ey_BE_matrix)**2
+    relative_squared = np.divide(error_squared, reference_squared,
+                                 out=np.full_like(reference_squared, np.nan),
+                                 where=valid)
+    return np.log10(np.maximum(np.sqrt(relative_squared), 1e-7))
+
 pl.figure(4, figsize=(12, 6)).patch.set_facecolor('w')
 sp1 = pl.subplot(121)
 pl.pcolormesh(x_grid_probes, y_grid_probes,
-    np.log10(np.sqrt((((Ex_singlegrid_matrix-Ex_BE_matrix)**2+(Ey_singlegrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
+    log_relative_error(Ex_singlegrid_matrix, Ey_singlegrid_matrix).T,
     vmax=0., vmin=-7.0)
 pl.title('RMS error Singlegrid - BE')
 pl.xlabel('x [m]')
@@ -248,7 +275,7 @@ sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 
 sp2 = pl.subplot(122, sharex = sp1, sharey = sp1)
 pl.pcolormesh(x_grid_probes, y_grid_probes,
-    np.log10(np.sqrt((((Ex_multigrid_matrix-Ex_BE_matrix)**2+(Ey_multigrid_matrix-Ey_BE_matrix)**2)/(Ex_BE_matrix**2+Ey_BE_matrix**2)))).T,
+    log_relative_error(Ex_multigrid_matrix, Ey_multigrid_matrix).T,
     vmax=0., vmin=-7.0)
 pl.title('RMS error Multigrid - BE')
 pl.xlabel('x [m]')
@@ -260,7 +287,7 @@ cb.set_label('RMS error')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
 sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
 pl.subplots_adjust(bottom = .13,top = .70)
-pl.suptitle('$\sigma_x$ = %.2e [m]\n $\sigma_y$ = %.2e [m]  \n $\Delta h_{single}$ = %.2e [m]\n $\Delta h_{multi}$ = %.2e [m]\n $\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single, 
+pl.suptitle('$\\sigma_x$ = %.2e [m]\n $\\sigma_y$ = %.2e [m]  \n $\\Delta h_{single}$ = %.2e [m]\n $\\Delta h_{multi}$ = %.2e [m]\n $\\Delta h_{BE}$ = %.2e [m]\n Solving time: $t_{single}$ = %.1f ms, $t_{multi}$ = %.1f ms'%(bunch.sigma_x(), bunch.sigma_y(), Dh_single,
                 Dh_target, Dh_BE, t_sw_single*1000., t_sw_multi*1000.))
 
 pl.show()

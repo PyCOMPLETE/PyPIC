@@ -3,7 +3,9 @@ import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FD
 import PyPIC.FFT_PEC_Boundary_SquareGrid as PIC_PEC_FFT
 import PyPIC.geom_impact_ellip as ell
 import PyPIC.geom_impact_poly as poly
-from scipy import rand
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 import numpy as np
 
 
@@ -26,13 +28,13 @@ chamber = poly.polyg_cham_geom_object({'Vx':na([x_aper, -x_aper, -x_aper, x_aper
                                        'x_sem_ellip_insc':0.99*x_aper,
                                        'y_sem_ellip_insc':0.99*y_aper})
 
-picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')
-picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU')
-picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh)
+picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'scipy_slu')
+picFD = PIC_FD.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'scipy_slu')
+picFFTPEC = PIC_PEC_FFT.FFT_PEC_Boundary_SquareGrid(x_aper = chamber.x_aper, y_aper = chamber.y_aper, Dh = Dh, fftlib='numpy')
 
 # generate particles
-x_part = R_charge*(2.*rand(N_part_gen)-1.)
-y_part = R_charge*(2.*rand(N_part_gen)-1.)
+x_part = R_charge*(2.*rng.random(N_part_gen)-1.)
+y_part = R_charge*(2.*rng.random(N_part_gen)-1.)
 mask_keep  = x_part**2+y_part**2<R_charge**2
 x_part = x_part[mask_keep]
 y_part = y_part[mask_keep]
@@ -106,7 +108,11 @@ pl.axis('equal')
 Ny = picFDSW.Nyg
 
 pl.figure(1003)
-pl.plot(picFDSW.phi[:,Ny//2]/picFFTPEC.phi[:,Ny//2])
+phi_reference = picFFTPEC.phi[:, Ny//2]
+phi_ratio = np.divide(picFDSW.phi[:, Ny//2], phi_reference,
+                      out=np.full_like(phi_reference, np.nan),
+                      where=phi_reference != 0)
+pl.plot(phi_ratio)
 
 pl.suptitle('%f'%(np.sum(picFDSW.phi)/np.sum(picFFTPEC.phi)))
 

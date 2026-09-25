@@ -2,7 +2,9 @@ import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
 import PyPIC.FFT_OpenBoundary_SquareGrid as PIC_FFT
 import PyPIC.geom_impact_ellip as ell
 
-from scipy import rand
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 import numpy as np
 
 R_cham = 1e-1
@@ -23,8 +25,8 @@ picFDSW = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, 
 
 
 # generate particles
-x_part = R_charge*(2.*rand(N_part_gen)-1.)
-y_part = R_charge*(2.*rand(N_part_gen)-1.)
+x_part = R_charge*(2.*rng.random(N_part_gen)-1.)
+y_part = R_charge*(2.*rng.random(N_part_gen)-1.)
 mask_keep  = x_part**2+y_part**2<R_charge**2
 x_part = x_part[mask_keep]
 y_part = y_part[mask_keep]
@@ -43,7 +45,7 @@ y_probes = 0.*x_probes
 #pic gather
 Ex_FDSW, Ey_FDSW = picFDSW.gather(x_probes, y_probes)
 
-E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) for x in x_probes]
+E_r_th = [-np.sum(x_part**2+y_part**2<x**2)*qe/eps0/(2*np.pi*x) if x != 0 else 0. for x in x_probes]
 
 
 import pylab as pl

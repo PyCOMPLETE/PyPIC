@@ -9,10 +9,12 @@ import PyPIC.geom_impact_ellip as ell
 chamber = ell.ellip_cham_geom_object(x_aper = x_aper, y_aper = y_aper)
 
 #build particle distribution
-from scipy import randn
+from numpy.random import default_rng
+
+rng = default_rng(12345)
 N_part = 10000; sigmax=.5e-3; sigmay=1e-3
-x_mp = sigmax*randn(N_part);
-y_mp = sigmay*randn(N_part);
+x_mp = sigmax*rng.standard_normal(N_part);
+y_mp = sigmay*rng.standard_normal(N_part);
 nel_mp = x_mp*0.+1.
 
 #build probes
@@ -28,28 +30,28 @@ pic_list = []
 # Finite Difference Shortley-Weller
 Dh=1e-3
 import PyPIC.FiniteDifferences_ShortleyWeller_SquareGrid as PIC_FDSW
-pic_list.append(PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU'))
+pic_list.append(PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'scipy_slu'))
 
 # Finite Difference Staircase
 Dh=1e-3
 import PyPIC.FiniteDifferences_Staircase_SquareGrid as PIC_FDSC
-pic_list.append(PIC_FDSC.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'PyKLU'))
+pic_list.append(PIC_FDSC.FiniteDifferences_Staircase_SquareGrid(chamb = chamber, Dh = Dh, sparse_solver = 'scipy_slu'))
 
 #  Multi grid 
 Sx_target = 5*sigmax
 Sy_target = 5*sigmay
 Dh_target = 0.1*min([sigmax, sigmay])
 Dh_single = .5e-3
-pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single, sparse_solver = 'PyKLU')
+pic_singlegrid = PIC_FDSW.FiniteDifferences_ShortleyWeller_SquareGrid(chamb = chamber, Dh = Dh_single, sparse_solver = 'scipy_slu')
 from PyPIC.MultiGrid import AddTelescopicGrids
 pic_list.append(AddTelescopicGrids(pic_main = pic_singlegrid, f_telescope = 0.3,
     target_grid = {'x_min_target':-Sx_target/2., 'x_max_target':Sx_target/2.,'y_min_target':-Sy_target/2.,'y_max_target':Sy_target/2.,'Dh_target':Dh_target},
-    N_nodes_discard = 3., N_min_Dh_main = 10, sparse_solver='PyKLU'))
+    N_nodes_discard = 3., N_min_Dh_main = 10, sparse_solver='scipy_slu'))
 
 # test:
 
 pl.close('all')
-ms.mystyle_arial(fontsz = 14)
+ms.mystyle(fontsz = 14)
 
 for i_pic, pic in enumerate(pic_list):
 
@@ -75,21 +77,21 @@ for i_pic, pic in enumerate(pic_list):
     # gather and plot
     pl.figure(1+i_pic, figsize=(10, 6)).patch.set_facecolor('w')
     sp1 = pl.subplot(2,1,1)
-    pl.plot(theta_probes, Ex_probes)
+    pl.plot(np.rad2deg(theta_probes), Ex_probes)
     sp2 = pl.subplot(2,1,2)
-    pl.plot(theta_probes, Ey_probes)
+    pl.plot(np.rad2deg(theta_probes), Ey_probes)
 
     for i_state, state in enumerate(list_states):
         colorcurr = ms.colorprog(i_state, N_states)
         Ex_prb_state, Ey_prb_state = state.gather(x_probes, y_probes)
         pl.subplot(2,1,1)
-        pl.plot(theta_probes, Ex_prb_state, '.', color=colorcurr, label = 'State %d'%i_state)
-        pl.plot(theta_probes, Ex_probes*fact_states[i_state], '-', color=colorcurr, label = 'Ref. %d'%i_state)
+        pl.plot(np.rad2deg(theta_probes), Ex_prb_state, '.', color=colorcurr, label = 'State %d'%i_state)
+        pl.plot(np.rad2deg(theta_probes), Ex_probes*fact_states[i_state], '-', color=colorcurr, label = 'Ref. %d'%i_state)
         pl.xlabel('theta [deg]')
         pl.ylabel('Ex [V/m]')
         pl.subplot(2,1,2)
-        pl.plot(theta_probes, Ey_prb_state, '.', color=colorcurr, label = 'State %d'%i_state)
-        pl.plot(theta_probes, Ey_probes*fact_states[i_state], '-', color=colorcurr, label = 'Ref. %d'%i_state)
+        pl.plot(np.rad2deg(theta_probes), Ey_prb_state, '.', color=colorcurr, label = 'State %d'%i_state)
+        pl.plot(np.rad2deg(theta_probes), Ey_probes*fact_states[i_state], '-', color=colorcurr, label = 'Ref. %d'%i_state)
         pl.xlabel('theta [deg]')
         pl.ylabel('Ey [V/m]')
     #check single state case
@@ -100,11 +102,11 @@ for i_pic, pic in enumerate(pic_list):
     Ex_prb_single_state, Ey_prb_single_state = single_state.gather(x_probes, y_probes)
     colorcurr = 'black'
     pl.subplot(2,1,1)
-    pl.plot(theta_probes, Ex_prb_single_state, '.', color=colorcurr, label = 'Single state')
-    pl.plot(theta_probes, Ex_probes*fact_single_state, '-', color=colorcurr, label = 'Single ref.')
+    pl.plot(np.rad2deg(theta_probes), Ex_prb_single_state, '.', color=colorcurr, label = 'Single state')
+    pl.plot(np.rad2deg(theta_probes), Ex_probes*fact_single_state, '-', color=colorcurr, label = 'Single ref.')
     pl.subplot(2,1,2)
-    pl.plot(theta_probes, Ey_prb_single_state, '.', color=colorcurr, label = 'Single state')
-    pl.plot(theta_probes, Ey_probes*fact_single_state, '-', color=colorcurr, label = 'Single ref.')
+    pl.plot(np.rad2deg(theta_probes), Ey_prb_single_state, '.', color=colorcurr, label = 'Single state')
+    pl.plot(np.rad2deg(theta_probes), Ey_probes*fact_single_state, '-', color=colorcurr, label = 'Single ref.')
 
     sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='x')
     sp1.ticklabel_format(style='sci', scilimits=(0,0),axis='y')
