@@ -37,3 +37,17 @@ The package version is defined only in `[project].version` in `pyproject.toml`.
 `__version__` reads installed distribution metadata, including editable installs.
 After changing the version, reinstall the package to refresh that metadata.
 Legacy uninstalled source checkouts report `unknown (not installed)`.
+
+## Package directory layout
+
+Runtime Python modules live in `PyPIC/`; native sources and declarations live
+in `PyPIC/_native/`. Meson installs the package directory without enumerating
+Python files. Native sources stay in the source archive; compiled extensions
+are installed in `PyPIC/`. Add new runtime Python modules directly to the
+package directory. Build tools, tests and standalone scripts stay at the root.
+Optional PyPIC GPU/FPPS directories remain outside the shipped CPU package.
+
+Legacy `make` targets and `python setup.py build_ext -i` now delegate to the
+same editable pip build. Install the documented editable-build dependencies
+first. These commands no longer create extension files inside the source
+package. PyECLOUD's `setup_pyecloud` and `cythonize` use the same path.

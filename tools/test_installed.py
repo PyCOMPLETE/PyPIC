@@ -1,4 +1,4 @@
-"""Run tests away from the flat source package to prevent import shadowing."""
+"""Run tests away from the source package to prevent import shadowing."""
 import os
 from pathlib import Path
 import shutil

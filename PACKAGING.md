@@ -24,7 +24,7 @@ Use `python -m pip install .` for an isolated source build. Install PyPIC first
 when testing unpublished local PyECLOUD changes. Install build dependencies
 before `python -m pip install --no-build-isolation -e .` for editable builds.
 Run `python tools/test_installed.py` to copy tests to a temporary directory and
-avoid importing this flat source tree accidentally. PyKLU is a required dependency of both packages. Tests assert the real solver
+avoid importing the source tree accidentally. PyKLU is a required dependency of both packages. Tests assert the real solver
 is used and fail when PyKLU is absent; CI obtains it from package dependencies.
 
 `python -m build` creates an sdist then builds its wheel in isolation. Meson
@@ -80,3 +80,17 @@ unchanged. PyHEADTAIL remains optional via `PyECLOUD[tracking]`.
 version, `_version.py` was removed, and runtime version reporting reads
 installed metadata. Uninstalled legacy source imports report an unknown
 version rather than maintaining a second version literal.
+
+## Package directory layout
+
+Runtime Python modules live in `PyPIC/`; native sources and declarations live
+in `PyPIC/_native/`. Meson installs the package directory without enumerating
+Python files. Native sources stay in the source archive; compiled extensions
+are installed in `PyPIC/`. Add new runtime Python modules directly to the
+package directory. Build tools, tests and standalone scripts stay at the root.
+Optional PyPIC GPU/FPPS directories remain outside the shipped CPU package.
+
+Legacy `make` targets and `python setup.py build_ext -i` now delegate to the
+same editable pip build. Install the documented editable-build dependencies
+first. These commands no longer create extension files inside the source
+package. PyECLOUD's `setup_pyecloud` and `cythonize` use the same path.
