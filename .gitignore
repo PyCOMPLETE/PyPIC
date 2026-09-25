@@ -8,3 +8,8 @@ norepository_*
 build
 CyFPPS.cpp
 .DS_Store
+*.pyd
+*.egg-info/
+dist/
+__pycache__/
+.pytest_cache/

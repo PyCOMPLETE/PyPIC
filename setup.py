@@ -1,34 +1,51 @@
-import numpy as np
+"""Native extension builds; package metadata lives in pyproject.toml."""
 
-from setuptools import setup, Extension
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
 
-from Cython.Distutils import build_ext
-from Cython.Build import cythonize
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
+from setuptools.errors import CompileError
 
 
-cy_ext_options = {"compiler_directives": {"profile": True}, "annotate": True}
-cy_ext = [
-    Extension(
-        "CyFPPS",
-        sources=[ # the Cython source and additional C++ source files generate and compile C++ code
-            'FPPS/CyFPPS.pyx', 'FPPS/FPPSWrapper.cc',
-            'FPPS/ChangeCoord.cc', 'FPPS/ElectricFieldSolver.cc', 'FPPS/Mesh.cc',
-        'FPPS/ChangeCoord_Frac.cc', 'FPPS/FastPolarPoissonSolver.cc',  'FPPS/NonLinearMesh.cc',
-        'FPPS/ChangeCoord_Tanh.cc', 'FPPS/PolarBeamRepresentation.cc',
-        'FPPS/ChargeDistribution.cc', 'FPPS/FunctionsFPPS.cc'],
-        language="c++", include_dirs=[np.get_include()], libraries=['fftw3', 'm'])
+class F2PyBuildExt(build_ext):
+    """Let setuptools manage placement and editable installs of F2PY modules."""
+
+    def build_extension(self, ext):
+        module_name = ext.name.rsplit('.', 1)[-1]
+        sources = [str(Path(source).resolve()) for source in ext.sources]
+        destination = Path(self.get_ext_fullpath(ext.name)).resolve()
+        build_dir = Path(self.build_temp).resolve()
+        build_dir.mkdir(parents=True, exist_ok=True)
+        # A fresh directory prevents an old binary from masking a failed build.
+        with tempfile.TemporaryDirectory(prefix=ext.name + '-', dir=build_dir) as tmp:
+            command = [sys.executable, '-m', 'numpy.f2py', '-c',
+                       '--backend', 'meson', '-m', module_name, *sources]
+            try:
+                subprocess.run(command, cwd=tmp, check=True)
+            except subprocess.CalledProcessError as exc:
+                raise CompileError(
+                    f'Failed to build {ext.name}. A C and Fortran compiler '
+                    'must be available; see README.md for installation details.'
+                ) from exc
+            binary = Path(tmp) / self.get_ext_filename(module_name)
+            if not binary.is_file():
+                raise CompileError(f'F2PY did not produce the expected file: {binary}')
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(binary, destination)
+
+
+extensions = [
+    Extension('PyPIC.' + name, ['PyPIC/fortran/' + source])
+    for name, source in [
+        ('rhocompute', 'compute_rho.f'),
+        ('int_field_for', 'interp_field_for.f'),
+        ('int_field_for_border', 'interp_field_for_with_border.f'),
+        ('errffor', 'errfff.f'),
+    ]
 ]
 
-
-setup(
-    name='PyPIC',
-    description='Collection of Python Particle-In-Cell solvers.',
-    url='http://github.com/PyCOMPLETE/PyPIC',
-    packages=['PyPIC'],
-    cmdclass={'build_ext': build_ext},
-    ext_modules=cythonize(cy_ext, **cy_ext_options),
-    install_requires=[
-        'numpy',
-        'cython'
-    ]
-)
+setup(ext_modules=extensions, cmdclass={'build_ext': F2PyBuildExt})

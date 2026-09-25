@@ -1,0 +1,33 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=77", "numpy>=1.26", "meson>=1.2", "ninja"]
+
+[project]
+name = "PyPIC"
+dynamic = ["version"]
+description = "Collection of Python Particle-In-Cell solvers"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26", "scipy"]
+
+[project.urls]
+"Source Code" = "https://github.com/PyCOMPLETE/PyPIC"
+
+[project.optional-dependencies]
+tests = ["pytest"]
+examples = ["matplotlib"]
+fftw = ["pyfftw"]
+
+[tool.setuptools]
+include-package-data = false
+py-modules = []
+
+[tool.setuptools.packages.find]
+include = ["PyPIC*"]
+namespaces = false
+
+[tool.setuptools.dynamic]
+version = {attr = "PyPIC._version.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
