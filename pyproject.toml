@@ -7,7 +7,7 @@ name = "PyCOMPLETE-PyPIC"
 version = "2.4.6"
 description = "CPU particle-in-cell solvers for PyCOMPLETE"
 readme = "README.md"
-license-files = ["COPYING"]
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = ['PyKLU>=0.2.0', 'numpy>=2.0,<3', 'scipy>=1.13', 'matplotlib>=3.9']
 
