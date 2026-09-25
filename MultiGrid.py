@@ -46,7 +46,6 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
         self.pic_external.scatter(x_mp, y_mp, nel_mp, charge, flag_add)
         self.pic_internal.scatter(x_mp, y_mp, nel_mp, charge, flag_add)
 
-         
     def gather(self, x_mp, y_mp):
         mask_internal = np.logical_and(\
             np.logical_and(x_mp > self.x_min_internal + self.D_discard, 
@@ -54,18 +53,19 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
             np.logical_and(y_mp > self.y_min_internal + self.D_discard, 
                            y_mp < self.y_max_internal - self.D_discard))
                            
-        mask_external = np.logical_not(mask_internal)
+        idx_internal = np.flatnonzero(mask_internal)
+        idx_external = np.flatnonzero(~mask_internal)
+
+        Ex_sc_n_external, Ey_sc_n_external = self.pic_external.gather(x_mp[idx_external], y_mp[idx_external])
+        Ex_sc_n_internal, Ey_sc_n_internal = self.pic_internal.gather(x_mp[idx_internal], y_mp[idx_internal])
         
-        Ex_sc_n_external, Ey_sc_n_external = self.pic_external.gather(x_mp[mask_external], y_mp[mask_external])
-        Ex_sc_n_internal, Ey_sc_n_internal = self.pic_internal.gather(x_mp[mask_internal], y_mp[mask_internal])
+        Ex_sc_n = np.zeros_like(x_mp)
+        Ey_sc_n = np.zeros_like(x_mp)
         
-        Ex_sc_n = 0.*x_mp
-        Ey_sc_n = 0.*x_mp
-        
-        Ex_sc_n[mask_external] = Ex_sc_n_external
-        Ey_sc_n[mask_external] = Ey_sc_n_external
-        Ex_sc_n[mask_internal] = Ex_sc_n_internal
-        Ey_sc_n[mask_internal] = Ey_sc_n_internal
+        Ex_sc_n[idx_external] = Ex_sc_n_external
+        Ey_sc_n[idx_external] = Ey_sc_n_external
+        Ex_sc_n[idx_internal] = Ex_sc_n_internal
+        Ey_sc_n[idx_internal] = Ey_sc_n_internal
         
         return Ex_sc_n, Ey_sc_n
         
@@ -76,18 +76,19 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
             np.logical_and(y_mp > self.y_min_internal + self.D_discard, 
                            y_mp < self.y_max_internal - self.D_discard))
                            
-        mask_external = np.logical_not(mask_internal)
+        idx_internal = np.flatnonzero(mask_internal)
+        idx_external = np.flatnonzero(~mask_internal)
+
+        phi_sc_n_external = self.pic_external.gather_phi(x_mp[idx_external], y_mp[idx_external])
+        phi_sc_n_internal = self.pic_internal.gather_phi(x_mp[idx_internal], y_mp[idx_internal])
         
-        phi_sc_n_external = self.pic_external.gather_phi(x_mp[mask_external], y_mp[mask_external])
-        phi_sc_n_internal = self.pic_internal.gather_phi(x_mp[mask_internal], y_mp[mask_internal])
+        phi_sc_n = np.zeros_like(x_mp)
         
-        phi_sc_n = 0.*x_mp
-        
-        phi_sc_n[mask_external] = phi_sc_n_external
-        phi_sc_n[mask_internal] = phi_sc_n_internal
+        phi_sc_n[idx_external] = phi_sc_n_external
+        phi_sc_n[idx_internal] = phi_sc_n_internal
 
         return phi_sc_n
-        
+
     def gather_rho(self, x_mp, y_mp):
         mask_internal = np.logical_and(\
             np.logical_and(x_mp > self.x_min_internal + self.D_discard, 
@@ -95,15 +96,15 @@ class AddInternalGrid(PyPIC_Scatter_Gather):
             np.logical_and(y_mp > self.y_min_internal + self.D_discard, 
                            y_mp < self.y_max_internal - self.D_discard))
                            
-        mask_external = np.logical_not(mask_internal)
+        idx_internal = np.flatnonzero(mask_internal)
+        idx_external = np.flatnonzero(~mask_internal)
+        rho_sc_n_external = self.pic_external.gather_rho(x_mp[idx_external], y_mp[idx_external])
+        rho_sc_n_internal = self.pic_internal.gather_rho(x_mp[idx_internal], y_mp[idx_internal])
         
-        rho_sc_n_external = self.pic_external.gather_rho(x_mp[mask_external], y_mp[mask_external])
-        rho_sc_n_internal = self.pic_internal.gather_rho(x_mp[mask_internal], y_mp[mask_internal])
+        rho_sc_n = np.zeros_like(x_mp)
         
-        rho_sc_n = 0.*x_mp
-        
-        rho_sc_n[mask_external] = rho_sc_n_external
-        rho_sc_n[mask_internal] = rho_sc_n_internal
+        rho_sc_n[idx_external] = rho_sc_n_external
+        rho_sc_n[idx_internal] = rho_sc_n_internal
 
         return rho_sc_n
 
