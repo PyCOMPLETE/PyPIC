@@ -5,7 +5,7 @@ The distribution is named `PyCOMPLETE-PyPIC`; the import remains `PyPIC`.
 Python 3.10–3.14 and NumPy 2.x are the target support matrix.
 Linux x86_64 and macOS Intel/Apple Silicon wheels avoid local compilation.
 
-Optional KLU solver: `python -m pip install "PyCOMPLETE-PyPIC[klu]"`.
+PyKLU is a required dependency and is installed automatically.
 The unrelated PyPI project `pypic` is not this package. Use a clean environment
 and do not install both distributions into the same environment.
 The GPU and FFTW polar backends are not included. Standard FFT solvers use
@@ -32,3 +32,8 @@ used by pip. Build release artifacts with `python -m build`.
 Run installed-package tests from outside the checkout:
 `python /path/to/checkout/tools/test_installed.py`.
 See `PACKAGING.md` for release and validation details.
+
+The package version is defined only in `[project].version` in `pyproject.toml`.
+`__version__` reads installed distribution metadata, including editable installs.
+After changing the version, reinstall the package to refresh that metadata.
+Legacy uninstalled source checkouts report `unknown (not installed)`.

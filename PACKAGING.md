@@ -24,8 +24,8 @@ Use `python -m pip install .` for an isolated source build. Install PyPIC first
 when testing unpublished local PyECLOUD changes. Install build dependencies
 before `python -m pip install --no-build-isolation -e .` for editable builds.
 Run `python tools/test_installed.py` to copy tests to a temporary directory and
-avoid importing this flat source tree accidentally. Optional KLU tests skip
-when PyKLU is absent; wheel CI installs it and asserts the real solver is used.
+avoid importing this flat source tree accidentally. PyKLU is a required dependency of both packages. Tests assert the real solver
+is used and fail when PyKLU is absent; CI obtains it from package dependencies.
 
 `python -m build` creates an sdist then builds its wheel in isolation. Meson
 archives committed files only: commit changes before validating the source
@@ -42,8 +42,8 @@ not release archives. Neither tests nor examples are installed in wheels.
 2. Confirm availability/ownership of `PyCOMPLETE-PyPIC` and `PyECLOUD` on both
    PyPI and TestPyPI. The unrelated `pypic` distribution must not be installed
    alongside PyCOMPLETE-PyPIC, as both may own the same import namespace.
-3. Set the release version consistently in pyproject.toml, meson.build and
-   _version.py. Configure trusted publishers for `.github/workflows/release.yml`
+3. Set the release version only in `[project].version` in pyproject.toml.
+   Runtime `__version__` reads installed metadata; reinstall after version changes. Configure trusted publishers for `.github/workflows/release.yml`
    and protected `testpypi`/`pypi` environments in each upstream repository.
 4. Run the build matrix and review tests. Stage PyPIC first; then PyECLOUD.
    PyECLOUD CI requires its PyPIC dependency to be available to pip. For local
@@ -51,12 +51,12 @@ not release archives. Neither tests nor examples are installed in wheels.
 5. Use the manual Release workflow targeting TestPyPI. Download the exact
    staged versions with `pip download --index-url https://test.pypi.org/simple/
    --no-deps`, then install those files in a fresh environment, resolving normal
-   third-party dependencies from PyPI. Exercise base and KLU installations.
+   third-party dependencies from PyPI. Verify that a normal installation includes PyKLU.
 6. Verify optional tracking independently using the manual tracking workflow.
    Published PyHEADTAIL currently builds from source; do not claim successful
    tracking on a Python/platform combination until that job passes.
 7. Publish PyPIC to PyPI before PyECLOUD, using the same reviewed commit and
-   version. Verify fresh `pip install PyECLOUD` and `pip install 'PyECLOUD[klu]'`.
+   version. Verify a fresh `pip install PyECLOUD`, including actual KLU execution.
 
 The manual release workflow does not run merely because a branch is pushed.
 No artifacts have been uploaded by the local packaging implementation.
@@ -70,3 +70,13 @@ minimum dependencies passed. Published PyHEADTAIL installation and tracking
 imports also passed on all five Linux Python versions.
 MacOS and release workflows have not been run. Local wheels require glibc 2.31;
 CI targets manylinux_2_28 using its older build image. Nothing was published.
+
+## Metadata update (2026-09-25)
+
+PyKLU>=0.2.0 is now a direct runtime dependency of both distributions; the
+`klu` extra was removed. Existing solver defaults and the SciPy fallback are
+unchanged. PyHEADTAIL remains optional via `PyECLOUD[tracking]`.
+`pyproject.toml` is the only version source. Meson does not duplicate the
+version, `_version.py` was removed, and runtime version reporting reads
+installed metadata. Uninstalled legacy source imports report an unknown
+version rather than maintaining a second version literal.

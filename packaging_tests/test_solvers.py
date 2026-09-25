@@ -24,7 +24,7 @@ def test_solver_linearity_and_symmetry(cls):
 
 @pytest.mark.parametrize('cls', [SW, Staircase])
 def test_klu_really_used(cls):
-    klu = pytest.importorskip('PyKLU')
+    import PyKLU as klu
     chamber = ellip_cham_geom_object(.02, .02)
     pic = cls(chamb=chamber, Dh=.002, sparse_solver='PyKLU')
     assert isinstance(pic.luobj, klu.Klu), 'KLU silently fell back to SciPy'

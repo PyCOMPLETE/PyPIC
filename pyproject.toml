@@ -9,10 +9,9 @@ description = "CPU particle-in-cell solvers for PyCOMPLETE"
 readme = "README.md"
 license-files = ["COPYING"]
 requires-python = ">=3.10"
-dependencies = ['numpy>=2.0,<3', 'scipy>=1.13', 'matplotlib>=3.9']
+dependencies = ['PyKLU>=0.2.0', 'numpy>=2.0,<3', 'scipy>=1.13', 'matplotlib>=3.9']
 
 [project.optional-dependencies]
-klu = ["PyKLU>=0.2.0"]
 test = ["pytest>=8"]
 
 [project.urls]
@@ -21,7 +20,7 @@ Repository = "https://github.com/PyCOMPLETE/PyPIC"
 [tool.cibuildwheel]
 build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
 skip = "*-musllinux_* *-win*"
-test-requires = ["pytest>=8", "PyKLU>=0.2.0"]
+test-requires = ["pytest>=8"]
 test-command = "python {project}/tools/test_installed.py"
 
 [tool.cibuildwheel.linux]

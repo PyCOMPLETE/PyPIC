@@ -1,9 +1,9 @@
-project('PyCOMPLETE-PyPIC', 'c', 'fortran', version: '2.4.6', meson_version: '>=1.3')
+project('PyCOMPLETE-PyPIC', 'c', 'fortran', meson_version: '>=1.3')
 py = import('python').find_installation(pure: false)
 np_inc = run_command(py, ['-c', 'import numpy; print(numpy.get_include())'], check: true).stdout().strip()
 f2py_inc = run_command(py, ['-c', 'import numpy.f2py; print(numpy.f2py.get_include())'], check: true).stdout().strip()
 incs = include_directories(np_inc, f2py_inc, '.')
-py.install_sources(['Bassetti_Erskine.py', 'FFT_OpenBoundary.py', 'FFT_OpenBoundary_SquareGrid.py', 'FFT_PEC_Boundary_SquareGrid.py', 'FiniteDifferences_ShortleyWeller_SquareGrid.py', 'FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation.py', 'FiniteDifferences_Staircase_SquareGrid.py', 'MultiGrid.py', 'PyPIC_Scatter_Gather.py', '__init__.py', '_version.py', 'geom_impact_ellip.py', 'geom_impact_poly.py', 'myloadmat_to_obj.py', 'mystyle.py', 'simple_polygon.py'], subdir: 'PyPIC')
+py.install_sources(['Bassetti_Erskine.py', 'FFT_OpenBoundary.py', 'FFT_OpenBoundary_SquareGrid.py', 'FFT_PEC_Boundary_SquareGrid.py', 'FiniteDifferences_ShortleyWeller_SquareGrid.py', 'FiniteDifferences_ShortleyWeller_SquareGrid_extrapolation.py', 'FiniteDifferences_Staircase_SquareGrid.py', 'MultiGrid.py', 'PyPIC_Scatter_Gather.py', '__init__.py', 'geom_impact_ellip.py', 'geom_impact_poly.py', 'myloadmat_to_obj.py', 'mystyle.py', 'simple_polygon.py'], subdir: 'PyPIC')
 
 rhocompute_src = custom_target('rhocompute_wrappers',
   input: 'compute_rho.f', output: ['rhocomputemodule.c', 'rhocompute-f2pywrappers.f'],
