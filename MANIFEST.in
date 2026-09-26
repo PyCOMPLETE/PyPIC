@@ -1,4 +1,4 @@
-include README.md Makefile
+include README.md Makefile release.py
 recursive-include PyPIC *.py *.f
 recursive-include tests *.py
 recursive-include examples *.py *.md
