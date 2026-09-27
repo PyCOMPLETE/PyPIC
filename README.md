@@ -73,25 +73,27 @@ Package version metadata lives in `PyPIC/_version.py`.
 
 ## Publishing a source release
 
-Set the version in `PyPIC/_version.py`, then install the release tools:
+Use a development environment with the build dependencies installed. Set a new
+version in `PyPIC/_version.py`, then build and check the source archive:
 
 ```sh
 python -m pip install build twine
-python release.py --build-only
+python -m build --sdist
+python -m twine check --strict dist/*.tar.gz
 ```
 
-This builds and checks one source archive in `dist/`, without uploading or
-tagging. After testing the archive, commit and push the release changes, then run:
+After testing the archive, commit and push the release changes, then run from
+the repository root:
 
 ```sh
-python release.py
+./release.sh
 ```
 
-The script requires a clean checkout and an unused `v<version>` tag. It builds
-and checks the source archive, uploads only that `.tar.gz` to PyPI using your
-Twine credentials (for example, configured in `~/.pypirc`), then creates and
-pushes the version tag to `origin`. No wheels are uploaded. If the upload
-succeeds but tagging or pushing fails, finish those Git operations manually;
-PyPI does not allow re-uploading the same release file.
+As in xwakes, the script creates and pushes `v<version>` to `origin`, builds an
+sdist with `setup.py`, then uploads it using Twine and your PyPI credentials
+(for example, configured in `~/.pypirc`). The archive is built in a temporary
+directory so only this release's source archive is uploaded, then cleaned up.
+No wheels are uploaded. If building or uploading fails after the tag is pushed,
+finish the remaining release steps manually.
 
 Publish `pypic-poisson` before releasing PyECLOUD, which depends on it.
